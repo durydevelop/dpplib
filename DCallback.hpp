@@ -1,6 +1,6 @@
 /*
 
-// ---- Classe che chiama: MyClass ------------
+// ---- Nella classe che espone la callback: MyClass ------------
 
 GlobalCallback *callback;
 
@@ -10,7 +10,7 @@ void MyClass::SetCallback(Callback::DCALLBACK_FUNC clbk) {
 }
 
 //! Esegue la chiamata di callback
-void Prodig::DoCallback(uint8_t Command, void* Param) {
+void MyClass::DoCallback(uint8_t Command, void* Param) {
 	if (callback == NULL) {
 		return;
 	}

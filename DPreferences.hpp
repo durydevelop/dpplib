@@ -14,6 +14,7 @@ class DPreferences
         bool Load(void);
         bool Save(bool BackupBefore = false);
         std::string GetLastStatus(void);
+        std::string GetFilename(void);
         int ReadInteger(std::string SectionTree, std::string Item, int Default);
         std::string ReadString(std::string SectionTree, std::string Item, std::string Default);
 		float ReadFloat(std::string SectionTree, std::string Item, float Default);

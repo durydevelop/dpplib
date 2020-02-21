@@ -347,3 +347,9 @@ std::string DPreferences::GetLastStatus(void)
 {
 	return(LastStatus);
 }
+
+//! @return filename in which preferences are stored
+std::string DPreferences::GetFilename(void)
+{
+	return(PrefFile);
+}
