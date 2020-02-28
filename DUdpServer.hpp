@@ -1,39 +1,57 @@
 #ifndef DUdpServerH
 #define DUdpServerH
 
-//#include <cstdlib>
-//#include <iostream>
-//#include <asio/ts/buffer.hpp>
-//#include <asio/ts/internet.hpp>
 #include <asio.hpp>
-#include "DCallback.hpp"
+#include <memory>
+#include <iostream>
+#include <functional>
 
-class DUdpServer {
+class DUdpServer; // forward declaration
+
+struct DUdpSession : std::enable_shared_from_this<DUdpSession> {
+
+    DUdpSession(DUdpServer* server);
+    void handle_request(const std::error_code& ec, std::size_t BytesRecvd);
+    void handle_sent(const std::error_code& ec, std::size_t BytesSent);
+
+    asio::ip::udp::endpoint RemoteEndpoint;
+    uint8_t *RecvBuffer;
+    uint8_t *SendBuffer;
+    DUdpServer* Server;
+    size_t BufferSize;
+};
+
+class DUdpServer
+{
+
+
+
     public:
-        DUdpServer(asio::io_context& Context, short Port);
-        void do_receive();
-        void do_send(std::size_t Length);
-        //void SetRecvHandler()
-
-		//! Registra la callback
-		void SetCallback(DCallback::DCALLBACK_FUNC clbk) {
-			callback=new DGlobalCallback(clbk);
-		}
-
-		//! Esegue la chiamata di callback
-		void DoCallback(uint8_t Command, void* Param) {
-			if (callback == NULL) {
-				return;
-			}
-			callback->call(Command, Param);
-		}
+        typedef std::shared_ptr<DUdpSession> shared_session;
+        typedef void (*DCallbackData)(shared_session session,uint8_t*, size_t);
+    typedef void (*DCallbackErr)(shared_session session, std::string);
+        DUdpServer(asio::io_service& io_service);
+        void SetOnDataRecvd(DCallbackData callback);
+        void SetOnDataSent(DCallbackData callback);
+		void SetOnError(DCallbackErr callback);
+		void DoCallbackDataRecvd(shared_session session, uint8_t *data, size_t len);
+		void DoCallbackDataSent(shared_session session, uint8_t *data, size_t len);
+		void DoCallbackError(shared_session session, std::string Error);
+		void Send(shared_session session, uint8_t *data, size_t len);
 
     private:
-    	DGlobalCallback *callback;
-        asio::ip::udp::socket Socket;
-        asio::ip::udp::endpoint Endpoint;
-        enum { MAX_LENGTH = 1024 };
-        uint8_t Data[MAX_LENGTH];
+        void receive_session();
+        void handle_receive(shared_session session, const std::error_code& ec, std::size_t bytes_recvd);
+        void enqueue_response(shared_session const& session, size_t len);
+
+        asio::ip::udp::socket  socket_;
+        asio::io_service::strand strand_;
+        DCallbackData OnDataRecvd;
+        DCallbackData OnDataSent;
+        DCallbackErr OnError;
+
+        friend struct DUdpSession;
 };
 
 #endif // DUdpServer
+

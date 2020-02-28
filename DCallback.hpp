@@ -1,69 +1,71 @@
-/*
-
-// ---- Nella classe che espone la callback: MyClass ------------
-
-GlobalCallback *callback;
-
-//! Registra la callback
-void MyClass::SetCallback(Callback::DCALLBACK_FUNC clbk) {
-	callback=new GlobalCallback(clbk);
-}
-
-//! Esegue la chiamata di callback
-void MyClass::DoCallback(uint8_t Command, void* Param) {
-	if (callback == NULL) {
-		return;
-	}
-	callback->call(Command, Param);
-}
-// --------------------------------------------
-
-// ---- Main -------
-void DProdigCallback(uint8_t Command, void *Param)
+class CallBack
 {
-	// Handle callback
-}
-
-int main {
-	MyClass myClass=new MyClass();
-	myCass->SetCallback((DCallback::Callback::DCALLBACK_FUNC) DProdigCallback);
-}
-
-*/
-
-// Abstract interface for all callbacks
-class DCallback {
-	public:
-		typedef void (*DCALLBACK_FUNC)(uint8_t Command, void* Param);
-		//virtual ~Callback() { }
-		//virtual Callback* clone() const = 0;
-		virtual void call(uint8_t, void*) = 0;
+   virtual callMeBack () {};
 };
 
-// Implementation for member functions
-template <typename T>
-class DClassCallback : public DCallback {
-	private:
-		T*      object;
-		void (T::*callback)();
+class Caller : public CallBack
+{
+    void DoSomething ()
+    {
+    }
 
-	public:
-		DClassCallback(T* obj, void (T::*clbk)()) : object(obj), callback(clbk) {}
-		virtual DCallback* clone() const { return new DClassCallback<T>(object,callback); }
-		virtual void call() { (object->*callback)(); }
+    void callMeBack()
+    {
+       std::cout << "I got your message" << std::endl;
+    }
 };
 
-// Implementation for global functions
-class DGlobalCallback : public DCallback {
-	private:
-		//void (*callback)();
-		DCALLBACK_FUNC callback;
+class AnotherClass ()
+{
+     public void RegisterMe(CallBack *callback)
+     {
+         m_callback = callback;
+     }
 
-	public:
-		DGlobalCallback(DCALLBACK_FUNC clbk) : DCallback() {
-			callback=clbk;
-		}
-		virtual void call(uint8_t Command, void* Data) {
-			(*callback)(Command,Data);
-		}
+     public void DoSomething ()
+     {
+        // DO STUFF
+        // .....
+        // then call
+        if (m_callback) m_callback->callMeBack();
+     }
+     private CallBack *m_callback = NULL;
+};
+
+class Callbacker
+{
+    public:
+        Callbacker(void) {
+            callback = NULL;
+            callback_obj = NULL;
+            object = NULL;
+        };
+        ~Callbacker(void);
+
+        void setCallback(void (*cb)(int)) {
+            callback_obj = NULL;
+            object = NULL;
+            callback = cb;
+        };
+        void setCallback(void (*cb)(void*,int),void* obj) {
+            callback = NULL;
+            object = obj;
+            callback_obj = cb;
+        };
+        void call() {
+            if(callback != NULL)
+            {
+                callback(9001);
+            }
+            else if((callback_obj != NULL) && (object != NULL))
+            {
+                callback_obj(object,9002);
+            }
+        };
+
+    private:
+        void (*callback)(int);
+        void (*callback_obj)(void*,int);
+        void* object;
+
 };
