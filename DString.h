@@ -1,5 +1,10 @@
- #include "DCommon.hpp"
+ //---------------------------------------------------------------------------
+#ifndef DStringH
+#define DStringH
+//---------------------------------------------------------------------------
  #include <chrono>
+ #include <sstream>
+ #include <memory>
 
 namespace DTools
 {
@@ -53,3 +58,4 @@ namespace DTools
         //std::string& RemoveAll(std::string& str, std::string& Search);
 	}
 }
+#endif

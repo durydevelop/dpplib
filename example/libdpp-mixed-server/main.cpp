@@ -7,7 +7,7 @@ DUdpServer *dUdpServer;
 
 void UdpDataRecvd(DUdpServer::shared_session session, uint8_t *data, size_t len) {
     std::cout << "FROM IP\t:\t" << session->RemoteEndpoint.address().to_string() << "\t:\t" << std::string((char*)data,len) << "\n";
-    dUdpServer->Send(session,data,len);
+    session->Server->Send(session,data,len);
 }
 
 void UdpDataSent(DUdpServer::shared_session session, uint8_t *data, size_t len) {
@@ -15,7 +15,7 @@ void UdpDataSent(DUdpServer::shared_session session, uint8_t *data, size_t len) 
 }
 
 void UdpError(DUdpServer::shared_session session,std::string Error) {
-    std::cout << "ERROR IP\t:\t" << session->RemoteEndpoint.address().to_string() << "\t:\t" << Error << "\n";
+    std::cout << "ERR IP\t:\t" << session->RemoteEndpoint.address().to_string() << "\t:\t" << Error << "\n";
 }
 
 int main(int argc, char* argv[])
@@ -26,14 +26,14 @@ int main(int argc, char* argv[])
         dUdpServer->SetOnDataRecvd(UdpDataRecvd);
         dUdpServer->SetOnDataSent(UdpDataSent);
         dUdpServer->SetOnError(UdpError);
-        io_service.run();
-/*
-        thread_group group;
+        //dUdpServer->Run();
+
+        std::thread_group group;
         for (unsigned i = 0; i < thread::hardware_concurrency(); ++i)
             group.create_thread(bind(&asio::io_service::run, ref(io_service)));
 
         group.join_all();
-*/
+
     }
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;

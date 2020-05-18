@@ -23,14 +23,13 @@ struct DUdpSession : std::enable_shared_from_this<DUdpSession> {
 
 class DUdpServer
 {
-
-
-
     public:
         typedef std::shared_ptr<DUdpSession> shared_session;
-        typedef void (*DCallbackData)(shared_session session,uint8_t*, size_t);
-    typedef void (*DCallbackErr)(shared_session session, std::string);
+        typedef void (*DCallbackData)(shared_session session, uint8_t*, size_t);
+        typedef void (*DCallbackErr)(shared_session session, std::string);
+
         DUdpServer(asio::io_service& io_service);
+        void Run();
         void SetOnDataRecvd(DCallbackData callback);
         void SetOnDataSent(DCallbackData callback);
 		void SetOnError(DCallbackErr callback);
@@ -40,12 +39,14 @@ class DUdpServer
 		void Send(shared_session session, uint8_t *data, size_t len);
 
     private:
-        void receive_session();
+        void StartReceiveSession();
         void handle_receive(shared_session session, const std::error_code& ec, std::size_t bytes_recvd);
-        void enqueue_response(shared_session const& session, size_t len);
+        void PostResponse(shared_session const& session, size_t len);
+        void handle_response(shared_session session, const std::error_code& ec, std::size_t BytesRecvd);
 
         asio::ip::udp::socket  socket_;
         asio::io_service::strand strand_;
+        asio::io_service *ioservice;
         DCallbackData OnDataRecvd;
         DCallbackData OnDataSent;
         DCallbackErr OnError;

@@ -1,5 +1,10 @@
-#include "DCommon.hpp"
+//---------------------------------------------------------------------------
+#ifndef DVectorH
+#define DVectorH
+//---------------------------------------------------------------------------
 #include <map>
+#include <algorithm>
+#include <vector>
 
 namespace DTools
 {
@@ -55,3 +60,4 @@ namespace DTools
 		}
 	}
 }
+#endif

@@ -1,10 +1,11 @@
-#include "DNetwork.hpp"
+#include "DNetwork.h"
+
 namespace DTools
 {
 	namespace DNet {
 		//! @return Host Name corrente
 		std::string GetHostName(void) {
-			auto host_name = boost::asio::ip::host_name();
+			auto host_name = asio::ip::host_name();
 			return(host_name);
 		}
 	}

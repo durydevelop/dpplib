@@ -1,6 +1,4 @@
-#include "DCsv.hpp"
-
-using namespace std;
+#include "DCsv.h"
 
 namespace DTools
 {
@@ -33,7 +31,7 @@ namespace DTools
 				ixR++;
 			}
 			// Last Item
-			string Item=Row.substr(ixStart,ixR-ixStart);
+			std::string Item=Row.substr(ixStart,ixR-ixStart);
 			if (!Item.empty()) {
 				DestList.push_back(Item);
 			}
@@ -105,7 +103,7 @@ namespace DTools
 
 			if (SepCount == 0) {
 				if (FieldNr > 1) {
-					return(string());
+					return(std::string());
 				}
 				else {
                     return(ReplaceStr);

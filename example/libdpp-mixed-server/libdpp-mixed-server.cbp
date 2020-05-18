@@ -42,7 +42,6 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="../../DCallback.hpp" />
 		<Unit filename="../../DTcpServer.cpp" />
 		<Unit filename="../../DTcpServer.hpp" />
 		<Unit filename="../../DUdpServer.cpp" />

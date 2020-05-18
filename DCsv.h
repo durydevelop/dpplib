@@ -1,14 +1,18 @@
+﻿//---------------------------------------------------------------------------
+#ifndef DCsvH
+#define DCsvH
+//---------------------------------------------------------------------------
 #include <vector>
 #include <string>
 
 namespace DTools
 {
 	namespace DCsv {
-	    size_t ReadCSVRow(std::vector<std::string> &DestList, std::string Row, char cSep, size_t MaxFieldsCount = 0);
+		size_t ReadCSVRow(std::vector<std::string> &DestList, std::string Row, char cSep, size_t MaxFieldsCount = 0);
 		std::string ReadCSVField(std::string Row, char cSep, size_t FieldNr);
 		std::string ReplaceCSVField_Copy(std::string Row, char cSep, size_t Index, std::string ReplaceStr);
 /* TODO
-        class DListaCSV {
+		class DListaCSV {
 	public:
 		class DItemCSV {
 			private:
@@ -163,7 +167,7 @@ namespace DTools
 		DItemCSV* AddItem(std::string ItemName, boost::filesystem::path Filename, bool Syncronize) {
 			DItemCSV *Item=new DItemCSV(ItemName,LocalDir,Filename,Syncronize);
 			Items.push_back(Item);
-            return(Items.back());
+			return(Items.back());
 		}
 		DItemCSV* SetItem(std::string ItemName, boost::filesystem::path Filename, bool Syncronize) {
 			DItemCSV *Item=GetItem(ItemName);
@@ -232,3 +236,4 @@ namespace DTools
 */
 	}
 }
+#endif

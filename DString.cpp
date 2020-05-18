@@ -1,11 +1,9 @@
-#include "DString.hpp"
+#include "DString.h"
 #include <regex>
 #include <iomanip>
 
-namespace DTools
-{
-	namespace DString
-	{
+namespace DTools {
+	namespace DString {
 		std::string& LTrim(std::string& str, const std::string& chars) {
 			str.erase(0, str.find_first_not_of(chars));
 			return str;

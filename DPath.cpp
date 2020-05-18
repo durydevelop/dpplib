@@ -1,11 +1,12 @@
-#include "DPath.hpp"
-#include "DStringGrid.hpp"
-#include "DString.hpp"
-#include "DCsv.hpp"
+﻿#include "DPath.h"
+#include "DStringGrid.h"
+#include "DString.h"
+#include "DCsv.h"
 
 namespace DTools
 {
 	namespace DPath {
+
 		fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute, err::error_code *ec) {
 			fs::path NewPath=Path.parent_path() / (Path.stem().string() + "." + DString::LTrim(NewExt,"."));
 
@@ -30,10 +31,20 @@ namespace DTools
 			return(Exts);
 		}
 
+		template <typename TP>
+		std::time_t to_time_t(TP tp)
+		{
+			using namespace std::chrono;
+			auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now()
+					  + system_clock::now());
+			return system_clock::to_time_t(sctp);
+		}
+
 		bool IsOlderThanHrs(const fs::path& Path, const int Hrs) {
 			// get now as time_point
 			std::chrono::system_clock::time_point now=std::chrono::system_clock::now();
 			// get file_time of file
+			/*
 			#if __cplusplus > 201402L // C++17
 				std::filesystem::file_time_type fttime=std::filesystem::last_write_time(Path);
 				// transform it to time_t
@@ -41,6 +52,9 @@ namespace DTools
 			#else
 				std::time_t ftimet=boost::filesystem::last_write_time(Path);
 			#endif
+			*/
+			fs::file_time_type fttime=fs::last_write_time(Path);
+			std::time_t ftimet=to_time_t(fttime);
 
 			// then in time_point
 			std::chrono::system_clock::time_point tptime=std::chrono::system_clock::from_time_t(ftimet);
@@ -51,6 +65,7 @@ namespace DTools
 		}
 
 		std::chrono::system_clock::time_point LastWriteTime(const fs::path Path) {
+			/*
             #if __cplusplus > 201402L // C++17
 				std::filesystem::file_time_type fttime=std::filesystem::last_write_time(Path);
 				// transform it to time_t
@@ -58,6 +73,9 @@ namespace DTools
 			#else
 				std::time_t ftimet=boost::filesystem::last_write_time(Path);
 			#endif
+			*/
+			fs::file_time_type fttime=fs::last_write_time(Path);
+			std::time_t ftimet=to_time_t(fttime);
 
 			// then in time_point
 			std::chrono::system_clock::time_point tptime=std::chrono::system_clock::from_time_t(ftimet);
@@ -93,7 +111,7 @@ namespace DTools
 		*
 		* @return 0 on success or an error_code if any arrors occours.
 		**/
-		err::error_code CopyDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DGlobalCallback *Callback) {
+		err::error_code CopyDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DGlobalCallback Callback) {
 
 			err::error_code ec;
 
@@ -121,18 +139,18 @@ namespace DTools
 				return ec;
 			}
 
-			if (Callback != NULL) {
+			if (Callback) {
 				int nFiles=CountFiles(SourceDir,false);
 				int nDirs=CountDirs(SourceDir,false);
 
-				Callback->call(SET_FILES,IntToPtr(nFiles));
-				Callback->call(SET_DIRS,IntToPtr(nDirs));
-				Callback->call(SET_OBJ,IntToPtr(nFiles+nDirs));
+				Callback(SET_FILES,DIntToPtr(nFiles));
+				Callback(SET_DIRS,DIntToPtr(nDirs));
+				Callback(SET_OBJ,DIntToPtr(nFiles+nDirs));
 			}
 			// Itera attraverso SourceDir
 			for (fs::directory_iterator iterator(SourceDir); iterator != fs::directory_iterator(); ++iterator) {
 				if (is_directory(iterator->status())) {
-					if (Callback != NULL) Callback->call(INC_DIR,NULL);
+					if (Callback) Callback(INC_DIR,NULL);
 					// In ricorsione
 					ec=CopyDir(iterator->path(),DestDir / iterator->path().filename(),FailIfExists,NULL); // nessuna callback perché viene eseguita solo per gli oggetti presenti nella root
 					if (ec.value() != 0) {
@@ -140,7 +158,7 @@ namespace DTools
 					}
 				}
 				else if (is_regular_file(iterator->status())) {
-					if (Callback != NULL) Callback->call(INC_FILE,NULL);
+					if (Callback) Callback(INC_FILE,NULL);
 					#if __cplusplus > 201402L // C++17
 						fs::copy_options options=fs::copy_options::overwrite_existing;
 					#else
@@ -166,7 +184,7 @@ namespace DTools
 		*
 		* @return 0 on success or an error_code if any arrors occours.
 		**/
-		err::error_code MoveDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DGlobalCallback *Callback) {
+		err::error_code MoveDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DGlobalCallback Callback) {
 			// TODO: fastmove
 			err::error_code ec=CopyDir(SourceDir,DestDir,FailIfExists,Callback);
 
@@ -204,7 +222,7 @@ namespace DTools
 		* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), NULL o vuoto equivale a tutto
 		*								N.B. Tutte le stringhe devo essere contenute nel nome
 		* @param NameWholeWord		->	Se true confronta la ricerca con l'intero nome (Ignorato se @ref NameContentList contiene più di una stringa)
-		* @param ExtList			->	Puntatore ad un array di estensioni da cercare, NULL o vuoto equivale a tutto
+		* @param ExtContentList			->	Puntatore ad un array di estensioni da cercare, NULL o vuoto equivale a tutto
 		*								N.B. Tutte le stringhe devo essere contenute nell'estensione
 		* @param ExtWholeWord		->	Se true confronta la ricerca con l'intera estensione (Ignorato se @ref ExtContentList contiene più di una stringa)
 		* @param CaseSensitive		->	Se true tiene conto di maiuscole e minuscole
@@ -399,13 +417,18 @@ namespace DTools
 		// Conta le cartelle all'interno di una cartella
 		/**
 		* @param PathToScan		->	Directory di partenza
-		* @param NameConentList	->	Puntatore ad un array di stringhe di ricerca per il nome, NULL o vuoto equivale a tutto
-		* @param ExtContentList	->	Puntatore ad un array di stringhe di ricerca per l'estensione, NULL o vuoto equivale a tutto
-		* @param Recoursive		->	Se true va in ricorsione
+		* @param Recoursive		->	Se true va in ricorsione (solo se non è un ordine Prodig)
+		* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), NULL o vuoto equivale a tutto
+		* @param NameWholeWord	->	Se true confronta la ricerca con l'intero nome
+		* @param ExtContentList	->	Puntatore ad un array di estensioni da cercare, NULL o vuoto equivale a tutto
+		*							N.B. Tutte le stringhe devo essere contenute nell'estensione
+		* @param ExtWholeWord	->	Se true confronta la ricerca con l'intera estensione
+		* @param FindAll			->	Se true esegue una ricerca di tipo AND: tutte le stringhe di @ref NameContent e @ExtContent devono essere trovate in ogni nome ed estensione
+		*							Se false esegue una ricerca di tipo OR: basta che una delle stringhe di @ref NameContent e @ExtContent venga trovata in ogni nome ed estensione
 		*
 		* @return il numero di directory trovate, -1 in caso di errore
 		**/
-		int CountDirs(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll) {
+		int CountDirs(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool FindAll) {
 			return(ListDirs(NULL,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,Recoursive,FindAll));
 		}
 
@@ -620,12 +643,11 @@ namespace DTools
 		* @param NameWholeWord	->	Se true confronta la ricerca con l'intero nome
 		* @param ExtContent		->	Stringa di ricerca per l'estensione, vuota equilave a tutto
 		* @param ExtWholeWord	->	Se true confronta la ricerca con l'intera estensione
-		* @param CaseSensitive	->	Se true tiene conto di maiuscole e minuscole
 		*
 		* @return il numero di files trovati, -1 in caso di errore
 		* N.B. @ref Result non viene pulita qindi s non è vuoa  risultati vengono aggiunti
 		**/
-		int ListFiles(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive) {
+		int ListFiles(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord) {
 			std::vector<std::string> NameContentList;
 			std::vector<std::string> ExtContentList;
 			if (!NameContent.empty()) {
@@ -649,13 +671,12 @@ namespace DTools
 		* @param ExtList			->	Puntatore ad un array di estensioni da cercare, NULL o vuoto equivale a tutto
 		*								N.B. Tutte le stringhe devo essere contenute nell'estensione
 		* @param ExtWholeWord		->	Se true confronta la ricerca con l'intera estensione (Ignorato se @ref ExtContentList contiene più di una stringa)
-		* @param CaseSensitive		->	Se true tiene conto di maiuscole e minuscole
 		* @param FindAll			->	Se true esegue una ricerca di tipo AND: tutte le stringhe di @ref NameContent e @ExtContent devono essere trovate in ogni nome ed estensione
 		*								Se false esegue una ricerca di tipo OR: basta che una delle stringhe di @ref NameContent e @ExtContent venga trovata in ogni nome ed estensione
 		*
 		* @return il numero di files trovati, -1 in caso di errore
 		**/
-		int CountFiles(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll) {
+		int CountFiles(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool FindAll) {
 			return(ListFiles(NULL,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,Recoursive,FindAll));
 		}
 
@@ -673,8 +694,8 @@ namespace DTools
 		*
 		* @return il numero di files trovati, -1 in caso di errore
 		**/
-		int CountFiles(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive) {
-			return(ListFiles(NULL,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensitive));
+		int CountFiles(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord) {
+			return(ListFiles(NULL,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord));
 		}
 
 		// Conta tutti i files all'interno di una cartella
@@ -689,5 +710,69 @@ namespace DTools
 		int CountFiles(fs::path PathToScan, bool Recoursive) {
 			return(ListFiles(NULL,PathToScan,Recoursive,NULL,false,NULL,false,true));
 		}
+
+		/*
+		// Elimina i più vecchi di 48 hr
+		ErrorList.erase(
+			std::remove_if(
+				ErrorList.begin(),
+				ErrorList.end(),
+				[](boost::filesystem::path Ext) {
+					return(!DTools::DPath::IsOlderThanHrs(Ext,48));
+				}
+			),
+			ErrorList.end()
+		);
+		//v.erase(std::remove_if(v.begin(), v.end(), IsOdd), v.end());
+		*/
 	}
 }
+
+/*
+		#if defined _WIN32 || defined _WIN64
+*/
+			//! Get version of EXE or DLL
+			/*
+			* @param Filename   ->  filename to extract version from, if empty, current process filename is used (default: empty)
+			* @param TrimDots	->  if true trims all dots from string (default: true).
+			* @return string containing file version. If TrimDots is false returen string is like "1.0.0.0" ,otherwise is like "1000"
+			*/
+/*
+			std::string GetFileVersion(std::string Filename, bool TrimDots) {
+				LPVOID lpStr1 = NULL;
+				LPVOID lpStr2 = NULL;
+				WORD* wTmp;
+				DWORD dwHandlev = NULL;
+				unsigned int nRet;
+				unsigned int dwLength;
+				char sFileName[1024]={0};
+				char sTmp[1024]={0};
+				LPVOID* pVersionInfo;
+				std::string sRet;
+
+				if (Filename.empty())
+					GetModuleFileName(NULL,sFileName,1024);
+				else
+					strcpy(sFileName,Filename.c_str());
+
+				DWORD dwInfoSize = GetFileVersionInfoSize((char*)(LPCTSTR)sFileName, &dwHandlev);
+				if (dwInfoSize) {
+					pVersionInfo = new LPVOID[dwInfoSize];
+					nRet = GetFileVersionInfo((char*)(LPCTSTR)sFileName, dwHandlev, dwInfoSize, pVersionInfo);
+					if(nRet) {
+						nRet = VerQueryValue(pVersionInfo, "\\VarFileInfo\\Translation", &lpStr1, &dwLength);
+						if (nRet) {
+							wTmp = (WORD*)lpStr1;
+							wsprintf(sTmp,"\\StringFileInfo\\%04x%04x\\FileVersion", *wTmp, *(wTmp + 1));
+							nRet = VerQueryValue(pVersionInfo, sTmp, &lpStr2, &dwLength);
+							if(nRet) {
+								sRet=std::string((char*)lpStr2);
+							}
+						}
+					}
+					delete[] pVersionInfo;
+				}
+				return (sRet);
+			}
+		#endif
+*/
