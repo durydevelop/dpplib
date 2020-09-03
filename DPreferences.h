@@ -37,6 +37,7 @@ namespace DTools {
 				bool Load(void);
 				bool Save(bool BackupBefore = false);
 				bool IsReady(void);
+                bool IsEmpty(void);
 
 				std::string GetLastStatus(void);
 				std::string GetFilename(void);

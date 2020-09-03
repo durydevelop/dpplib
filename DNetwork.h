@@ -6,27 +6,33 @@
 
 // Filesystem library include
 #if __cplusplus > 201402L // C++17
-	#include <filesystem>
-	#include <asio.hpp>
+    #if __GNUC__ >= 8
+        #include <filesystem>
+    #else
+        #include <experimental/filesystem>
+    #endif
+    #include <asio.hpp>
+
 #else
-	#include <boost/filesystem.hpp>
-	#include <boost/asio.hpp>
+    #include <boost/filesystem.hpp>
+    #include <boost/asio.hpp>
 #endif
 
 namespace DTools
 {
 	namespace DNet {
 		// Filesystem library namespace
-		#if __cplusplus > 201402L // C++17
-			//#include <filesystem>
-			namespace fs = std::filesystem;
-			namespace err = std;
-		#else
-			//#include <boost/filesystem.hpp>
-			namespace fs=boost::filesystem;
-			namespace asio=boost::asio;
-			namespace err = boost::system;
-		#endif
+        #if __cplusplus > 201402L // C++17
+            #if __GNUC__ >= 8
+                namespace fs = std::filesystem;
+            #else
+                namespace fs = std::experimental::filesystem;
+            #endif
+            namespace err = std;
+        #else
+            namespace fs=boost::filesystem;
+            namespace err = boost::system;
+        #endif
 		std::string GetHostName(void);
 	}
 }

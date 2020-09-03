@@ -45,6 +45,7 @@ namespace DTools
 		typedef void (*DGlobalCallback)(uint8_t,void*);
 		typedef void (*DMemberCallback)(void*,uint8_t,void*);
 
+        fs::path GetExePath();
 		fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute, err::error_code *ec = NULL);
 		bool IsOlderThanHrs(const fs::path& Path, const int Hrs);
 		std::chrono::system_clock::time_point LastWriteTime(const fs::path Path);

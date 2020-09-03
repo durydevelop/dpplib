@@ -1,10 +1,10 @@
- //---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 #ifndef DStringH
 #define DStringH
 //---------------------------------------------------------------------------
- #include <chrono>
- #include <sstream>
- #include <memory>
+#include <chrono>
+#include <sstream>
+#include <memory>
 
 namespace DTools
 {
@@ -55,6 +55,7 @@ namespace DTools
         std::string ToUpperCopy(std::string str);
         std::string& ToLower(std::string& str);
         std::string ToLowerCopy(std::string str);
+        bool CmpNoCase(std::string str1, std::string str2);
         //std::string& RemoveAll(std::string& str, std::string& Search);
 	}
 }

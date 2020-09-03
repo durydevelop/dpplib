@@ -146,6 +146,21 @@ namespace DTools {
 		    return(str);
 		}
 
+        //! Compare strings case-unsensitive
+        /**
+         * @param str1  ->  first string to compare
+         * @param str2  ->  first string to compare
+         * @return true if string are equals, otherwise false
+         */
+        bool CmpNoCase(std::string str1, std::string str2) {
+            std::transform(str1.begin(), str1.end(),str1.begin(), ::tolower);
+            std::transform(str2.begin(), str2.end(),str2.begin(), ::tolower);
+            if (str1.compare(str2) == 0) {
+                return true;
+            }
+            return false;
+        }
+
         /*
 		//! Erase all occurrences of characters in a string
 		std::string& RemoveAll(std::string& str, std::string& Search) {

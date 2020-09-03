@@ -38,6 +38,12 @@ namespace DTools
 			return(DestList.size());
 		}
 
+        std::vector<std::string> CsvToVector(std::string CsvString, char cSep) {
+            std::vector<std::string> Result;
+            ReadCSVRow(Result,CsvString,cSep);
+            return(Result);
+        }
+
 		//! Extract a field from a csv string
 		/**
 		* @param Row    	->  reference to string to extract from
@@ -115,73 +121,6 @@ namespace DTools
 			Ret.append(Row.substr(ixR,Row.length()-ixR));
 
 			return(Ret);
-
-			//return(Row.substr(ixStart,ixR-ixStart));
-
-			/*
-			enum class CSVState {
-				UnquotedField,
-				QuotedField,
-				QuotedQuote
-			};
-			CSVState state = CSVState::UnquotedField;
-			vector<string> fields {""};
-			size_t ixF=0; // Index of the current field
-			//size_t ixEnd=Index; // Last Field Index
-			size_t SubStrLen;	// Number of SubStr char
-			string SubStr;		// Current SubString
-			for (size_t ixR=0;ixR<Row.size();ixR++) {
-				switch (state) {
-					case CSVState::UnquotedField:
-						if (Row[ixR] == cSep) {
-							// end of field
-							SubStr=Row.substr(ixR-SubStrLen,SubStrLen);
-							SubStrLen=0;
-							ixF++;
-						}
-						else if (Row[ixR] == '"') {
-							state = CSVState::QuotedField;
-						}
-						else {
-							SubStrLen++; // Field ixF inc char count
-						}
-						break;
-					case CSVState::QuotedField:
-						if (Row[ixR] == '"') {
-							state = CSVState::QuotedQuote;
-						}
-						else {
-							SubStrLen++; // Field ixF inc char count
-						}
-						break;
-					case CSVState::QuotedQuote:
-						if (Row[ixR] == cSep) {
-							// cSep after closing quote
-							SubStr=Row.substr(ixR-SubStrLen,SubStrLen);
-							ixF++;
-							state = CSVState::UnquotedField;
-						}
-						else if (Row[ixR] == '"') {
-							// "" -> "
-							//fields[ixF].push_back('"');
-							SubStrLen++; // Field ixF inc char count
-							state = CSVState::QuotedField;
-						}
-						else {
-							// end of quote
-							state = CSVState::UnquotedField;
-						}
-						break;
-				}
-
-				if (ixF == FieldNr) {
-					Row.replace(ixR-SubStr.size()-1,ixR-1,SubStr);
-					return true;
-				}
-			}
-
-			return false;
-            */
 		}
 	}
 }

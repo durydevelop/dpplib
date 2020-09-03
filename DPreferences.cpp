@@ -80,6 +80,11 @@ namespace DTools {
 			return(Ready);
 		}
 
+        //! @return true if no sections extsts
+        bool DPreferences::IsEmpty(void) {
+            return(RootNode.empty());
+        }
+
 		//! Retrive an integer value
 		/**
 		* Try to get the integer value of @ref Item inside @ref SectionTree
