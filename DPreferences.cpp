@@ -9,10 +9,20 @@ namespace pt=boost::property_tree;
 namespace DTools {
 	namespace DPreferences {
 		//! Constructor
-		DPreferences::DPreferences(std::string Filename)
+		DPreferences::DPreferences(std::string Filename, bool CreateIfNotExists)
 		{
 			PrefFile=Filename;
-			Ready=Load();
+			if (!fs::exists(PrefFile)) {
+				if (CreateIfNotExists) {
+					Ready=Save();
+				}
+				else {
+					Ready=false;
+				}
+			}
+			else {
+				Ready=Load();
+			}
 		}
 
 		DPreferences::~DPreferences()
@@ -28,7 +38,8 @@ namespace DTools {
 		bool DPreferences::Load(void)
 		{
 			if (!fs::exists(PrefFile)) {
-				Save();
+				Ready=false;
+				return Ready;
 			}
 
 			try {

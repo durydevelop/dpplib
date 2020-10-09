@@ -14,6 +14,7 @@ namespace DTools
 {
 	namespace DPath {
 
+        // TODO
         fs::path GetExePath() {
             #ifdef _WIN32
                 wchar_t path[MAX_PATH] = { 0 };
@@ -102,6 +103,12 @@ namespace DTools
 			return(tptime);
 		}
 
+		std::uintmax_t space_to_be_freed(const fs::path& dir, unsigned int percent_free_required) {
+			const fs::space_info space_info = fs::space(dir) ;
+			std::uintmax_t required = space_info.capacity * percent_free_required / 100.0 ;
+			return space_info.available < required ? required - space_info.available : 0 ;
+		}
+
 		//! Copy a file
 		/**
 		* @param From	->	Source File.
@@ -109,7 +116,7 @@ namespace DTools
         *
 		* @return 0 on success or an error_code if any arrors occours.
 		**/
-		err::error_code Copy_File(const std::string &From, const std::string &To, bool OverwriteExisting) {
+		err::error_code Copy_File(const std::string &From, const std::string &To, bool OverwriteExisting, bool SafeMode) {
 			err::error_code ec;
 			#if __cplusplus > 201402L // C++17
 				fs::copy_options options=OverwriteExisting ? fs::copy_options::overwrite_existing : fs::copy_options::none;
@@ -117,8 +124,28 @@ namespace DTools
 				fs::copy_option options=OverwriteExisting ? fs::copy_option::overwrite_if_exists : fs::copy_option::none;
 			#endif
 
-			fs::copy_file(From,To,options,ec);
+			if (SafeMode) {
+				if (OverwriteExisting && fs::exists(To)) {
+					// Safe mode work-around:
+					// delete dest before (some version of filesystem lib does not copy if dest existing)
+					fs::remove(To);
+				}
+			}
+
+            fs::copy_file(From,To,options,ec);
             return(ec);
+		}
+
+		//! Copy a file
+		/**
+		* @param From	->	Source File.
+		* @param To		->	Destination file.
+		* @param
+		*
+		* @return 0 on success or an error_code if any arrors occours.
+		**/
+		err::error_code Copy_File(const fs::path &From, const fs::path &To, bool OverwriteExisting, bool SafeMode) {
+			return(Copy_File(From.string(),To.string(),OverwriteExisting,SafeMode));
 		}
 
 		//! Copy a directory recoursively
@@ -267,17 +294,22 @@ namespace DTools
 
 			if (!CaseSensitive) {
 				// Campi di ricerca in maiuscolo
-				if (ExtContentList != NULL) {
+				if (ExtContentList != nullptr) {
 					for (size_t ixE=0;ixE<ExtContentList->size();ixE++) {
 						DString::ToUpper(ExtContentList->at(ixE));
 					}
 				}
-				if (NameContentList != NULL) {
+				if (NameContentList != nullptr) {
 					for (size_t ixN=0;ixN<NameContentList->size();ixN++) {
 						DString::ToUpper(NameContentList->at(ixN));
 					}
 				}
 			}
+
+			// Ricerca all'interno del nome
+			bool FindInName=NameContentList != nullptr && !NameContentList->empty();
+			// Ricerca all'interno dell'estensione
+			bool FindInExt=ExtContentList != nullptr && !ExtContentList->empty();
 
 			for (fs::directory_iterator iterator(PathToScan); iterator != fs::directory_iterator(); ++iterator) {
 				if (is_directory(iterator->status())) {
@@ -298,7 +330,7 @@ namespace DTools
 
 					// Cerca il pattern nel nome
 					bool Found=true;
-					if (NameContentList != NULL) {
+					if (FindInName) {
 						// Ricerca patterns all'interno del nome
 						if (FindAll) {
 							// Found rimane true solo se vengono trovati tutti i pattern
@@ -348,7 +380,7 @@ namespace DTools
 					}
 
 					// Cerca il pattern nell'estensione
-					if (ExtContentList != NULL) {
+					if (FindInExt) {
 						std::string CurrExt=CurrPath.extension().string();
 						DString::RemoveChars(CurrExt,".");
 						if (FindAll) {
@@ -447,8 +479,8 @@ namespace DTools
 		*
 		* @return il numero di directory trovate, -1 in caso di errore
 		**/
-		int CountDirs(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool FindAll) {
-			return(ListDirs(NULL,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,Recoursive,FindAll));
+		int CountDirs(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll) {
+			return(ListDirs(nullptr,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll));
 		}
 
 		// Conta le cartelle all'interno di una cartella
@@ -461,7 +493,7 @@ namespace DTools
 		* @return il numero di directory trovate, -1 in caso di errore
 		**/
 		int CountDirs(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive) {
-			return(ListDirs(NULL,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensitive));
+			return(ListDirs(nullptr,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensitive));
 		}
 
 		// Conta tutte le cartelle all'interno di una cartella
@@ -472,7 +504,7 @@ namespace DTools
 		* @return il numero di directory trovate, -1 in caso di errore
 		**/
 		int CountDirs(fs::path PathToScan, bool Recoursive) {
-			return(ListDirs(NULL,PathToScan,Recoursive,NULL,false,NULL,false,true));
+			return(ListDirs(nullptr,PathToScan,Recoursive,nullptr,false,nullptr,false,false,false));
 		}
 
 		// Cerca tutti i files all'interno di una cartella
@@ -512,17 +544,22 @@ namespace DTools
 
 			if (!CaseSensitive) {
 				// Campi di ricerca in maiuscolo
-				if (ExtContentList != NULL) {
+				if (ExtContentList != nullptr) {
 					for (size_t ixE=0;ixE<ExtContentList->size();ixE++) {
 						DString::ToUpper(ExtContentList->at(ixE));
 					}
 				}
-				if (NameContentList != NULL) {
+				if (NameContentList != nullptr) {
 					for (size_t ixN=0;ixN<NameContentList->size();ixN++) {
 						DString::ToUpper(NameContentList->at(ixN));
 					}
 				}
 			}
+
+			// Ricerca all'interno del nome
+			bool FindInName=NameContentList != nullptr && !NameContentList->empty();
+			// Ricerca all'interno dell'estensione
+			bool FindInExt=ExtContentList != nullptr && !ExtContentList->empty();
 
 			for (fs::directory_iterator iterator(PathToScan); iterator != fs::directory_iterator(); ++iterator) {
 				if (is_directory(iterator->status())) {
@@ -544,7 +581,7 @@ namespace DTools
 						CurrPath=iterator->path();
 					}
 
-					if (NameContentList != NULL) {
+					if (FindInName) {
 						// Ricerca patterns all'interno del nome
 						if (FindAll) {
 							// Found rimane true solo se vengono trovati tutti i pattern
@@ -594,7 +631,7 @@ namespace DTools
 					}
 
 					// Cerca il pattern nell'estensione
-					if (ExtContentList != NULL) {
+					if (FindInExt) {
 						std::string CurrExt=CurrPath.extension().string();
 						DString::RemoveChars(CurrExt,".");
 						if (FindAll) {
@@ -664,9 +701,9 @@ namespace DTools
 		* @param ExtWholeWord	->	Se true confronta la ricerca con l'intera estensione
 		*
 		* @return il numero di files trovati, -1 in caso di errore
-		* N.B. @ref Result non viene pulita qindi s non è vuoa  risultati vengono aggiunti
+		* N.B. @ref Result non viene pulita qindi se non è vuota i risultati vengono aggiunti
 		**/
-		int ListFiles(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord) {
+		int ListFiles(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive) {
 			std::vector<std::string> NameContentList;
 			std::vector<std::string> ExtContentList;
 			if (!NameContent.empty()) {
@@ -675,7 +712,7 @@ namespace DTools
 			if (!ExtContent.empty()) {
 				ExtContentList.push_back(ExtContent);
 			}
-			return(ListFiles(Result,PathToScan,Recoursive,&NameContentList,NameWholeWord,&ExtContentList,ExtWholeWord,Recoursive,false));
+			return(ListFiles(Result,PathToScan,Recoursive,&NameContentList,NameWholeWord,&ExtContentList,ExtWholeWord,CaseSensitive,false));
 		}
 
 		// Conta i files all'interno di una cartella
@@ -695,8 +732,8 @@ namespace DTools
 		*
 		* @return il numero di files trovati, -1 in caso di errore
 		**/
-		int CountFiles(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool FindAll) {
-			return(ListFiles(NULL,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,Recoursive,FindAll));
+		int CountFiles(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll) {
+			return(ListFiles(nullptr,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll));
 		}
 
 		// Conta i files all'interno di una cartella
@@ -713,8 +750,8 @@ namespace DTools
 		*
 		* @return il numero di files trovati, -1 in caso di errore
 		**/
-		int CountFiles(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord) {
-			return(ListFiles(NULL,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord));
+		int CountFiles(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensistive) {
+			return(ListFiles(nullptr,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensistive));
 		}
 
 		// Conta tutti i files all'interno di una cartella
@@ -727,7 +764,7 @@ namespace DTools
 		* @return il numero di files trovati, -1 in caso di errore
 		**/
 		int CountFiles(fs::path PathToScan, bool Recoursive) {
-			return(ListFiles(NULL,PathToScan,Recoursive,NULL,false,NULL,false,true));
+			return(ListFiles(nullptr,PathToScan,Recoursive,nullptr,false,nullptr,false,false,false));
 		}
 
 		/*

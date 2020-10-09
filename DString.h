@@ -48,9 +48,9 @@ namespace DTools
 			snprintf(buf.get(),len, format.c_str(),args ...);
 			return std::string(buf.get(),buf.get()+len-1); // We don't want the '\0' inside
 		};
-		std::string FormatNow(std::string format);
-		std::string FormatTimeT(time_t in_time_t, std::string format);
-        std::string FormatTimeP(std::chrono::system_clock::time_point in_time_point, std::string format);
+		std::string FormatNow(std::string format = "%Y%m%d %H%M%S");
+		std::string FormatTimeT(time_t in_time_t, std::string format = "%Y%m%d %H%M%S");
+		std::string FormatTimeP(std::chrono::system_clock::time_point in_time_point, std::string format = "%Y%m%d %H%M%S");
         std::string& ToUpper(std::string& str);
         std::string ToUpperCopy(std::string str);
         std::string& ToLower(std::string& str);

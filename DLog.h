@@ -18,6 +18,7 @@
 
 namespace DTools {
     namespace DLog {
+        enum DLogPrintLevel {PRINT_LEVEL_NORMAL, PRINT_LEVEL_DEEP};
         /**
         * @class DLog
         *
@@ -33,49 +34,52 @@ namespace DTools {
         *
         * \section futures_sec Futures
         **/
-        class DLog
-        {
+        class DLog {
             public:
-            /**
-            * @brief Main contructor
-            * @details Create the log object
-            * @param LogFilename   ->  filename of a destination log file, if empty no file will be crated (default empty).
-            * @param StdoutEnabled ->  if true al leg messages are output on stdout or stderr (default true).
-            **/
-            DLog(std::string LogFilename = "", bool StdoutEnabled = true) {
-                LogToStdout=StdoutEnabled;
-                //outStream=NULL;
-                Filename=LogFilename;
-                if (Filename == "") {
-                    hFile=nullptr;
-                    LogToFile=false;
-                }
-                else {
-                    hFile=fopen(Filename.c_str(),"aw+");
-                    if (hFile == nullptr) {
-                        perror("Log file not opened");
+                /**
+                * @brief Main contructor
+                * @details Create the log object
+                * @param LogFilename    ->  filename of a destination log file, if empty no file will be crated (default empty).
+                * @param StdoutEnabled  ->  if true al leg messages are output on stdout or stderr (default true).
+                * @param Levep          ->  PRINT_LEVEL_NORMAL: Print only i() and e() call.
+                *                           PRINT_LEVEL_DEEP:   Print also d() and w() call.
+                **/
+                DLog(std::string LogFilename = "", bool StdoutEnabled = true, DLogPrintLevel Level = PRINT_LEVEL_DEEP) {
+                    LogToStdout=StdoutEnabled;
+                    LogPrintLevel=Level;
+                    //outStream=NULL;
+                    Filename=LogFilename;
+                    if (Filename == "") {
+                        hFile=nullptr;
                         LogToFile=false;
-                        StdoutEnabled=true; // se non posso loggare su file uso comunque lo stdout
                     }
                     else {
-                        LogToFile=true;
+                        hFile=fopen(Filename.c_str(),"aw+");
+                        if (hFile == nullptr) {
+                            perror("Log file not opened");
+                            LogToFile=false;
+                            StdoutEnabled=true; // se non posso loggare su file uso comunque lo stdout
+                        }
+                        else {
+                            LogToFile=true;
+                        }
+                    }
+
+                    if (LogToStdout) {
+                        i("DLog to Stdout: yes");
+                    }
+                    else {
+                        i("DLog to Stdout: no");
+                    }
+
+                    if (hFile == nullptr) {
+                        i("DLog to File: no");
+                    }
+                    else {
+                        i("DLog to File: &s",Filename.c_str());
                     }
                 }
 
-                if (LogToStdout) {
-                    i("DLog to Stdout: yes");
-                }
-                else {
-                    i("DLog to Stdout: no");
-                }
-
-                if (hFile == nullptr) {
-                    i("DLog to File: no");
-                }
-                else {
-                    i("DLog to File: &s",Filename.c_str());
-                }
-            }
                 //! Destructor
                 ~DLog() {
                     if (hFile != nullptr) fclose(hFile);
@@ -102,11 +106,11 @@ namespace DTools {
                 void d(const std::string& format, Args ... args) {
                     size_t size = snprintf(nullptr,0,format.c_str(),args ...)+1;
                     if( size <= 0 ){
-                        Write(DL_LEVEL_ERROR,"Log formatting failed");
+                        Write(OUTPUT_ERROR,"Log formatting failed");
                     }
                     std::unique_ptr<char[]> buf(new char[size]);
                     snprintf(buf.get(),size,format.c_str(),args ...);
-                    Write(DL_LEVEL_DEBUG,buf.get());
+                    Write(OUTPUT_DEBUG,buf.get());
                 }
 
                 template<typename ... Args>
@@ -114,11 +118,11 @@ namespace DTools {
                 {
                     size_t size = snprintf(nullptr,0,format.c_str(),args ...)+1;
                     if( size <= 0 ){
-                        Write(DL_LEVEL_ERROR,"Log formatting failed");
+                        Write(OUTPUT_ERROR,"Log formatting failed");
                     }
                     std::unique_ptr<char[]> buf(new char[size]);
                     snprintf(buf.get(),size,format.c_str(),args ...);
-                    Write(DL_LEVEL_INFO,buf.get());
+                    Write(OUTPUT_INFO,buf.get());
                 }
 
                 template<typename ... Args>
@@ -126,11 +130,11 @@ namespace DTools {
                 {
                     size_t size = snprintf(nullptr,0,format.c_str(),args ...)+1;
                     if( size <= 0 ){
-                        Write(DL_LEVEL_ERROR,"Log formatting failed");
+                        Write(OUTPUT_ERROR,"Log formatting failed");
                     }
                     std::unique_ptr<char[]> buf(new char[size]);
                     snprintf(buf.get(),size,format.c_str(),args ...);
-                    Write(DL_LEVEL_WARNING,buf.get());
+                    Write(OUTPUT_WARNING,buf.get());
                 }
 
                 template<typename ... Args>
@@ -138,19 +142,28 @@ namespace DTools {
                 {
                     size_t size = snprintf(nullptr,0,format.c_str(),args ...)+1;
                     if( size <= 0 ){
-                        Write(DL_LEVEL_ERROR,"Log formatting failed" );
+                        Write(OUTPUT_ERROR,"Log formatting failed" );
                     }
                     std::unique_ptr<char[]> buf(new char[size]);
                     snprintf(buf.get(),size,format.c_str(),args ...);
-                    Write(DL_LEVEL_ERROR,buf.get());
+                    Write(OUTPUT_ERROR,buf.get());
+                }
+
+                void SetLogPrintLevel(DLogPrintLevel Level) {
+                    LogPrintLevel=Level;
+                }
+
+                DLogPrintLevel GetLogPrintLevel(void) {
+                    return(LogPrintLevel);
                 }
 
             private:
-                enum DebugLevel {DL_LEVEL_DEBUG,DL_LEVEL_INFO,DL_LEVEL_WARNING,DL_LEVEL_ERROR};
+                enum DLogOutput {OUTPUT_DEBUG,OUTPUT_INFO,OUTPUT_WARNING,OUTPUT_ERROR};
                 std::string Filename;
                 FILE *hFile;
                 bool LogToFile;
                 bool LogToStdout;
+                DLogPrintLevel LogPrintLevel;
 
                 //! Colors defines for printf
                 const std::string CL_RED        =   "\x1b[31m";
@@ -162,7 +175,7 @@ namespace DTools {
                 const std::string CL_DEFAULT    =   "\x1b[0m";
 
                 //! Write the the message on stdout, stderr, file
-                void Write(unsigned char Level,std::string LogMsg) {
+                void Write(DLogOutput Output,std::string LogMsg) {
                     auto now_time_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
                     std::stringstream ss;
                     ss << std::put_time(localtime(&now_time_t),"%Y/%m/%d %H.%M.%S : ");
@@ -171,20 +184,20 @@ namespace DTools {
                     std::string LevelMsg;
 
                     // Debug level
-                    switch (Level) {
-                        case DL_LEVEL_DEBUG:
+                    switch (Output) {
+                        case OUTPUT_DEBUG:
                             LevelMsg+="DEBUG   : ";
                             Color=CL_MAGENTA;
                             break;
-                        case DL_LEVEL_INFO:
+                        case OUTPUT_INFO:
                             LevelMsg+="INFO    : ";
                             Color=CL_DEFAULT;
                             break;
-                        case DL_LEVEL_ERROR:
+                        case OUTPUT_ERROR:
                             LevelMsg+="ERROR   : ";
                             Color=CL_RED;
                             break;
-                        case DL_LEVEL_WARNING:
+                        case OUTPUT_WARNING:
                             LevelMsg+="WARNING : ";
                             Color=CL_YELLOW;
                             break;
@@ -199,13 +212,13 @@ namespace DTools {
                         fprintf(hFile,"%s\r",(HdrMsg+LevelMsg+LogMsg).c_str());
                     }
                     if (LogToStdout) {
-                        if (Level == DL_LEVEL_ERROR)  {
-                            perror((HdrMsg+Color+LevelMsg+LogMsg+CL_DEFAULT+"\r").c_str());
-                        }
-                        else {
+                        //if (Output == OUTPUT_ERROR)  {
+                        //    perror((HdrMsg+Color+LevelMsg+LogMsg+CL_DEFAULT+"\r").c_str());
+                        //}
+                        //else {
                             //std::cout << HdrMsg << Color << LevelMsg << LogMsg << CL_DEFAULT << "\r";
                             printf("%s%s\n\r",(HdrMsg+Color+LevelMsg+LogMsg).c_str(),CL_DEFAULT.c_str());
-                        }
+                        //}
                     }
 
                     /*

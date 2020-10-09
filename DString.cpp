@@ -1,7 +1,24 @@
 #include "DString.h"
 #include <regex>
 #include <iomanip>
+/** TODO
+#include <codecvt>
+std::wstring s2ws(const std::string& str)
+{
+    using convert_typeX = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_typeX, wchar_t> converterX;
 
+    return converterX.from_bytes(str);
+}
+
+std::string ws2s(const std::wstring& wstr)
+{
+    using convert_typeX = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_typeX, wchar_t> converterX;
+
+    return converterX.to_bytes(wstr);
+}
+ */
 namespace DTools {
 	namespace DString {
 		std::string& LTrim(std::string& str, const std::string& chars) {
@@ -78,7 +95,7 @@ namespace DTools {
 
 		//! Create now date/time string according to format specify by https://en.cppreference.com/w/cpp/io/manip/put_time
 		/**
-		* "%Y%m%d %H%M%S"
+		* @param format	->	Format string (default "%Y%m%d %H%M%S")
 		**/
 		std::string FormatNow(std::string format) {
 			auto now_time_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -87,9 +104,10 @@ namespace DTools {
 			return(ss.str());
 		}
 
-		//! Create a date/time string according to format specify by https://en.cppreference.com/w/cpp/io/manip/put_time
+		//! Create a date/time string from a time_t type according to format specify by https://en.cppreference.com/w/cpp/io/manip/put_time
 		/**
-		* "%Y%m%d %H%M%S"
+		* @param in_time_t	->	time_t time to format
+		* @param format		->	Format string (default "%Y%m%d %H%M%S")
 		**/
 		std::string FormatTimeT(time_t in_time_t, std::string format) {
 			std::stringstream ss;
@@ -97,9 +115,10 @@ namespace DTools {
 			return(ss.str());
 		}
 
-		//! Create a date/time string according to format specify by https://en.cppreference.com/w/cpp/io/manip/put_time
+		//! Create a date/time string from a time_pont type according to format specify by https://en.cppreference.com/w/cpp/io/manip/put_time
 		/**
-		* "%Y%m%d %H%M%S"
+		* @param in_time_t	->	time_point time to format
+		* @param format		->	Format string (default "%Y%m%d %H%M%S")
 		**/
 		std::string Format_TimeP(std::chrono::system_clock::time_point in_time_point, std::string format) {
 			auto in_time_t=std::chrono::system_clock::to_time_t(in_time_point);

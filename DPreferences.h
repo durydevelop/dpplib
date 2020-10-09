@@ -32,7 +32,7 @@ namespace DTools {
 
 		class DPreferences {
 			public:
-				DPreferences(std::string PrefFilename);
+				DPreferences(std::string PrefFilename, bool CreateIfNotExists = true);
 				virtual ~DPreferences();
 				bool Load(void);
 				bool Save(bool BackupBefore = false);

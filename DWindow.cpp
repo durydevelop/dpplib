@@ -90,43 +90,29 @@ namespace DTools
          * @param DestPrefs ->  Pointer to DTools::DPreferences::DPreferences instance used to save data. If no DPreferences is provided (DestPrefs is nullptr) a new file named "executable-name.conf" is created
          * @return true on success, false if cannot store data into prefs
          */
-        bool SaveQWindowPosition(QWindow& qWindow, DTools::DPreferences::DPreferences *DestPrefs) {
-            return(SaveWindowPositionData(qWindow.objectName().toStdString(),qWindow.x(),qWindow.y(),qWindow.width(),qWindow.height(),DestPrefs));
+        bool SaveQWindowPosition(QMainWindow& qMainWindow, DTools::DPreferences::DPreferences *DestPrefs) {
+            QWidget& qWidget=(QWidget&) qMainWindow;
+            return(SaveWindowPositionData(qWidget.objectName().toStdString(),qWidget.x(),qWidget.y(),qWidget.width(),qWidget.height(),DestPrefs));
         }
 
         /**
          * @brief Save QWindow position data
-         * @details Save position and size of a QWindow using DTools::DPreferences::DPreferences class
-         * @param qWindow   ->  Reference to a QWindow object
-         * @param DestPrefs ->  Pointer to DTools::DPreferences::DPreferences instance used to save data. If no DPreferences is provided (DestPrefs is nullptr) a new file named "executable-name.conf" is created
-         * @return true on success, false if cannot store data into prefs
+         * @details Save position and size of a QDialog using DTools::DPreferences::DPreferences class
+         * @param qDialog   ->  Reference to a QDialog object.
+         * @param DestPrefs ->  Pointer to DTools::DPreferences::DPreferences instance used to save data. If no DPreferences is provided (DestPrefs is nullptr) a new file named "executable-name.conf" is created.
+         * @return true on success, false if cannot store data into prefs.
          */
-        bool SaveQWindowPosition(QMainWindow& qMainWindow, DTools::DPreferences::DPreferences *DestPrefs) {
-            return(SaveWindowPositionData(qMainWindow.objectName().toStdString(),qMainWindow.x(),qMainWindow.y(),qMainWindow.width(),qMainWindow.height(),DestPrefs));
-        }
-
-        /**
-         * @brief Save Qt Window geometry (pure Qt api version)
-         * @details Save QWindow geometry information using QSettings api
-         * @param qWindow       ->  Reference to a QWidget object. QWidget it is used because QWindow descend from it
-         * @param CompanyName   ->  Used to store informations in correct way. If empty QSettings default rules are used
-         * @param AppName       ->  Used to store informations in correct way. If empty QSettings default rules are used
-         */
-        QSettings::Status SaveQWindowGeometry(QWindow& qWindow, QString CompanyName, QString AppName) {
-            QSettings qSettings(CompanyName,AppName);
-            QSettings::Status Status=qSettings.status();
-            if (Status == QSettings::NoError) {
-                qSettings.setValue(qWindow.objectName()+"/Geometry",((QWidget&)qWindow).saveGeometry());
-            }
-            return(Status);
+        bool SaveQWindowPosition(QDialog& qDialog, DTools::DPreferences::DPreferences *DestPrefs) {
+            QWidget& qWidget=(QWidget&) qDialog;
+            return(SaveWindowPositionData(qWidget.objectName().toStdString(),qWidget.x(),qWidget.y(),qWidget.width(),qWidget.height(),DestPrefs));
         }
 
         /**
          * @brief Save Qt Window geometry data (pure Qt api version)
          * @details QMainWindow version: save geometry and state (menus, info bars, ...) information using QSettings api
-         * @param qWindow       ->  Reference to a QMainWindow object
-         * @param CompanyName   ->  Used to store informations in correct way. If empty QSettings default rules are used
-         * @param AppName       ->  Used to store informations in correct way. If empty QSettings default rules are used
+         * @param qWindow       ->  Reference to a QMainWindow object.
+         * @param CompanyName   ->  Used to store informations in correct way. If empty QSettings default rules are used.
+         * @param AppName       ->  Used to store informations in correct way. If empty QSettings default rules are used.
          */
         QSettings::Status SaveQWindowGeometry(QMainWindow& qMainWindow, QString CompanyName, QString AppName) {
             QSettings qSettings(CompanyName,AppName);
@@ -139,25 +125,20 @@ namespace DTools
         }
 
         /**
-         * @brief Restore Qt Window position data
-         * @details Extract and set position and size of a QWindow using DTools::DPreferences::DPreferences class
-         * @param qWindow   ->  Reference to a QWindow object
-         * @param DestPrefs ->  Pointer to DTools::DPreferences::DPreferences instance used to save data. If no DPreferences is provided (DestPrefs is nullptr) a new file named "executable-name.conf" is created
-         * @return true on success, false if cannot store data into prefs
+         * @brief Save Qt Window geometry (pure Qt api version)
+         * @details Save QWindow geometry information using QSettings api
+         * @param qDialog       ->  Reference to a QDialog object.
+         * @param CompanyName   ->  Used to store informations in correct way. If empty QSettings default rules are used.
+         * @param AppName       ->  Used to store informations in correct way. If empty QSettings default rules are used.
          */
-        bool RestoreQWindowPosition(QWindow& qWindow, DTools::DPreferences::DPreferences *DestPrefs) {
-            int X,Y,Width,Height;
-            if (!DTools::DWindow::RestoreWindowPositionData(qWindow.objectName().toStdString(),X,Y,Width,Height,DestPrefs)) {
-                    return false;
+        QSettings::Status SaveQWindowGeometry(QDialog& qDialog, QString CompanyName, QString AppName) {
+            QSettings qSettings(CompanyName,AppName);
+            QSettings::Status Status=qSettings.status();
+            if (Status == QSettings::NoError) {
+                QWidget& qWidget=(QWidget&) qDialog;
+                qSettings.setValue(qWidget.objectName()+"/Geometry",qWidget.saveGeometry());
             }
-            if (X != 0 && Y != 0) {
-                qWindow.setPosition(X,Y);
-            }
-            if (Width > 0 && Height > 0) {
-                qWindow.setWidth(Width);
-                qWindow.setHeight(Height);
-            }
-            return true;
+            return(Status);
         }
 
         /**
@@ -183,19 +164,25 @@ namespace DTools
         }
 
         /**
-         * @brief Restore Qt Window geometry (pure Qt api version)
-         * @details Restore a QWindow geometry information using QSettings api
-         * @param qWindow       ->  Reference to a QWidget object. QWidget it is used because QWindow descend from it
-         * @param CompanyName   ->  Used to store informations in correct way. If empty QSettings default rules are used
-         * @param AppName       ->  Used to store informations in correct way. If empty QSettings default rules are used
+         * @brief Restore Qt Dialog position data.
+         * @details Extract and set position and size of a QWindow using DTools::DPreferences::DPreferences class.
+         * @param qDialog   ->  Reference to a QDialog object.
+         * @param DestPrefs ->  Pointer to DTools::DPreferences::DPreferences instance used to save data. If no DPreferences is provided (DestPrefs is nullptr) a new file named "executable-name.conf" is created.
+         * @return true on success, false if cannot store data into prefs.
          */
-        QSettings::Status RestoreQWindowGeometry(QWindow& qWindow, QString CompanyName, QString AppName) {
-            QSettings qSettings(CompanyName,AppName);
-            QSettings::Status Status=qSettings.status();
-            if (qSettings.status() == QSettings::NoError) {
-                ((QWidget&)qWindow).restoreGeometry(qSettings.value(qWindow.objectName()+"/Geometry").toByteArray());
+        bool RestoreQWindowPosition(QDialog& qDialog, DTools::DPreferences::DPreferences *DestPrefs) {
+            int X,Y,Width,Height;
+            QWidget& qWidget=(QWidget&) qDialog;
+            if (!DTools::DWindow::RestoreWindowPositionData(qWidget.objectName().toStdString(),X,Y,Width,Height,DestPrefs)) {
+                    return false;
             }
-            return(Status);
+            if (X != 0 && Y != 0) {
+                qWidget.move(X,Y);
+            }
+            if (Width > 0 && Height > 0) {
+                qWidget.resize(Width,Height);
+            }
+            return true;
         }
 
         /**
@@ -211,6 +198,23 @@ namespace DTools
             if (Status == QSettings::NoError) {
                 qMainWindow.restoreGeometry(qSettings.value(qMainWindow.objectName()+"/Geometry").toByteArray());
                 qMainWindow.restoreState(qSettings.value(qMainWindow.objectName()+"/State").toByteArray());
+            }
+            return(Status);
+        }
+
+        /**
+         * @brief Restore Qt Dialog geometry (pure Qt api version)
+         * @details Restore QDialog geometry information using QSettings api
+         * @param qWindow       ->  Reference to a QMainWindow object
+         * @param CompanyName   ->  Used to store informations in correct way. If empty QSettings default rules are used
+         * @param AppName       ->  Used to store informations in correct way. If empty QSettings default rules are used
+         */
+        QSettings::Status RestoreQWindowGeometry(QDialog& qDialog, QString CompanyName, QString AppName) {
+            QSettings qSettings(CompanyName,AppName);
+            QSettings::Status Status=qSettings.status();
+            if (Status == QSettings::NoError) {
+                QWidget& qWidget=(QWidget&) qDialog;
+                qWidget.restoreGeometry(qSettings.value(qWidget.objectName()+"/Geometry").toByteArray());
             }
             return(Status);
         }
