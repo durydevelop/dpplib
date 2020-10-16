@@ -108,16 +108,16 @@ namespace DTools {
      */
     bool DSyncWatcher::Start(void) {
         if (SyncList.size() == 0) {
-            Log("No watch set, thread not strated");
+            Log("No sync set, thread not strated");
             return false;
         }
-        Log("Watch thread starting...");
+        Log("Sync thread starting...");
 
         //std::promise<bool> PromiseEnded;
         ThreadFuture=PromiseEnded.get_future();
 
         WatchThread=std::thread([&]() {
-            Log("Watch thread started");
+            Log("Sync thread started");
             Watching=true;
             NeedToQuit=false;
             while (!NeedToQuit) {
@@ -126,7 +126,7 @@ namespace DTools {
                 std::this_thread::sleep_until(delta);
             }
             Watching=false;
-            Log("Watch thread ended");
+            Log("Sync thread ended");
             PromiseEnded.set_value_at_thread_exit(true);
         });
 
@@ -138,14 +138,24 @@ namespace DTools {
      * @brief Set stop flag to inform thread to stop watching loop. You can call IsWatching() method to test when thread is closed.
      */
     void DSyncWatcher::Stop(void) {
+        if (!Watching) {
+            Log("Sync thread is not alive, no stop needed");
+            return;
+        }
         NeedToQuit=true;
         Log("Stop flag set");
     }
 
     /**
-     * @brief Set stop flag to inform thread to stop watching loop. You can call IsWatching() method to test when thread is closed.
+     * @brief Set stop flag to inform thread to stop watching loop and wait until thread is finished.
+     * @param TimeOutMSec   ->  Nr of milliseconds to wait before return.
+     * @return true if thread is really stopped, false if thread is not alive or timeout is reached.
      */
     bool DSyncWatcher::StopAndWait(size_t TimeOutMSec) {
+        if (!Watching) {
+            Log("Sync thread is not alive, no stop needed");
+            return false;
+        }
         NeedToQuit=true;
         if (TimeOutMSec == 0) {
             // Default value

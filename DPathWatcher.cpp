@@ -97,6 +97,9 @@ namespace DTools {
         }
         Log("Watch thread starting...");
 
+        //std::promise<bool> PromiseEnded;
+        ThreadFuture=PromiseEnded.get_future();
+
         WatchThread=std::thread([&]() {
             Log("Watch thread started");
             Watching=true;
@@ -108,6 +111,7 @@ namespace DTools {
             }
             Watching=false;
             Log("Watch thread ended");
+            PromiseEnded.set_value_at_thread_exit(true);
         });
         WatchThread.detach();
         return true;
@@ -121,42 +125,30 @@ namespace DTools {
         Log("Stop flag set");
     }
 
-/*
-        std::unordered_map<std::string, DTools::fs::file_time_type> FilesList;
-        while(Watching) {
-            // Wait for "delay" milliseconds
-            std::this_thread::sleep_for(PollMilli);
-
-            auto it = paths_.begin();
-            while (it != paths_.end()) {
-                if (!std::filesystem::exists(it->first)) {
-                    action(it->first, FileStatus::erased);
-                    it = paths_.erase(it);
-                }
-                else {
-                    it++;
-                }
-            }
-
-            // Check if a file was created or modified
-            for(auto &file : std::filesystem::recursive_directory_iterator(path_to_watch)) {
-                auto current_file_last_write_time = std::filesystem::last_write_time(file);
-
-                // File creation
-                if(!contains(file.path().string())) {
-                    paths_[file.path().string()] = current_file_last_write_time;
-                    action(file.path().string(), FileStatus::created);
-                // File modification
-                } else {
-                    if(paths_[file.path().string()] != current_file_last_write_time) {
-                        paths_[file.path().string()] = current_file_last_write_time;
-                        action(file.path().string(), FileStatus::modified);
-                    }
-                }
-            }
+    /**
+     * @brief Set stop flag to inform thread to stop watching loop and wait until thread is finished.
+     * @param TimeOutMSec   ->  Nr of milliseconds to wait before return.
+     * @return true if thread is really stopped, false if thread is not alive or timeout is reached.
+     */
+    bool DPathWatcher::StopAndWait(size_t TimeOutMSec) {
+        if (!Watching) {
+            Log("Watch thread is not alive, no stop needed");
+            return false;
         }
+        NeedToQuit=true;
+        if (TimeOutMSec == 0) {
+            // Default value
+            TimeOutMSec=IntervalMSec*WatchList.size();
+        }
+
+        if (ThreadFuture.wait_for(std::chrono::milliseconds(TimeOutMSec)) == std::future_status::timeout) {
+            Log("Watch thread stop waiting: timeout");
+            return false;
+        }
+
+        Log("Watch thread stop waiting: end reached");
+        return(ThreadFuture.get());
     }
-*/
 
     // ******************************  Callback stuffs ***************************************
 

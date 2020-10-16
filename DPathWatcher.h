@@ -5,6 +5,8 @@
 #include "DPath.h"
 #include <chrono>
 #include <thread>
+#include <chrono>
+#include <future>
 
 namespace DTools {
     class DPathWatcher {
@@ -16,6 +18,7 @@ namespace DTools {
             void Check(bool FireOnlyChages = false);
             bool Start(void);
             void Stop(void);
+            bool StopAndWait(size_t TimeOutMSec);
             bool IsWatching(void);
             size_t AddPath(fs::path PathToWatch);
 
@@ -100,9 +103,12 @@ namespace DTools {
 
             bool Watching;
             bool NeedToQuit;
-            std::thread WatchThread;
             size_t IntervalMSec;
             std::string LastStrStatus;
+            // Thread stuffs
+            std::thread WatchThread;
+            std::promise<bool> PromiseEnded;
+            std::future<bool> ThreadFuture;
 
             // Private callback stuffs
             DGlobalCallback GlobalCallback;
