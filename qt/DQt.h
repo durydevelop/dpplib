@@ -14,5 +14,17 @@ namespace DTools {
 				if(Widget != nullptr) Widget->setEnabled(Enabled);
 			}
 		}
+
+		/**
+		 * @brief Show/hide all widget inside a QLayout
+		 * @param Layout	->	Pointer to layout container
+		 * @param Visible	->	Visible state
+		 */
+		void LayoutSetVisible(QLayout *Layout, bool Visible) {
+			for (int ixW=0; ixW<Layout->count(); ++ixW) {
+				QWidget *Widget = Layout->itemAt(ixW)->widget();
+				if(Widget != nullptr) Widget->setVisible(Visible);
+			}
+		}
 	}
 }

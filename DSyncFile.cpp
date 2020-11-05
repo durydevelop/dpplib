@@ -59,7 +59,7 @@ namespace DTools {
 		if (!fs::exists(Dest)) {
 			LastStrStatus.append("not present, sync ");
 		}
-		if (DTools::DPath::LastWriteTime(Source) > DTools::DPath::LastWriteTime(Dest)) {
+		else if (DTools::DPath::LastWriteTime(Source) > DTools::DPath::LastWriteTime(Dest)) {
 			LastStrStatus.append("sync ");
 		}
 		else {

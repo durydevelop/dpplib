@@ -5,18 +5,31 @@
 #include <map>
 #include <algorithm>
 #include <vector>
+#include <sstream>
 
 namespace DTools
 {
 	namespace DVector {
-		std::string Join(std::vector<std::string> &Vector, std::string JoinStr);
+		//! Join all string vector values with a specific string
+		/**
+		* @param Vector		->  Vector to read
+		* @param JoinStr    ->  String to join with
+		* @return joined string like "value1 + joinStr + value2 + JoinStr +...."
+		**/
+		std::string Join(std::vector<std::string> &Vector, std::string JoinStr) {
+				std::stringstream JoinedValues;
+				for (auto Value: Vector) {
+					JoinedValues << Value << JoinStr;
+				}
+			//Strip off the trailing comma
+			return(JoinedValues.str().substr(0,JoinedValues.str().size()-1));
+		}
 
-		//! Join a vector
+		//! Join a vector values with an object
 		/**
 		* @param begin		->  begin iterator of vector
-		* @param JoinStr    ->  end iterator of vector
+		* @param end    	->  end iterator of vector
 		* @param t          ->  joined obj
-		* @return joined string like "value1 + joinStr + value2 + JoinStr +...."
 		**/
 		template <class T, class A>
 		T Join(const A &begin, const A &end, const T &t) {

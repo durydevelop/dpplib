@@ -27,6 +27,10 @@ namespace DTools {
         * @author $Author
         *
         * \mainpage DLog class
+        * To enable colors in console on Windows run this command:
+        * reg add HKEY_CURRENT_USER\Console /v VirtualTerminalLevel /t REG_DWORD /d 0x00000001 /f
+        * To disable:
+        * reg add HKEY_CURRENT_USER\Console /v VirtualTerminalLevel /t REG_DWORD /d 0x00000000 /f
         *
         * \section intro_sec Intro
         *
@@ -37,11 +41,11 @@ namespace DTools {
         class DLog {
             public:
                 /**
-                * @brief Main contructor
+                * @brief Contructor
                 * @details Create the log object
                 * @param LogFilename    ->  filename of a destination log file, if empty no file will be crated (default empty).
                 * @param StdoutEnabled  ->  if true al leg messages are output on stdout or stderr (default true).
-                * @param Levep          ->  PRINT_LEVEL_NORMAL: Print only i() and e() call.
+                * @param Leve           ->  PRINT_LEVEL_NORMAL: Print only i() and e() call.
                 *                           PRINT_LEVEL_DEEP:   Print also d() and w() call.
                 **/
                 DLog(std::string LogFilename = "", bool StdoutEnabled = true, DLogPrintLevel Level = PRINT_LEVEL_DEEP) {
@@ -66,14 +70,14 @@ namespace DTools {
                     }
 
                     if (LogToStdout) {
-                        i("DLog to Stdout: yes");
+                        i("DLog to Stdout: enabled");
                     }
                     else {
-                        i("DLog to Stdout: no");
+                        i("DLog to Stdout: disabled");
                     }
 
                     if (hFile == nullptr) {
-                        i("DLog to File: no");
+                        i("DLog to File: disabled");
                     }
                     else {
                         i("DLog to File: &s",Filename.c_str());
@@ -95,7 +99,7 @@ namespace DTools {
                     fseek(hFile,0,SEEK_SET);
                     size_t len=fread(buff.get(),fSize,1,hFile);
                     if (len != fSize) {
-                        e("Readind log file deceted file size %d is different from readed %d bytes",fSize,len);
+                        e("File size %d is different from readed %d bytes",fSize,len);
                     }
                     fseek(hFile,0,SEEK_END);
 
@@ -158,7 +162,7 @@ namespace DTools {
                 }
 
             private:
-                enum DLogOutput {OUTPUT_DEBUG,OUTPUT_INFO,OUTPUT_WARNING,OUTPUT_ERROR};
+                enum DLogOutput {OUTPUT_INFO,OUTPUT_ERROR,OUTPUT_DEBUG,OUTPUT_WARNING};
                 std::string Filename;
                 FILE *hFile;
                 bool LogToFile;
@@ -176,6 +180,11 @@ namespace DTools {
 
                 //! Write the the message on stdout, stderr, file
                 void Write(DLogOutput Output,std::string LogMsg) {
+                    if (LogPrintLevel == PRINT_LEVEL_NORMAL) {
+                        if (Output > OUTPUT_ERROR) {
+                            return;
+                        }
+                    }
                     auto now_time_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
                     std::stringstream ss;
                     ss << std::put_time(localtime(&now_time_t),"%Y/%m/%d %H.%M.%S : ");
@@ -187,7 +196,7 @@ namespace DTools {
                     switch (Output) {
                         case OUTPUT_DEBUG:
                             LevelMsg+="DEBUG   : ";
-                            Color=CL_MAGENTA;
+                            Color=CL_CYAN;
                             break;
                         case OUTPUT_INFO:
                             LevelMsg+="INFO    : ";
@@ -205,20 +214,12 @@ namespace DTools {
                             break;
                     }
 
-                    //Msg+=LogMsg+CL_DEFAULT+"\r\n";
-
                     // Print log message
                     if (LogToFile) {
                         fprintf(hFile,"%s\r",(HdrMsg+LevelMsg+LogMsg).c_str());
                     }
                     if (LogToStdout) {
-                        //if (Output == OUTPUT_ERROR)  {
-                        //    perror((HdrMsg+Color+LevelMsg+LogMsg+CL_DEFAULT+"\r").c_str());
-                        //}
-                        //else {
-                            //std::cout << HdrMsg << Color << LevelMsg << LogMsg << CL_DEFAULT << "\r";
-                            printf("%s%s\n\r",(HdrMsg+Color+LevelMsg+LogMsg).c_str(),CL_DEFAULT.c_str());
-                        //}
+                        printf("%s%s\n\r",(HdrMsg+Color+LevelMsg+LogMsg).c_str(),CL_DEFAULT.c_str());
                     }
 
                     /*

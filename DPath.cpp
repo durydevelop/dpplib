@@ -32,7 +32,7 @@ namespace DTools
 
 			if (Execute) {
 				fs::rename(Path,NewPath,*ec);
-				if (ec != 0) {
+				if (ec->value() != 0) {
 					return (fs::path());
 				}
 			}
@@ -279,37 +279,14 @@ namespace DTools
 		* N.B. @ref Result non viene pulita qindi s non è vuoa  risultati vengono aggiunti
 		**/
 		int ListDirs(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll) {
+			err::error_code ec;
 			unsigned int Tot=0;
+
 			// Verifica esistenza
-			try {
-				if (!fs::exists(PathToScan)) {
-					return -1;
-				}
-				if (!is_directory(PathToScan)) {
-					return -1;
-				}
-			} catch (fs::filesystem_error& e) {
-				return(-1);
+			bool Ret=fs::exists(PathToScan,ec);
+			if (!Ret || ec.value() != 0) {
+				return -1;
 			}
-
-			if (!CaseSensitive) {
-				// Campi di ricerca in maiuscolo
-				if (ExtContentList != nullptr) {
-					for (size_t ixE=0;ixE<ExtContentList->size();ixE++) {
-						DString::ToUpper(ExtContentList->at(ixE));
-					}
-				}
-				if (NameContentList != nullptr) {
-					for (size_t ixN=0;ixN<NameContentList->size();ixN++) {
-						DString::ToUpper(NameContentList->at(ixN));
-					}
-				}
-			}
-
-			// Ricerca all'interno del nome
-			bool FindInName=NameContentList != nullptr && !NameContentList->empty();
-			// Ricerca all'interno dell'estensione
-			bool FindInExt=ExtContentList != nullptr && !ExtContentList->empty();
 
 			for (fs::directory_iterator iterator(PathToScan); iterator != fs::directory_iterator(); ++iterator) {
 				if (is_directory(iterator->status())) {
@@ -318,18 +295,174 @@ namespace DTools
 						Tot+=ListDirs(Result,iterator->path(),Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll);
 					}
 
-					// Directory attuale
-					fs::path CurrPath;
-					if (!CaseSensitive) {
-						// Ingnora case
-						CurrPath=DString::ToUpperCopy(iterator->path().string());
-					}
-					else {
-						CurrPath=iterator->path();
+					fs::path CurrPath=fs::absolute(iterator->path());
+					bool Found=false;
+
+					if (NameContentList != NULL) {
+						// Ricerca patterns all'interno del nome
+						if (FindAll) {
+							// Found rimane true solo se vengono trovati tutti i pattern
+							Found=true;
+							for (std::string NameContent : *NameContentList) {
+								DTools::DString::RemoveChars(NameContent,"*");
+								DTools::DString::RemoveChars(NameContent,".");
+								if (NameWholeWord) {
+									// Ricerca parola intera
+									if (CaseSensitive) {
+										if (CurrPath.stem() != NameContent) {
+											Found=false;
+										}
+									}
+									else {
+										if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),NameContent)) {
+											Found=false;
+										}
+									}
+								}
+								else {
+									// Ricerca all'interno del nome file
+									if (CaseSensitive) {
+										if (CurrPath.stem().string().find(NameContent) == std::string::npos) {
+											Found=false;
+										}
+									}
+									else {
+										if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(NameContent)) == std::string::npos) {
+											Found=false;
+										}
+									}
+								}
+							}
+						}
+						else {
+							// Found diventa true al primo match
+							std::string CurrName=CurrPath.stem().string();
+							Found=false;
+							for (std::string NameContent : *NameContentList) {
+								DString::RemoveChars(NameContent,"*");
+								DString::RemoveChars(NameContent,".");
+								if (ExtWholeWord) {
+									// Ricerca parola intera
+									if (CaseSensitive) {
+										if (CurrName == NameContent) {
+											Found=true;
+											break;
+										}
+									}
+									else {
+										if (DTools::DString::CmpNoCase(CurrName,NameContent)) {
+											Found=true;
+											break;
+										}
+									}
+								}
+								else {
+									// Ricerca all'interno dell'estensione
+									if (CaseSensitive) {
+										if (NameContent.find(CurrName) != std::string::npos) {
+											Found=true;
+											break;
+										}
+									}
+									else {
+										if (DTools::DString::ToUpperCopy(NameContent).find(DTools::DString::ToUpperCopy(CurrName)) != std::string::npos) {
+											Found=true;
+											break;
+										}
+									}
+								}
+							}
+						}
 					}
 
-					// Cerca il pattern nel nome
-					bool Found=true;
+					if (ExtContentList != NULL) {
+						// Cerca il pattern nell'estensione
+						if (FindAll) {
+							// Found rimane true solo se vengono trovati tutti i pattern
+							for (std::string ExtContent : *ExtContentList) {
+								DString::RemoveChars(ExtContent,"*");
+								DString::RemoveChars(ExtContent,".");
+								if (NameWholeWord) {
+									// Ricerca parola intera
+									if (CaseSensitive) {
+										if (CurrPath.stem() != ExtContent) {
+											Found=false;
+										}
+									}
+									else {
+										if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),ExtContent)) {
+											Found=false;
+										}
+									}
+								}
+								else {
+									// Ricerca all'interno del nome file
+									if (CaseSensitive) {
+										if (CurrPath.stem().string().find(ExtContent) == std::string::npos) {
+											Found=false;
+										}
+									}
+									else {
+										if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(ExtContent)) == std::string::npos) {
+											Found=false;
+										}
+									}
+								}
+							}
+						}
+						else {
+							// Found diventa true al primo match
+							std::string CurrExt=CurrPath.extension().string();
+							DTools::DString::RemoveChars(CurrExt,".");
+							for (std::string ExtContent : *ExtContentList) {
+								DTools::DString::RemoveChars(ExtContent,"*");
+								DTools::DString::RemoveChars(ExtContent,".");
+								if (ExtWholeWord) {
+									// Ricerca parola intera
+									if (CaseSensitive) {
+										if (CurrExt == ExtContent) {
+											Found=true;
+											break;
+										}
+									}
+									else {
+										if (DTools::DString::CmpNoCase(CurrExt,ExtContent)) {
+											Found=true;
+											break;
+										}
+									}
+								}
+								else {
+									// Ricerca all'interno dell'estensione
+									if (CaseSensitive) {
+										if (ExtContent.find(CurrExt) != std::string::npos) {
+											Found=true;
+											break;
+										}
+									}
+									else {
+										if (DTools::DString::ToUpperCopy(ExtContent).find(DTools::DString::ToUpperCopy(CurrExt)) != std::string::npos) {
+											Found=true;
+											break;
+										}
+									}
+								}
+							}
+						}
+					}
+
+					if (!Found) {
+						continue;
+					}
+
+					// Trovato
+					Tot++;
+					if (Result != NULL) {
+						Result->push_back(CurrPath);
+					}
+
+
+/*
 					if (FindInName) {
 						// Ricerca patterns all'interno del nome
 						if (FindAll) {
@@ -432,6 +565,7 @@ namespace DTools
 							Result->push_back(iterator->path());
 						}
 					}
+*/
 				}
 			}
 			return(Tot);
@@ -528,38 +662,14 @@ namespace DTools
 		* N.B. @ref Result non viene pulita qindi s non è vuoa  risultati vengono aggiunti
 		**/
 		int ListFiles(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll) {
+			err::error_code ec;
 			unsigned int Tot=0;
 
 			// Verifica esistenza
-			try {
-				if (!fs::exists(PathToScan)) {
-					return -1;
-				}
-				if (!is_directory(PathToScan)) {
-					return -1;
-				}
-			} catch (fs::filesystem_error& e) {
-				return(-1);
+			bool Ret=fs::exists(PathToScan,ec);
+			if (!Ret || ec.value() != 0) {
+				return -1;
 			}
-
-			if (!CaseSensitive) {
-				// Campi di ricerca in maiuscolo
-				if (ExtContentList != nullptr) {
-					for (size_t ixE=0;ixE<ExtContentList->size();ixE++) {
-						DString::ToUpper(ExtContentList->at(ixE));
-					}
-				}
-				if (NameContentList != nullptr) {
-					for (size_t ixN=0;ixN<NameContentList->size();ixN++) {
-						DString::ToUpper(NameContentList->at(ixN));
-					}
-				}
-			}
-
-			// Ricerca all'interno del nome
-			bool FindInName=NameContentList != nullptr && !NameContentList->empty();
-			// Ricerca all'interno dell'estensione
-			bool FindInExt=ExtContentList != nullptr && !ExtContentList->empty();
 
 			for (fs::directory_iterator iterator(PathToScan); iterator != fs::directory_iterator(); ++iterator) {
 				if (is_directory(iterator->status())) {
@@ -569,6 +679,172 @@ namespace DTools
 					}
 				}
 				else {
+					fs::path CurrPath=fs::absolute(iterator->path());
+					bool Found=false;
+
+					if (NameContentList != NULL) {
+						// Ricerca patterns all'interno del nome
+						if (FindAll) {
+							// Found rimane true solo se vengono trovati tutti i pattern
+							Found=true;
+							for (std::string NameContent : *NameContentList) {
+								DTools::DString::RemoveChars(NameContent,"*");
+								DTools::DString::RemoveChars(NameContent,".");
+								if (NameWholeWord) {
+									// Ricerca parola intera
+									if (CaseSensitive) {
+										if (CurrPath.stem() != NameContent) {
+											Found=false;
+										}
+									}
+									else {
+										if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),NameContent)) {
+											Found=false;
+										}
+									}
+								}
+								else {
+									// Ricerca all'interno del nome file
+									if (CaseSensitive) {
+										if (CurrPath.stem().string().find(NameContent) == std::string::npos) {
+											Found=false;
+										}
+									}
+									else {
+										if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(NameContent)) == std::string::npos) {
+											Found=false;
+										}
+									}
+								}
+							}
+						}
+						else {
+							// Found diventa true al primo match
+							std::string CurrName=CurrPath.stem().string();
+							Found=false;
+							for (std::string NameContent : *NameContentList) {
+								DString::RemoveChars(NameContent,"*");
+								DString::RemoveChars(NameContent,".");
+								if (ExtWholeWord) {
+									// Ricerca parola intera
+									if (CaseSensitive) {
+										if (CurrName == NameContent) {
+											Found=true;
+											break;
+										}
+									}
+									else {
+										if (DTools::DString::CmpNoCase(CurrName,NameContent)) {
+											Found=true;
+											break;
+										}
+									}
+								}
+								else {
+									// Ricerca all'interno dell'estensione
+									if (CaseSensitive) {
+										if (NameContent.find(CurrName) != std::string::npos) {
+											Found=true;
+											break;
+										}
+									}
+									else {
+										if (DTools::DString::ToUpperCopy(NameContent).find(DTools::DString::ToUpperCopy(CurrName)) != std::string::npos) {
+											Found=true;
+											break;
+										}
+									}
+								}
+							}
+						}
+					}
+
+					if (ExtContentList != NULL) {
+						// Cerca il pattern nell'estensione
+						if (FindAll) {
+							// Found rimane true solo se vengono trovati tutti i pattern
+							for (std::string ExtContent : *ExtContentList) {
+								DString::RemoveChars(ExtContent,"*");
+								DString::RemoveChars(ExtContent,".");
+								if (NameWholeWord) {
+									// Ricerca parola intera
+									if (CaseSensitive) {
+										if (CurrPath.stem() != ExtContent) {
+											Found=false;
+										}
+									}
+									else {
+										if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),ExtContent)) {
+											Found=false;
+										}
+									}
+								}
+								else {
+									// Ricerca all'interno del nome file
+									if (CaseSensitive) {
+										if (CurrPath.stem().string().find(ExtContent) == std::string::npos) {
+											Found=false;
+										}
+									}
+									else {
+										if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(ExtContent)) == std::string::npos) {
+											Found=false;
+										}
+									}
+								}
+							}
+						}
+						else {
+							// Found diventa true al primo match
+							std::string CurrExt=CurrPath.extension().string();
+							DTools::DString::RemoveChars(CurrExt,".");
+							for (std::string ExtContent : *ExtContentList) {
+								DTools::DString::RemoveChars(ExtContent,"*");
+								DTools::DString::RemoveChars(ExtContent,".");
+								if (ExtWholeWord) {
+									// Ricerca parola intera
+									if (CaseSensitive) {
+										if (CurrExt == ExtContent) {
+											Found=true;
+											break;
+										}
+									}
+									else {
+										if (DTools::DString::CmpNoCase(CurrExt,ExtContent)) {
+											Found=true;
+											break;
+										}
+									}
+								}
+								else {
+									// Ricerca all'interno dell'estensione
+									if (CaseSensitive) {
+										if (ExtContent.find(CurrExt) != std::string::npos) {
+											Found=true;
+											break;
+										}
+									}
+									else {
+										if (DTools::DString::ToUpperCopy(ExtContent).find(DTools::DString::ToUpperCopy(CurrExt)) != std::string::npos) {
+											Found=true;
+											break;
+										}
+									}
+								}
+							}
+						}
+					}
+
+					if (!Found) {
+						continue;
+					}
+
+					// Trovato
+					Tot++;
+					if (Result != NULL) {
+						Result->push_back(CurrPath);
+					}
+/*
 					// Cerca il pattern nel nome
 					bool Found=true;
 					// Directory attuale
@@ -683,6 +959,7 @@ namespace DTools
 							Result->push_back(iterator->path());
 						}
 					}
+*/
 				}
 			}
 			return(Tot);
@@ -783,52 +1060,3 @@ namespace DTools
 		*/
 	}
 }
-
-/*
-		#if defined _WIN32 || defined _WIN64
-*/
-			//! Get version of EXE or DLL
-			/*
-			* @param Filename   ->  filename to extract version from, if empty, current process filename is used (default: empty)
-			* @param TrimDots	->  if true trims all dots from string (default: true).
-			* @return string containing file version. If TrimDots is false returen string is like "1.0.0.0" ,otherwise is like "1000"
-			*/
-/*
-			std::string GetFileVersion(std::string Filename, bool TrimDots) {
-				LPVOID lpStr1 = NULL;
-				LPVOID lpStr2 = NULL;
-				WORD* wTmp;
-				DWORD dwHandlev = NULL;
-				unsigned int nRet;
-				unsigned int dwLength;
-				char sFileName[1024]={0};
-				char sTmp[1024]={0};
-				LPVOID* pVersionInfo;
-				std::string sRet;
-
-				if (Filename.empty())
-					GetModuleFileName(NULL,sFileName,1024);
-				else
-					strcpy(sFileName,Filename.c_str());
-
-				DWORD dwInfoSize = GetFileVersionInfoSize((char*)(LPCTSTR)sFileName, &dwHandlev);
-				if (dwInfoSize) {
-					pVersionInfo = new LPVOID[dwInfoSize];
-					nRet = GetFileVersionInfo((char*)(LPCTSTR)sFileName, dwHandlev, dwInfoSize, pVersionInfo);
-					if(nRet) {
-						nRet = VerQueryValue(pVersionInfo, "\\VarFileInfo\\Translation", &lpStr1, &dwLength);
-						if (nRet) {
-							wTmp = (WORD*)lpStr1;
-							wsprintf(sTmp,"\\StringFileInfo\\%04x%04x\\FileVersion", *wTmp, *(wTmp + 1));
-							nRet = VerQueryValue(pVersionInfo, sTmp, &lpStr2, &dwLength);
-							if(nRet) {
-								sRet=std::string((char*)lpStr2);
-							}
-						}
-					}
-					delete[] pVersionInfo;
-				}
-				return (sRet);
-			}
-		#endif
-*/

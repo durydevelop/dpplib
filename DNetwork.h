@@ -20,7 +20,7 @@
 
 namespace DTools
 {
-	namespace DNet {
+		namespace DNetwork {
 		// Filesystem library namespace
         #if __cplusplus > 201402L // C++17
             #if __GNUC__ >= 8
