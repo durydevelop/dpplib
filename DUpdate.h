@@ -8,6 +8,7 @@ namespace DTools {
         public:
             enum DRepoType {REPO_TYPE_FOLDER, REPO_TYPE_HTTP, REPO_TYPE_FTP};
             DUpdate(std::string ApplicationName, std::string CurrentVersion);
+            ~DUpdate();
             void SetRepository(DRepoType RepoType,std::string RepoUri, std::string RepoSubUri, bool Authenticate, std::string RepoUser, std::string RepoPwd);
 
             // Public callback stuffs
@@ -15,6 +16,7 @@ namespace DTools {
             typedef std::function<void (void*, std::string)> DMemberCallback;
             void SetGlobalCallback(DGlobalCallback callback);
             void SetMemberCallback(DMemberCallback callback, void *ClassObj);
+            bool DoUpgrade(void);
 
         private:
             typedef struct {
@@ -31,12 +33,14 @@ namespace DTools {
             int CurrVersionNr;
             bool Ready;
             DTools::fs::path UpdateTempDir;
+            DTools::fs::path BackupDir;
             DTools::fs::path LocalInfoFilename;
             DTools::DPreferences::DPreferences *RepoInfo;
 
             bool DownloadRemoteInfoFile(void);
             bool ParseRepoInfoFile(void);
-            bool DownloadFiles(void)
+            bool DownloadFiles(void);
+            bool ApplyUpdate(void);
 
             // Private callback stuffs
             DGlobalCallback GlobalCallback;
@@ -48,6 +52,5 @@ namespace DTools {
             std::string LastStrStatus;
             void Log(std::string LogMsg);
             std::string GetLastStatus(void);
-
     };
 }

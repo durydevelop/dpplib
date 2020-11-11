@@ -2,6 +2,7 @@
 #include "DStringGrid.h"
 #include "DString.h"
 #include "DCsv.h"
+#include <fcntl.h>
 
 #ifdef _WIN32
     #include <windows.h>    //GetModuleFileNameW
@@ -116,7 +117,7 @@ namespace DTools
         *
 		* @return 0 on success or an error_code if any arrors occours.
 		**/
-		err::error_code Copy_File(const std::string &From, const std::string &To, bool OverwriteExisting, bool SafeMode) {
+		err::error_code Copy_File(const fs::path &From, const fs::path &To, bool OverwriteExisting, bool SafeMode) {
 			err::error_code ec;
 			#if __cplusplus > 201402L // C++17
 				fs::copy_options options=OverwriteExisting ? fs::copy_options::overwrite_existing : fs::copy_options::none;
@@ -125,27 +126,73 @@ namespace DTools
 			#endif
 
 			if (SafeMode) {
-				if (OverwriteExisting && fs::exists(To)) {
-					// Safe mode work-around:
-					// delete dest before (some version of filesystem lib does not copy if dest existing)
-					fs::remove(To);
+				if (OverwriteExisting) {
+					if (fs::exists(To)) {
+						// Safe mode work-around:
+						// delete dest before copy (some version of filesystem lib does not copy if dest existing)
+						fs::remove(To,ec);
+						if (ec.value() != 0) {
+							return(ec);
+						}
+					}
 				}
+				fs::copy_file(From,To,ec);
 			}
-
-            fs::copy_file(From,To,options,ec);
+			else {
+				fs::copy_file(From,To,options,ec);
+			}
             return(ec);
 		}
 
-		//! Copy a file
 		/**
-		* @param From	->	Source File.
-		* @param To		->	Destination file.
-		* @param
-		*
-		* @return 0 on success or an error_code if any arrors occours.
-		**/
-		err::error_code Copy_File(const fs::path &From, const fs::path &To, bool OverwriteExisting, bool SafeMode) {
-			return(Copy_File(From.string(),To.string(),OverwriteExisting,SafeMode));
+		 * @brief Custom file copy routine using posix api and buffer
+		 * @param inFile
+		 * @param outFile
+		 * @return
+		 */
+		bool Copy_File(const char* SourceFile, const char* DestFile, size_t BufferSize) {
+			int in = ::open(SourceFile, O_RDONLY | O_BINARY);
+			if (in < 0)
+			{
+				//std::cout << "Can't open input file: " << inFile << std::endl;
+				return false;
+			}
+
+			int out = ::open(DestFile, O_CREAT | O_WRONLY | O_BINARY, 0666);
+			if (out < 0)
+			{
+				//std::cout << "Can't open output file: " << outFile << std::endl;
+				return false;
+			}
+
+			size_t inFileSize = ::lseek(in, 0, SEEK_END);
+			::lseek(in, 0, SEEK_SET);
+
+			if (BufferSize == 0) {
+				BufferSize=1024 * 1024;
+			}
+
+			if (BufferSize > inFileSize) {
+				BufferSize=inFileSize;
+			}
+
+			std::vector<char> inBuffer(BufferSize);
+
+			for (size_t bytesLeft = inFileSize, chunk = inBuffer.size(); bytesLeft > 0; bytesLeft -= chunk)
+			{
+				if (bytesLeft < chunk)
+				{
+					chunk = bytesLeft;
+				}
+
+				::read(in, &inBuffer[0], chunk);
+				::write(out, &inBuffer[0], chunk);
+			}
+
+			::close(out);
+			::close(in);
+
+			return true;
 		}
 
 		//! Copy a directory recoursively

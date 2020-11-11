@@ -4,32 +4,8 @@
 #include <vector>
 #include <boost/property_tree/ptree.hpp>
 
-// Filesystem library include
-#if __cplusplus > 201402L // C++17
-	#if __GNUC__ >= 8
-		#include <filesystem>
-	#else
-		#include <experimental/filesystem>
-	#endif
-#else
-	#include <boost/filesystem.hpp>
-#endif
-
 namespace DTools {
 	namespace DPreferences {
-		// Filesystem library namespace
-		#if __cplusplus > 201402L // C++17
-			#if __GNUC__ >= 8
-				namespace fs = std::filesystem;
-			#else
-				namespace fs = std::experimental::filesystem;
-			#endif
-			namespace err = std;
-		#else
-			namespace fs=boost::filesystem;
-			namespace err = boost::system;
-		#endif
-
 		class DPreferences {
 			public:
 				DPreferences(std::string PrefFilename, bool CreateIfNotExists = true);
@@ -43,6 +19,7 @@ namespace DTools {
 				std::string GetFilename(void);
 				int ReadInteger(std::string SectionTree, std::string Item, int Default);
 				std::string ReadString(std::string SectionTree, std::string Item, std::string Default);
+				std::string ReadDotString(std::string SectionTree, std::string Item, std::string Default);
 				float ReadFloat(std::string SectionTree, std::string Item, float Default);
 				uint8_t ReadByte(std::string SectionTree, std::string Item, uint8_t Default);
 				bool ReadBool(std::string SectionTree, std::string Item, bool Default);

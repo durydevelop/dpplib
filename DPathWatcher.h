@@ -41,7 +41,7 @@ namespace DTools {
                             }
                             else {
                                 // File
-                                LastWriteTime=fs::last_write_time(Path);
+                                LastWriteTime=DPath::LastWriteTime(Path);
                             }
                         }
                     }
@@ -69,7 +69,7 @@ namespace DTools {
                             }
                             else {
                                 // File
-                                std::chrono::system_clock::time_point NewLastWriteTime=fs::last_write_time(Path);
+                                std::chrono::system_clock::time_point NewLastWriteTime=DPath::LastWriteTime(Path);
                                 if (NewLastWriteTime != LastWriteTime) {
                                     LastChangeStatus=CHANGE_STATUS_MODIFIED;
                                     LastWriteTime=NewLastWriteTime;

@@ -1,5 +1,12 @@
 #include "DNetwork.h"
 
+#if __cplusplus > 201402L // C++17
+    #include <asio.hpp>
+
+#else
+    #include <boost/asio.hpp>
+#endif
+
 namespace DTools
 {
         namespace DNetwork {

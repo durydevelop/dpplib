@@ -1,5 +1,5 @@
 #include "DPreferences.h"
-
+#include "DFilesystem.h"
 #include <boost/property_tree/json_parser.hpp>
 #include <sstream>
 #include <boost/exception/all.hpp>
@@ -118,16 +118,21 @@ namespace DTools {
 		std::string DPreferences::ReadString(std::string SectionTree, std::string Item, std::string Default) {
 			if (!Ready) return Default;
 			return(RootNode.get<std::string>(SectionTree+"."+Item,Default));
-			/*
-			// Find SectionTree
-			auto inValue=RootNode.get_child_optional(SectionTree+"."+Item);
-			if (!inValue.is_initialized()) {
-				return(std::string());
-			}
-			pt::ptree &Node=inValue.get();
+		}
 
-			return(Node.get_value(Default));
-			*/
+		//! Retrive a path type value. This method is usefull to retrive strings values containing dots, like path.
+		/**
+		* Try to get the string value of @ref Item inside @ref SectionTree
+		* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
+		* @param Item			->	the item name to retrive.
+		* @param Default		->	default value to return if @ref Item is empty or missing
+		**/
+		std::string DPreferences::ReadDotString(std::string SectionTree, std::string Item, std::string Default) {
+			if (!Ready) return Default;
+			// replace dots in tree
+			std::replace(SectionTree.begin(),SectionTree.end(),'.','/');
+			// use getter with translator '/'
+			return(RootNode.get<std::string>(pt::ptree::path_type(SectionTree+"/"+Item,'/'),Default));
 		}
 
 		//! Retrive a float value
@@ -240,6 +245,8 @@ namespace DTools {
 			LastStatus="Write succesfully";
 			return true;
 		}
+
+		// TODO WriteDotString()
 
 		//! Write path data as "value"
 		/**
