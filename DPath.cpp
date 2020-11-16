@@ -2,7 +2,11 @@
 #include "DStringGrid.h"
 #include "DString.h"
 #include "DCsv.h"
+
 #include <fcntl.h>
+#ifndef O_BINARY
+    #define O_BINARY 0
+#endif
 
 #ifdef _WIN32
     #include <windows.h>    //GetModuleFileNameW
@@ -145,52 +149,53 @@ namespace DTools
 		}
 
 		/**
-		 * @brief Custom file copy routine using posix api and buffer
-		 * @param inFile
-		 * @param outFile
+		 * @brief Copy a file using posix api
+		 * @param SourceFile			->	Source filename
+		 * @param DestFile				->	Dest filename
+		 * @param MemberCallback		->	Class member function to callback each buffered copy loop
+		 * @param MemberCallbackClass	->	Pointer to Class containing callback funcion
+		 * @param BufferSize			->	Size of buffer used to copy, if value is 0, file lenght is used (only one callback will be performed)
 		 * @return
 		 */
-		bool Copy_File(const char* SourceFile, const char* DestFile, size_t BufferSize) {
-			int in = ::open(SourceFile, O_RDONLY | O_BINARY);
-			if (in < 0)
-			{
+		bool Copy_File(const char* SourceFile, const char* DestFile, DMemberCallback MemberCallback, void *MemberCallbackClass, size_t BufferSize) {
+			int in=open(SourceFile, O_RDONLY | O_BINARY);
+			if (in < 0) {
 				//std::cout << "Can't open input file: " << inFile << std::endl;
 				return false;
 			}
 
-			int out = ::open(DestFile, O_CREAT | O_WRONLY | O_BINARY, 0666);
-			if (out < 0)
-			{
+			int out=open(DestFile, O_CREAT | O_WRONLY | O_BINARY, 0666);
+			if (out < 0) {
 				//std::cout << "Can't open output file: " << outFile << std::endl;
 				return false;
 			}
 
-			size_t inFileSize = ::lseek(in, 0, SEEK_END);
-			::lseek(in, 0, SEEK_SET);
+			size_t inFileSize=lseek(in, 0, SEEK_END);
+			lseek(in, 0, SEEK_SET);
 
 			if (BufferSize == 0) {
-				BufferSize=1024 * 1024;
+				// Use file size
+				BufferSize=inFileSize;
 			}
-
-			if (BufferSize > inFileSize) {
+			else if (BufferSize > inFileSize) {
 				BufferSize=inFileSize;
 			}
 
 			std::vector<char> inBuffer(BufferSize);
 
-			for (size_t bytesLeft = inFileSize, chunk = inBuffer.size(); bytesLeft > 0; bytesLeft -= chunk)
-			{
-				if (bytesLeft < chunk)
-				{
-					chunk = bytesLeft;
+			for (size_t bytesLeft=inFileSize,chunk=inBuffer.size(); bytesLeft>0; bytesLeft-=chunk)	{
+				if (bytesLeft < chunk) {
+					// Last shot
+					chunk=bytesLeft;
 				}
 
-				::read(in, &inBuffer[0], chunk);
-				::write(out, &inBuffer[0], chunk);
+				read(in,&inBuffer[0],chunk);
+				write(out,&inBuffer[0],chunk);
+				if (MemberCallback) MemberCallback(MemberCallbackClass,DEC_BYTES,reinterpret_cast<void *>(static_cast<intptr_t>(bytesLeft)));
 			}
 
-			::close(out);
-			::close(in);
+			close(out);
+			close(in);
 
 			return true;
 		}

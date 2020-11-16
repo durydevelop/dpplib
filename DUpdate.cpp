@@ -7,12 +7,25 @@ namespace err=DTools::err;
 namespace pt=boost::property_tree;
 
 // Repo info file content
-#define FILE_INFO               "Info.json"
+#ifdef _WIN32
+    #define FILE_INFO               "InfoWin.json"
+#else
+    #define FILE_INFO               "InfoNix.json"
+#endif
 #define SECTION_UPGRADE_INFO    "UpgradeInfo"
 #define SECTION_FILES           "Files"
 #define SECTION_REPLACE         "Replace"
 #define SECTION_MODIFY          "Modify"
 #define SECTION_LIST            "List"
+
+#define SECTION_REPO            "Repo"
+#define PARAM_REPO_TYPE         "RepoType"
+#define PARAM_REPO_URI          "RepoUri"
+#define PARAM_REPO_SUB_URI      "RepoSubUri"
+#define PARAM_REPO_AUTH         "Authenticate"
+#define PARAM_REPO_USER         "User"
+#define PARAM_REPO_PWD          "Pwd"
+
 
 #define PARAM_APP_NAME          "AppName"
 #define PARAM_UPGRADE_VERSION   "Version"
@@ -67,13 +80,36 @@ namespace DTools {
         }
 
         CurrVersionNr=DString::ToNumber<int>(CurrentVersion);
-        RepoInfo=nullptr;
+        UpdateData=nullptr;
     }
 
     DUpdate::~DUpdate() {
-        if (RepoInfo != nullptr) {
-            delete RepoInfo;
+        if (UpdateData != nullptr) {
+            delete UpdateData;
         }
+    }
+
+    /**
+     * @brief DUpdate::SetRepositoryFromFile
+     * @param Filename
+     * @return
+     */
+    bool DUpdate::SetRepositoryFromFile(fs::path Filename) {
+        Log("Updater: Load repo data from "+Filename.string());
+        DTools::DPreferences RepoFile(Filename.string());
+        if (!RepoFile.IsReady()) {
+            Log("Updater: RepoInfoFile open error: "+RepoFile.GetLastStatus());
+            return false;
+        }
+
+        SetRepository(RepoFile.ReadString(SECTION_REPO,PARAM_REPO_TYPE,""),
+                      RepoFile.ReadString(SECTION_REPO,PARAM_REPO_URI,""),
+                      RepoFile.ReadString(SECTION_REPO,PARAM_REPO_SUB_URI,""),
+                      RepoFile.ReadBool(SECTION_REPO,PARAM_REPO_AUTH,false),
+                      RepoFile.ReadString(SECTION_REPO,PARAM_REPO_USER,""),
+                      RepoFile.ReadString(SECTION_REPO,PARAM_REPO_PWD,""));
+
+        return (IsValidRepository());
     }
 
     /**
@@ -85,13 +121,37 @@ namespace DTools {
      * @param RepoUser
      * @param RepoPwd
      */
-    void DUpdate::SetRepository(DRepoType RepoType,std::string RepoUri, std::string RepoSubUri, bool Authenticate, std::string RepoUser, std::string RepoPwd) {
+    void DUpdate::SetRepository(std::string RepoType,std::string RepoUri, std::string RepoSubUri, bool Authenticate, std::string RepoUser, std::string RepoPwd) {
         dRepository.RepoType=RepoType;
         dRepository.MainUri=RepoUri;
         dRepository.SubUri=RepoSubUri;
         dRepository.NeedAuth=Authenticate;
         dRepository.User=RepoUser;
         dRepository.Password=RepoPwd;
+    }
+
+    bool DUpdate::IsValidRepository(void) {
+        if (dRepository.MainUri.empty()) {
+            Log("Updater: Repo Uri "+dRepository.MainUri+" not valid");
+            return false;
+        }
+
+        if (dRepository.RepoType == REPO_TYPE_FOLDER) {
+            if (dRepository.NeedAuth) {
+                // TODO
+            }
+            return true;
+        }
+        else if (dRepository.RepoType == REPO_TYPE_HTTP) {
+            // TODO
+            return true;
+        }
+        else if (dRepository.RepoType == REPO_TYPE_FTP) {
+            // TODO
+            return true;
+        }
+        Log("Updater: Repo type "+dRepository.RepoType+" not valid");
+        return false;
     }
 
     bool DUpdate::DoUpgrade(void) {
@@ -155,23 +215,23 @@ namespace DTools {
     bool DUpdate::ParseRepoInfoFile(void) {
         if (!Ready) return false;
 
-        if (RepoInfo == nullptr) {
-            RepoInfo=new DTools::DPreferences::DPreferences(LocalInfoFilename.string());
-            if (!RepoInfo->IsReady()) {
-                Log("Update info file parse error: "+RepoInfo->GetLastStatus());
+        if (UpdateData == nullptr) {
+            UpdateData=new DTools::DPreferences(LocalInfoFilename.string());
+            if (!UpdateData->IsReady()) {
+                Log("Update info file parse error: "+UpdateData->GetLastStatus());
                 return false;
             }
         }
 
         // Check app name
-        std::string RepoAppName=RepoInfo->ReadString(SECTION_UPGRADE_INFO,PARAM_APP_NAME,"");
+        std::string RepoAppName=UpdateData->ReadString(SECTION_UPGRADE_INFO,PARAM_APP_NAME,"");
         if (RepoAppName.empty() || RepoAppName != CurrAppName) {
             Log("Update AppName does't match");
             return false;
         }
 
         // Read Version
-        std::string RepoVersionStr=RepoInfo->ReadString(SECTION_UPGRADE_INFO,PARAM_UPGRADE_VERSION,"");
+        std::string RepoVersionStr=UpdateData->ReadString(SECTION_UPGRADE_INFO,PARAM_UPGRADE_VERSION,"");
         int RepoVersionNr=DTools::DString::ToNumber<int>(RepoVersionStr);
         if (RepoVersionNr > CurrVersionNr) {
             Log("Update "+RepoVersionStr+" available");
@@ -196,7 +256,7 @@ namespace DTools {
             // Read replace files list
             std::vector<std::string> Files;
             std::string NodeName=SECTION_FILES "." SECTION_REPLACE;
-            RepoInfo->ReadItemNames(NodeName,Files);
+            UpdateData->ReadItemNames(NodeName,Files);
             for (std::string Source : Files) {
                 // Make filenames
                 fs::path SourceFilename=fs::path(dRepository.MainUri) / dRepository.SubUri / Source;
@@ -209,7 +269,8 @@ namespace DTools {
                 Log("Updater: Copy "+SourceFilename.string()+" to "+DestFilename.string());
 
                 //err::error_code ec=DTools::DPath::Copy_File(SourceFilename,DestFilename,true,true);
-                bool ret=fs::copy_file(SourceFilename,DestFilename);
+                //bool ret=fs::copy_file(SourceFilename,DestFilename);
+                bool ret=DTools::DPath::Copy_File(SourceFilename.string().c_str(),DestFilename.string().c_str(),0);
                 //if (ec.value() != 0) {
                 if (!ret) {
                     //Log("Updater: download file "+SourceFilename.string()+" error: "+ec.message());
@@ -219,8 +280,6 @@ namespace DTools {
                 else {
                     //Log("Updater: done: "+ec.message());
                 }
-
-                //Copy_File(SourceFilename.string().c_str(),DestFilename.string().c_str());
             }
             return true;
         }
@@ -243,10 +302,10 @@ namespace DTools {
         // Read files list
         std::vector<std::string> Files;
         std::string NodeName=SECTION_FILES "." SECTION_REPLACE;
-        RepoInfo->ReadItemNames(NodeName,Files);
+        UpdateData->ReadItemNames(NodeName,Files);
         for (std::string Source : Files) {
             // Real file name
-            std::string RealName=RepoInfo->ReadDotString(NodeName,Source,"");
+            std::string RealName=UpdateData->ReadDotString(NodeName,Source,"");
             // Source filename (downloaded one)
             fs::path SourceFilename=UpdateTempDir / Source;
             if (!fs::exists(SourceFilename)) {

@@ -5,7 +5,6 @@
 #include <boost/property_tree/ptree.hpp>
 
 namespace DTools {
-	namespace DPreferences {
 		class DPreferences {
 			public:
 				DPreferences(std::string PrefFilename, bool CreateIfNotExists = true);
@@ -41,6 +40,5 @@ namespace DTools {
 				std::string LastStatus;
 				bool Ready;
 		};
-    }
 }
 #endif

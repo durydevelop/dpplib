@@ -8,12 +8,14 @@
 
 namespace DTools
 {
+/*
 	enum DProgressCode {INC_FILE=1,     //Trigger when a file is copied or moved
 						INC_DIR=2,      //Trigger when a file is copied or moved
 						SET_FILES=3,    //Trigger to send nr of files to copy or move
 						SET_DIRS=4,     //Trigger to send nr of dirs to copy or move
 						SET_OBJ=5,      //Trigger to send nr of dirs+file to copy or move
 						};
+*/
 
 	namespace DString
 	{

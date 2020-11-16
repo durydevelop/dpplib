@@ -6,10 +6,14 @@
 namespace DTools {
     class DUpdate {
         public:
-            enum DRepoType {REPO_TYPE_FOLDER, REPO_TYPE_HTTP, REPO_TYPE_FTP};
+            const std::string REPO_TYPE_FOLDER= "FOLDER";
+            const std::string REPO_TYPE_HTTP=   "HTTP";
+            const std::string REPO_TYPE_FTP=    "FTP";
             DUpdate(std::string ApplicationName, std::string CurrentVersion);
             ~DUpdate();
-            void SetRepository(DRepoType RepoType,std::string RepoUri, std::string RepoSubUri, bool Authenticate, std::string RepoUser, std::string RepoPwd);
+            bool SetRepositoryFromFile(DTools::fs::path Filename);
+            void SetRepository(std::string RepoType,std::string RepoUri, std::string RepoSubUri, bool Authenticate, std::string RepoUser, std::string RepoPwd);
+            bool IsValidRepository(void);
 
             // Public callback stuffs
             typedef std::function<void (std::string)> DGlobalCallback;
@@ -20,7 +24,7 @@ namespace DTools {
 
         private:
             typedef struct {
-                DRepoType RepoType=REPO_TYPE_FOLDER;
+                std::string RepoType="";
                 std::string MainUri;
                 std::string SubUri;
                 bool NeedAuth=false;
@@ -35,7 +39,7 @@ namespace DTools {
             DTools::fs::path UpdateTempDir;
             DTools::fs::path BackupDir;
             DTools::fs::path LocalInfoFilename;
-            DTools::DPreferences::DPreferences *RepoInfo;
+            DTools::DPreferences *UpdateData;
 
             bool DownloadRemoteInfoFile(void);
             bool ParseRepoInfoFile(void);

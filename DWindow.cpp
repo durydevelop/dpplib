@@ -20,11 +20,11 @@ namespace DTools
          * @param DestPrefs ->  Pointer to DTools::DPreferences::DPreferences instance used to save data. If no DPreferences is provided (DestPrefs is nullptr) a new file named "executable-name.conf" is created
          * @return true on success, false if cannot store data into prefs
          */
-        bool SaveWindowPositionData(std::string Name, size_t X, size_t Y, size_t Width, size_t Height, DTools::DPreferences::DPreferences *DestPrefs) {
-            DTools::DPreferences::DPreferences *Prefs=nullptr;
+        bool SaveWindowPositionData(std::string Name, size_t X, size_t Y, size_t Width, size_t Height, DTools::DPreferences *DestPrefs) {
+            DTools::DPreferences *Prefs=nullptr;
             if (DestPrefs == nullptr) {
                 std::string PrefFilename=DTools::DPath::GetExePath().string();
-                Prefs=new DTools::DPreferences::DPreferences(PrefFilename+".conf");
+                Prefs=new DTools::DPreferences(PrefFilename+".conf");
                 if (!Prefs->IsReady()) {
                     return false;
                 }
@@ -57,11 +57,11 @@ namespace DTools
          * @param DestPrefs ->  Pointer to DTools::DPreferences::DPreferences instance used to save data. If no DPreferences is provided (DestPrefs is nullptr) a new file named "executable-name.conf" is created
          * @return true on success, false if cannot store data into prefs
          */
-        bool RestoreWindowPositionData(std::string Name, int& X, int& Y, int& Width, int& Height, DTools::DPreferences::DPreferences *DestPrefs) {
-            DTools::DPreferences::DPreferences *Prefs=nullptr;
+        bool RestoreWindowPositionData(std::string Name, int& X, int& Y, int& Width, int& Height, DTools::DPreferences *DestPrefs) {
+            DTools::DPreferences *Prefs=nullptr;
             if (DestPrefs == nullptr) {
                 std::string PrefFilename=DTools::DPath::GetExePath().string();
-                Prefs=new DTools::DPreferences::DPreferences(PrefFilename+".conf");
+                Prefs=new DTools::DPreferences(PrefFilename+".conf");
                 if (!Prefs->IsReady()) {
                     return false;
                 }
@@ -90,7 +90,7 @@ namespace DTools
          * @param DestPrefs ->  Pointer to DTools::DPreferences::DPreferences instance used to save data. If no DPreferences is provided (DestPrefs is nullptr) a new file named "executable-name.conf" is created
          * @return true on success, false if cannot store data into prefs
          */
-        bool SaveQWindowPosition(QMainWindow& qMainWindow, DTools::DPreferences::DPreferences *DestPrefs) {
+        bool SaveQWindowPosition(QMainWindow& qMainWindow, DTools::DPreferences *DestPrefs) {
             QWidget& qWidget=(QWidget&) qMainWindow;
             return(SaveWindowPositionData(qWidget.objectName().toStdString(),qWidget.x(),qWidget.y(),qWidget.width(),qWidget.height(),DestPrefs));
         }
@@ -102,7 +102,7 @@ namespace DTools
          * @param DestPrefs ->  Pointer to DTools::DPreferences::DPreferences instance used to save data. If no DPreferences is provided (DestPrefs is nullptr) a new file named "executable-name.conf" is created.
          * @return true on success, false if cannot store data into prefs.
          */
-        bool SaveQWindowPosition(QDialog& qDialog, DTools::DPreferences::DPreferences *DestPrefs) {
+        bool SaveQWindowPosition(QDialog& qDialog, DTools::DPreferences *DestPrefs) {
             QWidget& qWidget=(QWidget&) qDialog;
             return(SaveWindowPositionData(qWidget.objectName().toStdString(),qWidget.x(),qWidget.y(),qWidget.width(),qWidget.height(),DestPrefs));
         }
@@ -148,7 +148,7 @@ namespace DTools
          * @param DestPrefs ->  Pointer to DTools::DPreferences::DPreferences instance used to save data. If no DPreferences is provided (DestPrefs is nullptr) a new file named "executable-name.conf" is created
          * @return true on success, false if cannot store data into prefs
          */
-        bool RestoreQWindowPosition(QMainWindow& qMainWindow, DTools::DPreferences::DPreferences *DestPrefs) {
+        bool RestoreQWindowPosition(QMainWindow& qMainWindow, DTools::DPreferences *DestPrefs) {
             //return(RestoreQWindowPosition((QWindow&)qMainWindow,DestPrefs));
             int X,Y,Width,Height;
             if (!DTools::DWindow::RestoreWindowPositionData(qMainWindow.objectName().toStdString(),X,Y,Width,Height,DestPrefs)) {
@@ -170,7 +170,7 @@ namespace DTools
          * @param DestPrefs ->  Pointer to DTools::DPreferences::DPreferences instance used to save data. If no DPreferences is provided (DestPrefs is nullptr) a new file named "executable-name.conf" is created.
          * @return true on success, false if cannot store data into prefs.
          */
-        bool RestoreQWindowPosition(QDialog& qDialog, DTools::DPreferences::DPreferences *DestPrefs) {
+        bool RestoreQWindowPosition(QDialog& qDialog, DTools::DPreferences *DestPrefs) {
             int X,Y,Width,Height;
             QWidget& qWidget=(QWidget&) qDialog;
             if (!DTools::DWindow::RestoreWindowPositionData(qWidget.objectName().toStdString(),X,Y,Width,Height,DestPrefs)) {
