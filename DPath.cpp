@@ -157,7 +157,7 @@ namespace DTools
 		 * @param BufferSize			->	Size of buffer used to copy, if value is 0, file lenght is used (only one callback will be performed)
 		 * @return
 		 */
-		bool Copy_File(const char* SourceFile, const char* DestFile, DMemberCallback MemberCallback, void *MemberCallbackClass, size_t BufferSize) {
+		bool Copy_File(const char* SourceFile, const char* DestFile, bool OverwriteExisting, DMemberCallback MemberCallback, void *MemberCallbackClass, size_t BufferSize) {
 			int in=open(SourceFile, O_RDONLY | O_BINARY);
 			if (in < 0) {
 				//std::cout << "Can't open input file: " << inFile << std::endl;

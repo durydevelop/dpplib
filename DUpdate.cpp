@@ -83,6 +83,9 @@ namespace DTools {
         UpdateData=nullptr;
     }
 
+    /**
+     * @brief Desctructor
+     */
     DUpdate::~DUpdate() {
         if (UpdateData != nullptr) {
             delete UpdateData;
@@ -90,9 +93,24 @@ namespace DTools {
     }
 
     /**
-     * @brief DUpdate::SetRepositoryFromFile
-     * @param Filename
-     * @return
+     * @brief Populate repository data reading them from file.
+     * @param Filename  ->  Json filename containing data.
+     * @return true if loaded data are valid repository data.
+     * json file must be structured as follow:
+      {
+        "Repo": {
+                "RepoType": "FOLDER",
+                "RepoUri": "\\\\smbserver\\path\\to\\folder",
+                "RepoSubUri": "Update",
+                "Authenticate": "false",
+                "User": "",
+                "Pwd": ""
+        }
+      }
+
+      N.B. In *nix system, folder path can be
+      "RepoUri": "/mnt/mounted/remote/folder"
+     *
      */
     bool DUpdate::SetRepositoryFromFile(fs::path Filename) {
         Log("Updater: Load repo data from "+Filename.string());
@@ -113,13 +131,13 @@ namespace DTools {
     }
 
     /**
-     * @brief Populate repository data
-     * @param RepoType
-     * @param RepoUri
-     * @param RepoSubUri
-     * @param Authenticate
-     * @param RepoUser
-     * @param RepoPwd
+     * @brief Manually populate repository data
+     * @param RepoType      ->  Must be REPO_TYPE_FOLDER, REPO_TYPE_HTTP ot REPO_TYPE_FTP string value.
+     * @param RepoUri       ->  Folder path, http main url or ftp server.
+     * @param RepoSubUri    ->  Can be empty in folder, can be second part of url in http/s, can be sub-folder in ftp.
+     * @param Authenticate  ->  if true autentication is performed using RepoUser and RepoPwd using appropriate method for repo type
+     * @param RepoUser      ->  User for authentication. If empty in ftp, "anonymous" is used.
+     * @param RepoPwd       ->  Password for authentication (actually encryption is not suprted).
      */
     void DUpdate::SetRepository(std::string RepoType,std::string RepoUri, std::string RepoSubUri, bool Authenticate, std::string RepoUser, std::string RepoPwd) {
         dRepository.RepoType=RepoType;
@@ -130,6 +148,9 @@ namespace DTools {
         dRepository.Password=RepoPwd;
     }
 
+    /**
+     * @return true if current DRepository is valid, otherwise false;
+     */
     bool DUpdate::IsValidRepository(void) {
         if (dRepository.MainUri.empty()) {
             Log("Updater: Repo Uri "+dRepository.MainUri+" not valid");
@@ -154,6 +175,10 @@ namespace DTools {
         return false;
     }
 
+    /**
+     * @brief Execute all needed operation for Update.
+     * @return true on succeed otherwise false (use GelLastStatus() to retrive error text).
+     */
     bool DUpdate::DoUpgrade(void) {
         if (!DownloadRemoteInfoFile()) {
             return false;
@@ -172,7 +197,7 @@ namespace DTools {
 
     /**
      * @brief Download repo info file from remote repository.
-     * @return true on succesfully copy to UpdateTempDir, otherwise false.
+     * @return true on succeed otherwise false (use GelLastStatus() to retrive error text).
      */
     bool DUpdate::DownloadRemoteInfoFile(void) {
         if (!Ready) return false;
@@ -182,15 +207,15 @@ namespace DTools {
             if (dRepository.NeedAuth) {
                 // TODO
             }
-            Log("Updater: Copy "+RemoteInfoFilename.string()+" to "+LocalInfoFilename.string());
+            std::string LogMsg="copy repo file"+RemoteInfoFilename.string()+" to "+LocalInfoFilename.string();
             err::error_code ec=DTools::DPath::Copy_File(RemoteInfoFilename,LocalInfoFilename,true,true);
             if (ec.value() != 0) {
-                Log("Updater: info file copy error: "+ec.message());
+                Log("Updater error: "+LogMsg+" : "+ec.message());
                 Ready=false;
                 return false;
             }
             else {
-                Log("Updater: done: "+ec.message());
+                Log("Updater done: "+LogMsg);
             }
         }
         else if (dRepository.RepoType == REPO_TYPE_HTTP) {
@@ -200,7 +225,7 @@ namespace DTools {
             // TODO
         }
         else {
-            Log("Repo type unkown????");
+            Log("Updater: repo type unkown????");
             Ready=false;
             return false;
         }
@@ -209,8 +234,7 @@ namespace DTools {
 
     /**
      * @brief Parse repo info file, check app name matching and upgrade version.
-     * @return true if app name match, false if any parsing errors occours.
-     * After return, UpgradeAvailable is set to true if upgrade version is major that current version
+     * @return true on succeed otherwise false (use GelLastStatus() to retrive error text).
      */
     bool DUpdate::ParseRepoInfoFile(void) {
         if (!Ready) return false;
@@ -241,8 +265,8 @@ namespace DTools {
     }
 
     /**
-     * @brief Download all files needed by ugrade. Filenames are store in SECTION_REPLACE and SECTION_UPDATE section in info file
-     * @return true if all files has been downloaded, otherwise false;
+     * @brief Download all files needed by ugrade. Filenames are store in SECTION_REPLACE and SECTION_UPDATE section in info file.
+     * @return true on succeed otherwise false (use GelLastStatus() to retrive error text).
      */
     bool DUpdate::DownloadFiles(void) {
         if (!Ready) return false;
@@ -265,20 +289,17 @@ namespace DTools {
                     Log("Updater: file missing: "+SourceFilename.string());
                     return false;
                 }
-                // copy to local temp
-                Log("Updater: Copy "+SourceFilename.string()+" to "+DestFilename.string());
 
-                //err::error_code ec=DTools::DPath::Copy_File(SourceFilename,DestFilename,true,true);
-                //bool ret=fs::copy_file(SourceFilename,DestFilename);
+                // copy to local temp
+                std::string LogMsg="copy "+SourceFilename.string()+" to "+DestFilename.string();
                 bool ret=DTools::DPath::Copy_File(SourceFilename.string().c_str(),DestFilename.string().c_str(),0);
-                //if (ec.value() != 0) {
                 if (!ret) {
-                    //Log("Updater: download file "+SourceFilename.string()+" error: "+ec.message());
+                    Log("Updater: error "+LogMsg);
                     Ready=false;
                     return false;
                 }
                 else {
-                    //Log("Updater: done: "+ec.message());
+                    Log("Updater: done copy "+LogMsg);
                 }
             }
             return true;
@@ -290,13 +311,17 @@ namespace DTools {
             // TODO
         }
         else {
-            Log("Repo type unkown????");
+            Log("Updater: repo type unkown????");
             Ready=false;
             return false;
         }
         return true;
     }
 
+    /**
+     * @brief Apply download update files: backup files to udate, than replace them or modify them (as written in update file).
+     * @return true on succeed otherwise false (use GelLastStatus() to retrive error text).
+     */
     bool DUpdate::ApplyUpdate(void) {
         if (!Ready) return false;
         // Read files list
@@ -316,36 +341,36 @@ namespace DTools {
             fs::path DestFilename=fs::current_path() / RealName;
 
             // Backup if already exists
+            std::string LogMsg;
             if (fs::exists(DestFilename)) {
                 // Backup dest filename
                 fs::path BakFilename=BackupDir / RealName;
-                Log("Updater: Backup "+DestFilename.string()+" to "+BakFilename.string());
+                LogMsg="backup "+DestFilename.string()+" to "+BakFilename.string();
                 //err::error_code ec=DTools::DPath::Copy_File(DestFilename,BakFilename,true,true);
                 err::error_code ec;
                 fs::rename(DestFilename,BakFilename,ec);
                 if (ec.value() != 0) {
-                    Log("Updater: backuping file "+RealName+" error: "+ec.message());
+                    Log("Updater: error "+LogMsg+" : "+ec.message());
                     Ready=false;
                     return false;
                 }
+                Log("Updater: done "+LogMsg);
             }
 
             // Replace with new one
-            Log("Updater: installing file "+SourceFilename.string()+" to "+DestFilename.string());
+            LogMsg="installing file "+SourceFilename.string()+" to "+DestFilename.string();
             //err::error_code ec=DTools::DPath::Copy_File(UpdFilename,DestFilename,true);
             err::error_code ec;
             fs::rename(SourceFilename,DestFilename,ec);
             if (ec.value() != 0) {
-                Log("Updater: Installing file "+RealName+" error: "+ec.message());
+                Log("Updater: error "+LogMsg+" : "+ec.message());
                 Ready=false;
                 return false;
             }
+            Log("Updater: done "+LogMsg);
         }
         return true;
     }
-
-
-
 
     // ******************************  Callback stuffs ***************************************
     /**
@@ -370,9 +395,8 @@ namespace DTools {
 	}
 
 	/**
-	 * @brief Perform the callback
-	 * @param Path			->	Filename that has been changed.
-	 * @param SyncStatus	->	Detected Change type. Can be CHANGE_STATUS_CREATED, CHANGE_STATUS_ERASED, CHANGE_STATUS_MODIFIED.
+	 * @brief Perform the callback.
+	 * @param Msg	->	Log message to send.
 	 */
 	void DUpdate::DoCallback(std::string Msg) {
 		if(GlobalCallback != NULL) {
