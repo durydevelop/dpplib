@@ -1,3 +1,0 @@
-C:\Qt\Tools\CMake_32\bin\cmake.exe -E rm -f CMakeFiles\rest-client.dir/objects.a
-C:\Qt\Tools\mingw810_64\bin\ar.exe cr CMakeFiles\rest-client.dir/objects.a @CMakeFiles\rest-client.dir\objects1.rsp
-C:\Qt\Tools\mingw810_64\bin\g++.exe -O3 -DNDEBUG -Wl,--whole-archive CMakeFiles\rest-client.dir/objects.a -Wl,--no-whole-archive -o rest-client.exe -Wl,--out-implib,librest-client.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\rest-client.dir\linklibs.rsp

@@ -1,3 +1,0 @@
-E:/Programming/Lib/cpp/libdpp/network/example/rest-client/build/CMakeFiles/rebuild_cache.dir
-E:/Programming/Lib/cpp/libdpp/network/example/rest-client/build/CMakeFiles/edit_cache.dir
-E:/Programming/Lib/cpp/libdpp/network/example/rest-client/build/CMakeFiles/rest-client.dir
