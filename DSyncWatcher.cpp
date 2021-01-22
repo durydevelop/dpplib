@@ -107,8 +107,12 @@ namespace DTools {
      * @return false if there are no watches in the list, otherwise true. You can call IsWatching() method to test if thread is running.
      */
     bool DSyncWatcher::Start(void) {
+        if (Watching) {
+            Log("Already started");
+            return false;
+        }
         if (SyncList.size() == 0) {
-            Log("No sync set, thread not strated");
+            Log("No sync set, thread not started");
             return false;
         }
         Log("Sync thread starting...");

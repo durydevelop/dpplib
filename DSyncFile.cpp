@@ -34,7 +34,7 @@ namespace DTools {
 		}
 		else {
 			LastSyncStatus=SYNC_NOT_YET;
-			LastStrStatus=Source.string()+" no creation sync";
+			LastStrStatus=Source.string()+" sync on creation not required";
 		}
 	}
 

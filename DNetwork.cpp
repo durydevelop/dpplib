@@ -1,7 +1,8 @@
 #include "DNetwork.h"
 
 #if __cplusplus > 201402L // C++17
-    #include <asio.hpp>
+    #include <boost/asio.hpp>
+    namespace asio=boost::asio;
 
 #else
     #include <boost/asio.hpp>

@@ -9,6 +9,8 @@
 
 namespace DShell {
 	bool Execute(std::string Filename, std::string Args, bool Visible);
+	bool Execute(std::string Filename, std::string Args);
+	bool ShutDown(void);
 /*
 		HANDLE ShellEsegui(std::string NomeFile, bool Visibile, AnsiString Parametri);
 		HANDLE ShellEsegui(AnsiString NomeFile, bool Visibile, AnsiString Parametri, unsigned long mSecAttesa);

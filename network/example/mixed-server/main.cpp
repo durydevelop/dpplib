@@ -1,6 +1,7 @@
 #include <iostream>
-#include "DUdpServer.hpp"
-#include "DTcpServer.hpp"
+#include "DUdpServer.h"
+//#include "DTcpServer.h"
+#include <functional>
 
 using namespace std;
 DUdpServer *dUdpServer;
@@ -21,18 +22,18 @@ void UdpError(DUdpServer::shared_session session,std::string Error) {
 int main(int argc, char* argv[])
 {
     try {
-        asio::io_service io_service;
-        dUdpServer=new DUdpServer(io_service);
+        asio::io_context iocontext;
+        dUdpServer=new DUdpServer(iocontext);
         dUdpServer->SetOnDataRecvd(UdpDataRecvd);
         dUdpServer->SetOnDataSent(UdpDataSent);
         dUdpServer->SetOnError(UdpError);
         //dUdpServer->Run();
 
-        std::thread_group group;
+        asio::detail::thread_group group;
         for (unsigned i = 0; i < thread::hardware_concurrency(); ++i)
-            group.create_thread(bind(&asio::io_service::run, ref(io_service)));
+            group.create_thread([&dUdpServer](){dUdpServer->Run();});
 
-        group.join_all();
+        group.join();
 
     }
     catch (std::exception& e) {

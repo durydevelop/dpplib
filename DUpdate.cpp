@@ -1,6 +1,8 @@
 #include "DUpdate.h"
 #include "DString.h"
 #include "DPath.h"
+#include "DShell.h"
+#include <fstream>
 
 namespace fs=DTools::fs;
 namespace err=DTools::err;
@@ -8,9 +10,9 @@ namespace pt=boost::property_tree;
 
 // Repo info file content
 #ifdef _WIN32
-    #define FILE_INFO               "InfoWin.json"
+    #define FILE_INFO           "InfoWin.json"
 #else
-    #define FILE_INFO               "InfoNix.json"
+    #define FILE_INFO           "InfoNix.json"
 #endif
 #define SECTION_UPGRADE_INFO    "UpgradeInfo"
 #define SECTION_FILES           "Files"
@@ -26,10 +28,13 @@ namespace pt=boost::property_tree;
 #define PARAM_REPO_USER         "User"
 #define PARAM_REPO_PWD          "Pwd"
 
-
 #define PARAM_APP_NAME          "AppName"
 #define PARAM_UPGRADE_VERSION   "Version"
 #define PARAM_CASE_SENSITIVE    "CaseSensitive"
+#define PARAM_MAIN_EXE          "MainExe"
+
+#define UPDATER_FILENAME        "DuryUpdater.exe"
+#define JUST_UPDATE_FILENAME    ".justupdate"
 
 namespace DTools {
     /**
@@ -37,18 +42,50 @@ namespace DTools {
      * @param ApplicationName   ->  Name used to ensure to use right update
      * @param CurrentVersion    ->  String containing current app version, may be something like "1.0.0.2" all the non digit characters will be trimmed and the string transformed to number
      */
-    DUpdate::DUpdate(std::string ApplicationName, std::string CurrentVersion) {
+    DUpdate::DUpdate(const std::string ApplicationName, const std::string CurrentVersion) {
+        // Callbacks
+        GlobalCallback=nullptr;
+        MemberCallback=nullptr;
+        MemberCalbackObj=nullptr;
+
+        Init(ApplicationName,CurrentVersion);
+    }
+
+    DUpdate::DUpdate(const std::string ApplicationName, const std::string CurrentVersion, DMemberCallback Callback, void *ClassObj) {
+        if (Callback != nullptr && ClassObj != nullptr) {
+            SetMemberCallback(Callback,ClassObj);
+        }
+        Init(ApplicationName,CurrentVersion);
+    }
+
+    DUpdate::DUpdate(const std::string ApplicationName, const std::string CurrentVersion, DGlobalCallback Callback) {
+        if (Callback != nullptr) {
+            SetGlobalCallback(Callback);
+        }
+        Init(ApplicationName,CurrentVersion);
+    }
+
+    /**
+     * @brief Desctructor
+     */
+    DUpdate::~DUpdate() {
+        if (UpdateData != nullptr) {
+            delete UpdateData;
+        }
+    }
+
+    void DUpdate::Init(const std::string ApplicationName, const std::string CurrentVersion) {
         // UpdateTempDir
         UpdateTempDir=fs::current_path() / "Update";
         if (!fs::exists(UpdateTempDir)) {
             err::error_code ec;
             if (fs::create_directory(UpdateTempDir,ec)) {
                 Ready=true;
-                Log("Update dir created");
+                Log("Updater: update dir created");
             }
             else {
                 Ready=false;
-                Log("Update dir creating error: "+ec.message());
+                Log("Updater: update dir creating error: "+ec.message());
             }
         }
         else {
@@ -79,17 +116,9 @@ namespace DTools {
             Ready=false;
         }
 
-        CurrVersionNr=DString::ToNumber<int>(CurrentVersion);
+        CurrVersionNr=DString::ToNumber<int>(DString::RemoveNotDigitCopy(CurrentVersion));
         UpdateData=nullptr;
-    }
-
-    /**
-     * @brief Desctructor
-     */
-    DUpdate::~DUpdate() {
-        if (UpdateData != nullptr) {
-            delete UpdateData;
-        }
+        UpdateNeeded=false;
     }
 
     /**
@@ -113,10 +142,10 @@ namespace DTools {
      *
      */
     bool DUpdate::SetRepositoryFromFile(fs::path Filename) {
-        Log("Updater: Load repo data from "+Filename.string());
+        Log("Updater: load repo data from "+Filename.string());
         DTools::DPreferences RepoFile(Filename.string());
         if (!RepoFile.IsReady()) {
-            Log("Updater: RepoInfoFile open error: "+RepoFile.GetLastStatus());
+            Log("Updater: repoInfoFile open error: "+RepoFile.GetLastStatus());
             return false;
         }
 
@@ -153,7 +182,7 @@ namespace DTools {
      */
     bool DUpdate::IsValidRepository(void) {
         if (dRepository.MainUri.empty()) {
-            Log("Updater: Repo Uri "+dRepository.MainUri+" not valid");
+            Log("Updater: repo Uri "+dRepository.MainUri+" not valid");
             return false;
         }
 
@@ -171,28 +200,92 @@ namespace DTools {
             // TODO
             return true;
         }
-        Log("Updater: Repo type "+dRepository.RepoType+" not valid");
+        Log("Updater: repo type "+dRepository.RepoType+" not valid");
         return false;
     }
 
     /**
-     * @brief Execute all needed operation for Update.
+     * @brief Check for pendings operations.
+     * If process filename is UPDATER_FILENAME, start files upgrade.
+     * If ".justupdated" file is found this is the first start after upgrade, so, doesn't perform any update check to avoid unwanted loop (in case of error).
+     */
+    void DUpdate::CheckPendings(void) {
+        // Check for upgrade operations pending
+        ExeName=DPath::GetExePath();
+        if (ExeName.filename() == UPDATER_FILENAME) {
+            Log("Updater: detect run as executable updater");
+            // Run as updater
+            ParseLocalRepoInfoFile();
+
+            Log("Updater: apply update");
+            if (ApplyUpdate()) {
+                // Apply update and re-run main exe
+                Log("Updater: update apply sucessfully");
+                std::ofstream File(JUST_UPDATE_FILENAME);
+                if (File.is_open()) {
+                    File.close();
+                }
+                else {
+                    Log("Updater: cannot create file " JUST_UPDATE_FILENAME);
+                }
+                DShell::Execute(UpdateData->ReadDotString(SECTION_UPGRADE_INFO,PARAM_MAIN_EXE,""),"");
+                exit(0);
+            }
+            else {
+                Log("Updater: ERROR applying update");
+            }
+        }
+        else if (fs::exists(JUST_UPDATE_FILENAME)) {
+            Log("Updater: detected " JUST_UPDATE_FILENAME " : first time after upgrade, to avoid unwanted loop, update is disabled.");
+            err::error_code ec;
+            if (!fs::remove(JUST_UPDATE_FILENAME,ec)) {
+                Log("Updater: ERROR "+ec.message());
+            }
+            if (!fs::remove(UPDATER_FILENAME,ec)) {
+                Log("Updater: ERROR "+ec.message());
+            }
+            Ready=false;
+        }
+    }
+
+    /**
+     * @brief Execute all needed operations to Upgrade.
      * @return true on succeed otherwise false (use GelLastStatus() to retrive error text).
      */
-    bool DUpdate::DoUpgrade(void) {
+    void DUpdate::DoUpgrade(void) {
+        CheckPendings();
+
         if (!DownloadRemoteInfoFile()) {
-            return false;
+            return;
         }
 
-        if (!ParseRepoInfoFile()) {
-            return false;
+        if (!ParseLocalRepoInfoFile()) {
+            return;
+        }
+
+        Log("Updater: current version  "+std::to_string(CurrVersionNr));
+        Log("Updater: available verion "+std::to_string(RepoVersionNr));
+        if (UpdateNeeded) {
+            Log("Updater: update needed.");
+        }
+        else {
+            Log("Updater: update not needed.");
+            return;
         }
 
         if (!DownloadFiles()) {
-            return false;
+            return;
         }
 
-        return(ApplyUpdate());
+        Log("Updater: create executable updater.");
+        // Create executable updater copy from myself
+        fs::path UpdaterFilename=DPath::GetExePath().parent_path() / UPDATER_FILENAME;
+        DTools::DPath::Copy_File(DPath::GetExePath().string().c_str(),UpdaterFilename.string().c_str(),true);
+
+        Log("Updater: run executable updater and exit.");
+        // Run updater and exit
+        DShell::Execute(UpdaterFilename.string(),"");
+        exit(0);
     }
 
     /**
@@ -210,12 +303,12 @@ namespace DTools {
             std::string LogMsg="copy repo file"+RemoteInfoFilename.string()+" to "+LocalInfoFilename.string();
             err::error_code ec=DTools::DPath::Copy_File(RemoteInfoFilename,LocalInfoFilename,true,true);
             if (ec.value() != 0) {
-                Log("Updater error: "+LogMsg+" : "+ec.message());
+                Log("Updater: error "+LogMsg+" : "+ec.message());
                 Ready=false;
                 return false;
             }
             else {
-                Log("Updater done: "+LogMsg);
+                Log("Updater: done "+LogMsg);
             }
         }
         else if (dRepository.RepoType == REPO_TYPE_HTTP) {
@@ -233,16 +326,17 @@ namespace DTools {
     }
 
     /**
-     * @brief Parse repo info file, check app name matching and upgrade version.
+     * @brief Parse repo info file and populate UpdateData prefs.
+     * Check app name matching and upgrade version.
      * @return true on succeed otherwise false (use GelLastStatus() to retrive error text).
      */
-    bool DUpdate::ParseRepoInfoFile(void) {
+    bool DUpdate::ParseLocalRepoInfoFile(void) {
         if (!Ready) return false;
 
         if (UpdateData == nullptr) {
             UpdateData=new DTools::DPreferences(LocalInfoFilename.string());
             if (!UpdateData->IsReady()) {
-                Log("Update info file parse error: "+UpdateData->GetLastStatus());
+                Log("Updater: info file parse error: "+UpdateData->GetLastStatus());
                 return false;
             }
         }
@@ -250,15 +344,18 @@ namespace DTools {
         // Check app name
         std::string RepoAppName=UpdateData->ReadString(SECTION_UPGRADE_INFO,PARAM_APP_NAME,"");
         if (RepoAppName.empty() || RepoAppName != CurrAppName) {
-            Log("Update AppName does't match");
+            Log("Updater: appName does't match");
             return false;
         }
 
         // Read Version
         std::string RepoVersionStr=UpdateData->ReadString(SECTION_UPGRADE_INFO,PARAM_UPGRADE_VERSION,"");
-        int RepoVersionNr=DTools::DString::ToNumber<int>(RepoVersionStr);
+        RepoVersionNr=DTools::DString::ToNumber<int>(DString::RemoveNotDigit(RepoVersionStr));
         if (RepoVersionNr > CurrVersionNr) {
-            Log("Update "+RepoVersionStr+" available");
+            UpdateNeeded=true;
+        }
+        else {
+            UpdateNeeded=false;
         }
 
         return true;
@@ -286,7 +383,7 @@ namespace DTools {
                 fs::path SourceFilename=fs::path(dRepository.MainUri) / dRepository.SubUri / Source;
                 fs::path DestFilename=UpdateTempDir / Source; // same as repo
                 if (!fs::exists(SourceFilename)) {
-                    Log("Updater: file missing: "+SourceFilename.string());
+                    Log("Updater: file missing "+SourceFilename.string());
                     return false;
                 }
 
@@ -299,7 +396,7 @@ namespace DTools {
                     return false;
                 }
                 else {
-                    Log("Updater: done copy "+LogMsg);
+                    Log("Updater: done "+LogMsg);
                 }
             }
             return true;
@@ -329,7 +426,7 @@ namespace DTools {
         std::string NodeName=SECTION_FILES "." SECTION_REPLACE;
         UpdateData->ReadItemNames(NodeName,Files);
         for (std::string Source : Files) {
-            // Real file name
+            // Dest file name (real name)
             std::string RealName=UpdateData->ReadDotString(NodeName,Source,"");
             // Source filename (downloaded one)
             fs::path SourceFilename=UpdateTempDir / Source;
@@ -337,7 +434,7 @@ namespace DTools {
                 Log("Updater: previous downloaded file missing: "+Source);
                 return false;
             }
-            // Real dest filename
+            // Dest full filename
             fs::path DestFilename=fs::current_path() / RealName;
 
             // Backup if already exists
@@ -348,7 +445,12 @@ namespace DTools {
                 LogMsg="backup "+DestFilename.string()+" to "+BakFilename.string();
                 //err::error_code ec=DTools::DPath::Copy_File(DestFilename,BakFilename,true,true);
                 err::error_code ec;
-                fs::rename(DestFilename,BakFilename,ec);
+                if (fs::exists(BakFilename)) {
+                    fs::remove(BakFilename,ec);
+                }
+                if (ec.value() == 0) {
+                    fs::rename(DestFilename,BakFilename,ec);
+                }
                 if (ec.value() != 0) {
                     Log("Updater: error "+LogMsg+" : "+ec.message());
                     Ready=false;

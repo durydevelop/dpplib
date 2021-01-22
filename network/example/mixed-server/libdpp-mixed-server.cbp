@@ -42,15 +42,9 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="../../DTcpServer.cpp" />
-		<Unit filename="../../DTcpServer.hpp" />
 		<Unit filename="../../DUdpServer.cpp" />
-		<Unit filename="../../DUdpServer.hpp" />
+		<Unit filename="../../DUdpServer.h" />
 		<Unit filename="main.cpp" />
-		<Extensions>
-			<code_completion />
-			<envvars />
-			<debugger />
-		</Extensions>
+		<Extensions />
 	</Project>
 </CodeBlocks_project_file>

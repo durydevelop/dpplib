@@ -4,8 +4,6 @@
 #include "DFilesystem.h"
 #include "DPath.h"
 #include <chrono>
-#include <thread>
-#include <chrono>
 #include <future>
 
 namespace DTools {

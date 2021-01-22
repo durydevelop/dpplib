@@ -23,7 +23,7 @@ namespace DTools
         fs::path GetExePath() {
             #ifdef _WIN32
                 wchar_t path[MAX_PATH] = { 0 };
-                GetModuleFileNameW(NULL, path, MAX_PATH);
+                GetModuleFileNameW(nullptr, path, MAX_PATH);
                 return path;
             #else
                 char result[PATH_MAX];
@@ -248,15 +248,15 @@ namespace DTools
 			// Itera attraverso SourceDir
 			for (fs::directory_iterator iterator(SourceDir); iterator != fs::directory_iterator(); ++iterator) {
 				if (is_directory(iterator->status())) {
-					if (Callback) Callback(INC_DIR,NULL);
+					if (Callback) Callback(INC_DIR,nullptr);
 					// In ricorsione
-					ec=CopyDir(iterator->path(),DestDir / iterator->path().filename(),FailIfExists,NULL); // nessuna callback perché viene eseguita solo per gli oggetti presenti nella root
+					ec=CopyDir(iterator->path(),DestDir / iterator->path().filename(),FailIfExists,nullptr); // nessuna callback perché viene eseguita solo per gli oggetti presenti nella root
 					if (ec.value() != 0) {
 						return(ec);
 					}
 				}
 				else if (is_regular_file(iterator->status())) {
-					if (Callback) Callback(INC_FILE,NULL);
+					if (Callback) Callback(INC_FILE,nullptr);
 					#if __cplusplus > 201402L // C++17
 						fs::copy_options options=fs::copy_options::overwrite_existing;
 					#else
@@ -283,15 +283,54 @@ namespace DTools
 		* @return 0 on success or an error_code if any arrors occours.
 		**/
 		err::error_code MoveDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DGlobalCallback Callback) {
-			// TODO: fastmove
-			err::error_code ec=CopyDir(SourceDir,DestDir,FailIfExists,Callback);
+			if (Callback) {
+				// If You want callback, need to copy and delete...
+				err::error_code ec=CopyDir(SourceDir,DestDir,FailIfExists,Callback);
 
-			if (ec.value() != 0) {
+				if (ec.value() != 0) {
+					return(ec);
+				}
+
+				fs::remove_all(SourceDir,ec);
 				return(ec);
 			}
+			else {
+				#if __cplusplus > 201402L // C++17
+					// C++17 fast move
+					err::error_code ec;
+					fs::rename(SourceDir,DestDir,ec);
+					return(ec);
+				#else
+					#ifdef WIN32
+						// windows fast move
+						if (SourceDir.string().substr(0,2) == DestDir.string().substr(0,2) && DestDir.string().substr(0,2) != "\\\\") {
+							// use windows api for c++ < 17
+							bool ret=MoveFileEx(SourceDir,DestDir,MOVEFILE_REPLACE_EXISTING);
+							if (!ret) {
+								ec.error_code=1;
+							}
+						}
+						else {
+							// use c++ copy and delete
+							ec=CopyDir(SourceDir,DestDir,FailIfExists,Callback);
+							if (ec.value() != 0) {
+								return(ec);
+							}
 
-			fs::remove_all(SourceDir,ec);
-			return(ec);
+							dfs::remove_all(SourceDir,ec);
+							return(ec);
+						}
+					#else
+						err::error_code ec=CopyDir(SourceDir,DestDir,FailIfExists,nullptr);
+						if (ec.value() != 0) {
+							return(ec);
+						}
+
+						fs::remove_all(SourceDir,ec);
+						return(ec);
+					#endif
+				#endif
+			}
 		}
 
 		//! Delete a directory recoursively
@@ -314,13 +353,13 @@ namespace DTools
 		/**
 		* Ricerca tramite una lista per nome e una lista per l'estensione
 		*
-		* @param Result				->	Puntatore ad una array di path da popolare con i risultati, se NULL ritorna solo il conteggio
+		* @param Result				->	Puntatore ad una array di path da popolare con i risultati, se nullptr ritorna solo il conteggio
 		* @param PathToScan			->	Directory di partenza
 		* @param Recoursive			->	Se true va in ricorsione (solo se non è un ordine Prodig)
-		* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), NULL o vuoto equivale a tutto
+		* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), nullptr o vuoto equivale a tutto
 		*								N.B. Tutte le stringhe devo essere contenute nel nome
 		* @param NameWholeWord		->	Se true confronta la ricerca con l'intero nome (Ignorato se @ref NameContentList contiene più di una stringa)
-		* @param ExtContentList			->	Puntatore ad un array di estensioni da cercare, NULL o vuoto equivale a tutto
+		* @param ExtContentList			->	Puntatore ad un array di estensioni da cercare, nullptr o vuoto equivale a tutto
 		*								N.B. Tutte le stringhe devo essere contenute nell'estensione
 		* @param ExtWholeWord		->	Se true confronta la ricerca con l'intera estensione (Ignorato se @ref ExtContentList contiene più di una stringa)
 		* @param CaseSensitive		->	Se true tiene conto di maiuscole e minuscole
@@ -350,157 +389,177 @@ namespace DTools
 					fs::path CurrPath=fs::absolute(iterator->path());
 					bool Found=false;
 
-					if (NameContentList != NULL) {
-						// Ricerca patterns all'interno del nome
-						if (FindAll) {
-							// Found rimane true solo se vengono trovati tutti i pattern
-							Found=true;
-							for (std::string NameContent : *NameContentList) {
-								DTools::DString::RemoveChars(NameContent,"*");
-								DTools::DString::RemoveChars(NameContent,".");
-								if (NameWholeWord) {
-									// Ricerca parola intera
-									if (CaseSensitive) {
-										if (CurrPath.stem() != NameContent) {
-											Found=false;
+					if (NameContentList != nullptr) {
+						if (NameContentList->size() > 0) {
+							// Ricerca patterns all'interno del nome
+							if (FindAll) {
+								// Found rimane true solo se vengono trovati tutti i pattern
+								Found=true;
+								for (std::string NameContent : *NameContentList) {
+									DTools::DString::RemoveChars(NameContent,"*");
+									DTools::DString::RemoveChars(NameContent,".");
+									if (NameWholeWord) {
+										// Ricerca parola intera
+										if (CaseSensitive) {
+											if (CurrPath.stem() != NameContent) {
+												Found=false;
+											}
+										}
+										else {
+											if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),NameContent)) {
+												Found=false;
+											}
 										}
 									}
 									else {
-										if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),NameContent)) {
-											Found=false;
+										// Ricerca all'interno del nome file
+										if (CaseSensitive) {
+											if (CurrPath.stem().string().find(NameContent) == std::string::npos) {
+												Found=false;
+											}
+										}
+										else {
+											if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(NameContent)) == std::string::npos) {
+												Found=false;
+											}
 										}
 									}
 								}
-								else {
-									// Ricerca all'interno del nome file
-									if (CaseSensitive) {
-										if (CurrPath.stem().string().find(NameContent) == std::string::npos) {
-											Found=false;
+							}
+							else {
+								// Found diventa true al primo match
+								std::string CurrName=CurrPath.stem().string();
+								Found=false;
+								for (std::string NameContent : *NameContentList) {
+									DString::RemoveChars(NameContent,"*");
+									DString::RemoveChars(NameContent,".");
+									if (ExtWholeWord) {
+										// Ricerca parola intera
+										if (CaseSensitive) {
+											if (CurrName == NameContent) {
+												Found=true;
+												break;
+											}
+										}
+										else {
+											if (DTools::DString::CmpNoCase(CurrName,NameContent)) {
+												Found=true;
+												break;
+											}
 										}
 									}
 									else {
-										if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(NameContent)) == std::string::npos) {
-											Found=false;
+										// Ricerca all'interno dell'estensione
+										if (CaseSensitive) {
+											if (NameContent.find(CurrName) != std::string::npos) {
+												Found=true;
+												break;
+											}
+										}
+										else {
+											if (DTools::DString::ToUpperCopy(NameContent).find(DTools::DString::ToUpperCopy(CurrName)) != std::string::npos) {
+												Found=true;
+												break;
+											}
 										}
 									}
 								}
 							}
 						}
 						else {
-							// Found diventa true al primo match
-							std::string CurrName=CurrPath.stem().string();
-							Found=false;
-							for (std::string NameContent : *NameContentList) {
-								DString::RemoveChars(NameContent,"*");
-								DString::RemoveChars(NameContent,".");
-								if (ExtWholeWord) {
-									// Ricerca parola intera
-									if (CaseSensitive) {
-										if (CurrName == NameContent) {
-											Found=true;
-											break;
-										}
-									}
-									else {
-										if (DTools::DString::CmpNoCase(CurrName,NameContent)) {
-											Found=true;
-											break;
-										}
-									}
-								}
-								else {
-									// Ricerca all'interno dell'estensione
-									if (CaseSensitive) {
-										if (NameContent.find(CurrName) != std::string::npos) {
-											Found=true;
-											break;
-										}
-									}
-									else {
-										if (DTools::DString::ToUpperCopy(NameContent).find(DTools::DString::ToUpperCopy(CurrName)) != std::string::npos) {
-											Found=true;
-											break;
-										}
-									}
-								}
-							}
+							// Lista vuota
+							Found=true;
 						}
 					}
+					else {
+						// Lista null
+						Found=true;
+					}
 
-					if (ExtContentList != NULL) {
-						// Cerca il pattern nell'estensione
-						if (FindAll) {
-							// Found rimane true solo se vengono trovati tutti i pattern
-							for (std::string ExtContent : *ExtContentList) {
-								DString::RemoveChars(ExtContent,"*");
-								DString::RemoveChars(ExtContent,".");
-								if (NameWholeWord) {
-									// Ricerca parola intera
-									if (CaseSensitive) {
-										if (CurrPath.stem() != ExtContent) {
-											Found=false;
+					if (ExtContentList != nullptr) {
+						if (ExtContentList->size() > 0) {
+							// Cerca il pattern nell'estensione
+							if (FindAll) {
+								// Found rimane true solo se vengono trovati tutti i pattern
+								for (std::string ExtContent : *ExtContentList) {
+									DString::RemoveChars(ExtContent,"*");
+									DString::RemoveChars(ExtContent,".");
+									if (NameWholeWord) {
+										// Ricerca parola intera
+										if (CaseSensitive) {
+											if (CurrPath.stem() != ExtContent) {
+												Found=false;
+											}
+										}
+										else {
+											if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),ExtContent)) {
+												Found=false;
+											}
 										}
 									}
 									else {
-										if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),ExtContent)) {
-											Found=false;
+										// Ricerca all'interno del nome file
+										if (CaseSensitive) {
+											if (CurrPath.stem().string().find(ExtContent) == std::string::npos) {
+												Found=false;
+											}
+										}
+										else {
+											if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(ExtContent)) == std::string::npos) {
+												Found=false;
+											}
 										}
 									}
 								}
-								else {
-									// Ricerca all'interno del nome file
-									if (CaseSensitive) {
-										if (CurrPath.stem().string().find(ExtContent) == std::string::npos) {
-											Found=false;
+							}
+							else {
+								// Found diventa true al primo match
+								std::string CurrExt=CurrPath.extension().string();
+								DTools::DString::RemoveChars(CurrExt,".");
+								for (std::string ExtContent : *ExtContentList) {
+									DTools::DString::RemoveChars(ExtContent,"*");
+									DTools::DString::RemoveChars(ExtContent,".");
+									if (ExtWholeWord) {
+										// Ricerca parola intera
+										if (CaseSensitive) {
+											if (CurrExt == ExtContent) {
+												Found=true;
+												break;
+											}
+										}
+										else {
+											if (DTools::DString::CmpNoCase(CurrExt,ExtContent)) {
+												Found=true;
+												break;
+											}
 										}
 									}
 									else {
-										if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(ExtContent)) == std::string::npos) {
-											Found=false;
+										// Ricerca all'interno dell'estensione
+										if (CaseSensitive) {
+											if (ExtContent.find(CurrExt) != std::string::npos) {
+												Found=true;
+												break;
+											}
+										}
+										else {
+											if (DTools::DString::ToUpperCopy(ExtContent).find(DTools::DString::ToUpperCopy(CurrExt)) != std::string::npos) {
+												Found=true;
+												break;
+											}
 										}
 									}
 								}
 							}
 						}
 						else {
-							// Found diventa true al primo match
-							std::string CurrExt=CurrPath.extension().string();
-							DTools::DString::RemoveChars(CurrExt,".");
-							for (std::string ExtContent : *ExtContentList) {
-								DTools::DString::RemoveChars(ExtContent,"*");
-								DTools::DString::RemoveChars(ExtContent,".");
-								if (ExtWholeWord) {
-									// Ricerca parola intera
-									if (CaseSensitive) {
-										if (CurrExt == ExtContent) {
-											Found=true;
-											break;
-										}
-									}
-									else {
-										if (DTools::DString::CmpNoCase(CurrExt,ExtContent)) {
-											Found=true;
-											break;
-										}
-									}
-								}
-								else {
-									// Ricerca all'interno dell'estensione
-									if (CaseSensitive) {
-										if (ExtContent.find(CurrExt) != std::string::npos) {
-											Found=true;
-											break;
-										}
-									}
-									else {
-										if (DTools::DString::ToUpperCopy(ExtContent).find(DTools::DString::ToUpperCopy(CurrExt)) != std::string::npos) {
-											Found=true;
-											break;
-										}
-									}
-								}
-							}
+							// Lista vuota
+							Found=true;
 						}
+					}
+					else {
+						// Lista null
+						Found=true;
 					}
 
 					if (!Found) {
@@ -509,115 +568,9 @@ namespace DTools
 
 					// Trovato
 					Tot++;
-					if (Result != NULL) {
+					if (Result != nullptr) {
 						Result->push_back(CurrPath);
 					}
-
-
-/*
-					if (FindInName) {
-						// Ricerca patterns all'interno del nome
-						if (FindAll) {
-							// Found rimane true solo se vengono trovati tutti i pattern
-							for (std::string NameContent : *NameContentList) {
-								DString::RemoveChars(NameContent,"*");
-								DString::RemoveChars(NameContent,".");
-								if (NameWholeWord) {
-									// Ricerca parola intera
-									if (CurrPath.stem() != NameContent) {
-										Found=false;
-									}
-								}
-								else {
-									// Ricerca all'interno del nome file
-									if (CurrPath.stem().string().find(NameContent) == std::string::npos) {
-										Found=false;
-									}
-								}
-							}
-						}
-						else {
-							// Found diventa true al primo match
-							Found=false;
-							for (std::string NameContent : *NameContentList) {
-								DString::RemoveChars(NameContent,"*");
-								DString::RemoveChars(NameContent,".");
-								if (NameWholeWord) {
-									// Ricerca parola intera
-									if (CurrPath.stem() == NameContent) {
-										Found=true;
-										break;
-									}
-								}
-								else {
-									// Ricerca al''interno dell'estensione
-									if (CurrPath.stem().string().find(NameContent) != std::string::npos) {
-										Found=true;
-										break;
-									}
-								}
-							}
-						}
-					}
-
-					if (!Found) {
-						continue;
-					}
-
-					// Cerca il pattern nell'estensione
-					if (FindInExt) {
-						std::string CurrExt=CurrPath.extension().string();
-						DString::RemoveChars(CurrExt,".");
-						if (FindAll) {
-							// Found rimane true solo se vengono trovati tutti i pattern
-							for (std::string ExtContent : *ExtContentList) {
-								DString::RemoveChars(ExtContent,"*");
-								DString::RemoveChars(ExtContent,".");
-								if (ExtWholeWord) {
-									// Ricerca parola intera
-									if (CurrExt != ExtContent) {
-										Found=false;
-									}
-								}
-								else {
-									// Ricerca all'interno del nome file
-									if (CurrExt.find(ExtContent) == std::string::npos) {
-										Found=false;
-									}
-								}
-							}
-						}
-						else {
-							// Found diventa true al primo match
-							Found=false;
-							for (std::string ExtContent : *ExtContentList) {
-								DString::RemoveChars(ExtContent,"*");
-								DString::RemoveChars(ExtContent,".");
-								if (ExtWholeWord) {
-									// Ricerca parola intera
-									if (CurrExt == ExtContent) {
-										Found=true;
-										break;
-									}
-								}
-								else {
-									// Ricerca al''interno dell'estensione
-									if (CurrExt.find(ExtContent) != std::string::npos) {
-										Found=true;
-										break;
-									}
-								}
-							}
-						}
-					}
-
-					if (Found) {
-						Tot++;
-						if (Result != NULL) {
-							Result->push_back(iterator->path());
-						}
-					}
-*/
 				}
 			}
 			return(Tot);
@@ -627,7 +580,7 @@ namespace DTools
 		/**
 		* Ricerca tramite una stringa per nome e una stringa per l'estensione
 		*
-		* @param Result			->	Puntatore ad una array di path da popolare con i risultati, se NULL ritorna solo il conteggio
+		* @param Result			->	Puntatore ad una array di path da popolare con i risultati, se nullptr ritorna solo il conteggio
 		* @param PathToScan		->	Directory di partenza
 		* @param Recoursive		->	Se true va in ricorsione (solo se non è un ordine Prodig)
 		* @param NameContent	->	Stringa di ricerca per il nome, vuota equilave a tutto
@@ -655,9 +608,9 @@ namespace DTools
 		/**
 		* @param PathToScan		->	Directory di partenza
 		* @param Recoursive		->	Se true va in ricorsione (solo se non è un ordine Prodig)
-		* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), NULL o vuoto equivale a tutto
+		* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), nullptr o vuoto equivale a tutto
 		* @param NameWholeWord	->	Se true confronta la ricerca con l'intero nome
-		* @param ExtContentList	->	Puntatore ad un array di estensioni da cercare, NULL o vuoto equivale a tutto
+		* @param ExtContentList	->	Puntatore ad un array di estensioni da cercare, nullptr o vuoto equivale a tutto
 		*							N.B. Tutte le stringhe devo essere contenute nell'estensione
 		* @param ExtWholeWord	->	Se true confronta la ricerca con l'intera estensione
 		* @param FindAll			->	Se true esegue una ricerca di tipo AND: tutte le stringhe di @ref NameContent e @ExtContent devono essere trovate in ogni nome ed estensione
@@ -697,13 +650,13 @@ namespace DTools
 		/**
 		* Ricerca tramite una lista per nome e una lista per l'estensione
 		*
-		* @param Result				->	Puntatore ad una array di path da popolare con i risultati, se NULL ritorna solo il conteggio
+		* @param Result				->	Puntatore ad una array di path da popolare con i risultati, se nullptr ritorna solo il conteggio
 		* @param PathToScan			->	Directory di partenza
 		* @param Recoursive			->	Se true va in ricorsione (solo se non è un ordine Prodig)
-		* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), NULL o vuoto equivale a tutto
+		* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), nullptr o vuoto equivale a tutto
 		*								N.B. Tutte le stringhe devo essere contenute nel nome
 		* @param NameWholeWord		->	Se true confronta la ricerca con l'intero nome (Ignorato se @ref NameContentList contiene più di una stringa)
-		* @param ExtList			->	Puntatore ad un array di estensioni da cercare, NULL o vuoto equivale a tutto
+		* @param ExtList			->	Puntatore ad un array di estensioni da cercare, nullptr o vuoto equivale a tutto
 		*								N.B. Tutte le stringhe devo essere contenute nell'estensione
 		* @param ExtWholeWord		->	Se true confronta la ricerca con l'intera estensione (Ignorato se @ref ExtContentList contiene più di una stringa)
 		* @param CaseSensitive		->	Se true tiene conto di maiuscole e minuscole
@@ -734,157 +687,177 @@ namespace DTools
 					fs::path CurrPath=fs::absolute(iterator->path());
 					bool Found=false;
 
-					if (NameContentList != NULL) {
-						// Ricerca patterns all'interno del nome
-						if (FindAll) {
-							// Found rimane true solo se vengono trovati tutti i pattern
-							Found=true;
-							for (std::string NameContent : *NameContentList) {
-								DTools::DString::RemoveChars(NameContent,"*");
-								DTools::DString::RemoveChars(NameContent,".");
-								if (NameWholeWord) {
-									// Ricerca parola intera
-									if (CaseSensitive) {
-										if (CurrPath.stem() != NameContent) {
-											Found=false;
+					if (NameContentList != nullptr) {
+						if (NameContentList->size() > 0) {
+							// Ricerca patterns all'interno del nome
+							if (FindAll) {
+								// Found rimane true solo se vengono trovati tutti i pattern
+								Found=true;
+								for (std::string NameContent : *NameContentList) {
+									DTools::DString::RemoveChars(NameContent,"*");
+									DTools::DString::RemoveChars(NameContent,".");
+									if (NameWholeWord) {
+										// Ricerca parola intera
+										if (CaseSensitive) {
+											if (CurrPath.stem() != NameContent) {
+												Found=false;
+											}
+										}
+										else {
+											if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),NameContent)) {
+												Found=false;
+											}
 										}
 									}
 									else {
-										if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),NameContent)) {
-											Found=false;
+										// Ricerca all'interno del nome file
+										if (CaseSensitive) {
+											if (CurrPath.stem().string().find(NameContent) == std::string::npos) {
+												Found=false;
+											}
+										}
+										else {
+											if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(NameContent)) == std::string::npos) {
+												Found=false;
+											}
 										}
 									}
 								}
-								else {
-									// Ricerca all'interno del nome file
-									if (CaseSensitive) {
-										if (CurrPath.stem().string().find(NameContent) == std::string::npos) {
-											Found=false;
+							}
+							else {
+								// Found diventa true al primo match
+								std::string CurrName=CurrPath.stem().string();
+								Found=false;
+								for (std::string NameContent : *NameContentList) {
+									DString::RemoveChars(NameContent,"*");
+									DString::RemoveChars(NameContent,".");
+									if (ExtWholeWord) {
+										// Ricerca parola intera
+										if (CaseSensitive) {
+											if (CurrName == NameContent) {
+												Found=true;
+												break;
+											}
+										}
+										else {
+											if (DTools::DString::CmpNoCase(CurrName,NameContent)) {
+												Found=true;
+												break;
+											}
 										}
 									}
 									else {
-										if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(NameContent)) == std::string::npos) {
-											Found=false;
+										// Ricerca all'interno dell'estensione
+										if (CaseSensitive) {
+											if (NameContent.find(CurrName) != std::string::npos) {
+												Found=true;
+												break;
+											}
+										}
+										else {
+											if (DTools::DString::ToUpperCopy(NameContent).find(DTools::DString::ToUpperCopy(CurrName)) != std::string::npos) {
+												Found=true;
+												break;
+											}
 										}
 									}
 								}
 							}
 						}
 						else {
-							// Found diventa true al primo match
-							std::string CurrName=CurrPath.stem().string();
-							Found=false;
-							for (std::string NameContent : *NameContentList) {
-								DString::RemoveChars(NameContent,"*");
-								DString::RemoveChars(NameContent,".");
-								if (ExtWholeWord) {
-									// Ricerca parola intera
-									if (CaseSensitive) {
-										if (CurrName == NameContent) {
-											Found=true;
-											break;
-										}
-									}
-									else {
-										if (DTools::DString::CmpNoCase(CurrName,NameContent)) {
-											Found=true;
-											break;
-										}
-									}
-								}
-								else {
-									// Ricerca all'interno dell'estensione
-									if (CaseSensitive) {
-										if (NameContent.find(CurrName) != std::string::npos) {
-											Found=true;
-											break;
-										}
-									}
-									else {
-										if (DTools::DString::ToUpperCopy(NameContent).find(DTools::DString::ToUpperCopy(CurrName)) != std::string::npos) {
-											Found=true;
-											break;
-										}
-									}
-								}
-							}
+							// Lista vuota
+							Found=true;
 						}
 					}
+					else {
+						// Lista null
+						Found=true;
+					}
 
-					if (ExtContentList != NULL) {
-						// Cerca il pattern nell'estensione
-						if (FindAll) {
-							// Found rimane true solo se vengono trovati tutti i pattern
-							for (std::string ExtContent : *ExtContentList) {
-								DString::RemoveChars(ExtContent,"*");
-								DString::RemoveChars(ExtContent,".");
-								if (NameWholeWord) {
-									// Ricerca parola intera
-									if (CaseSensitive) {
-										if (CurrPath.stem() != ExtContent) {
-											Found=false;
+					if (ExtContentList != nullptr) {
+						if (ExtContentList->size() > 0) {
+							// Cerca il pattern nell'estensione
+							if (FindAll) {
+								// Found rimane true solo se vengono trovati tutti i pattern
+								for (std::string ExtContent : *ExtContentList) {
+									DString::RemoveChars(ExtContent,"*");
+									DString::RemoveChars(ExtContent,".");
+									if (NameWholeWord) {
+										// Ricerca parola intera
+										if (CaseSensitive) {
+											if (CurrPath.stem() != ExtContent) {
+												Found=false;
+											}
+										}
+										else {
+											if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),ExtContent)) {
+												Found=false;
+											}
 										}
 									}
 									else {
-										if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),ExtContent)) {
-											Found=false;
+										// Ricerca all'interno del nome file
+										if (CaseSensitive) {
+											if (CurrPath.stem().string().find(ExtContent) == std::string::npos) {
+												Found=false;
+											}
+										}
+										else {
+											if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(ExtContent)) == std::string::npos) {
+												Found=false;
+											}
 										}
 									}
 								}
-								else {
-									// Ricerca all'interno del nome file
-									if (CaseSensitive) {
-										if (CurrPath.stem().string().find(ExtContent) == std::string::npos) {
-											Found=false;
+							}
+							else {
+								// Found diventa true al primo match
+								std::string CurrExt=CurrPath.extension().string();
+								DTools::DString::RemoveChars(CurrExt,".");
+								for (std::string ExtContent : *ExtContentList) {
+									DTools::DString::RemoveChars(ExtContent,"*");
+									DTools::DString::RemoveChars(ExtContent,".");
+									if (ExtWholeWord) {
+										// Ricerca parola intera
+										if (CaseSensitive) {
+											if (CurrExt == ExtContent) {
+												Found=true;
+												break;
+											}
+										}
+										else {
+											if (DTools::DString::CmpNoCase(CurrExt,ExtContent)) {
+												Found=true;
+												break;
+											}
 										}
 									}
 									else {
-										if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(ExtContent)) == std::string::npos) {
-											Found=false;
+										// Ricerca all'interno dell'estensione
+										if (CaseSensitive) {
+											if (ExtContent.find(CurrExt) != std::string::npos) {
+												Found=true;
+												break;
+											}
+										}
+										else {
+											if (DTools::DString::ToUpperCopy(ExtContent).find(DTools::DString::ToUpperCopy(CurrExt)) != std::string::npos) {
+												Found=true;
+												break;
+											}
 										}
 									}
 								}
 							}
 						}
 						else {
-							// Found diventa true al primo match
-							std::string CurrExt=CurrPath.extension().string();
-							DTools::DString::RemoveChars(CurrExt,".");
-							for (std::string ExtContent : *ExtContentList) {
-								DTools::DString::RemoveChars(ExtContent,"*");
-								DTools::DString::RemoveChars(ExtContent,".");
-								if (ExtWholeWord) {
-									// Ricerca parola intera
-									if (CaseSensitive) {
-										if (CurrExt == ExtContent) {
-											Found=true;
-											break;
-										}
-									}
-									else {
-										if (DTools::DString::CmpNoCase(CurrExt,ExtContent)) {
-											Found=true;
-											break;
-										}
-									}
-								}
-								else {
-									// Ricerca all'interno dell'estensione
-									if (CaseSensitive) {
-										if (ExtContent.find(CurrExt) != std::string::npos) {
-											Found=true;
-											break;
-										}
-									}
-									else {
-										if (DTools::DString::ToUpperCopy(ExtContent).find(DTools::DString::ToUpperCopy(CurrExt)) != std::string::npos) {
-											Found=true;
-											break;
-										}
-									}
-								}
-							}
+							// Lista vuota
+							Found=true;
 						}
+					}
+					else {
+						// Lista null
+						Found=true;
 					}
 
 					if (!Found) {
@@ -893,125 +866,9 @@ namespace DTools
 
 					// Trovato
 					Tot++;
-					if (Result != NULL) {
+					if (Result != nullptr) {
 						Result->push_back(CurrPath);
 					}
-/*
-					// Cerca il pattern nel nome
-					bool Found=true;
-					// Directory attuale
-					fs::path CurrPath;
-					if (!CaseSensitive) {
-						// Ingnora case
-						CurrPath=DString::ToUpperCopy(iterator->path().string());
-					}
-					else {
-						CurrPath=iterator->path();
-					}
-
-					if (FindInName) {
-						// Ricerca patterns all'interno del nome
-						if (FindAll) {
-							// Found rimane true solo se vengono trovati tutti i pattern
-							for (std::string NameContent : *NameContentList) {
-								DString::RemoveChars(NameContent,"*");
-								DString::RemoveChars(NameContent,".");
-								if (NameWholeWord) {
-									// Ricerca parola intera
-									if (CurrPath.stem() != NameContent) {
-										Found=false;
-									}
-								}
-								else {
-									// Ricerca all'interno del nome file
-									if (CurrPath.stem().string().find(NameContent) == std::string::npos) {
-										Found=false;
-									}
-								}
-							}
-						}
-						else {
-							// Found diventa true al primo match
-							Found=false;
-							for (std::string NameContent : *NameContentList) {
-								DString::RemoveChars(NameContent,"*");
-								DString::RemoveChars(NameContent,".");
-								if (NameWholeWord) {
-									// Ricerca parola intera
-									if (CurrPath.stem() == NameContent) {
-										Found=true;
-										break;
-									}
-								}
-								else {
-									// Ricerca al''interno dell'estensione
-									if (CurrPath.stem().string().find(NameContent) != std::string::npos) {
-										Found=true;
-										break;
-									}
-								}
-							}
-						}
-					}
-
-					if (!Found) {
-						continue;
-					}
-
-					// Cerca il pattern nell'estensione
-					if (FindInExt) {
-						std::string CurrExt=CurrPath.extension().string();
-						DString::RemoveChars(CurrExt,".");
-						if (FindAll) {
-							// Found rimane true solo se vengono trovati tutti i pattern
-							for (std::string ExtContent : *ExtContentList) {
-								DString::RemoveChars(ExtContent,"*");
-								DString::RemoveChars(ExtContent,".");
-								if (ExtWholeWord) {
-									// Ricerca parola intera
-									if (CurrExt != ExtContent) {
-										Found=false;
-									}
-								}
-								else {
-									// Ricerca all'interno dell'estensione
-									if (CurrExt.find(ExtContent) == std::string::npos) {
-										Found=false;
-									}
-								}
-							}
-						}
-						else {
-							// Found diventa true al primo match
-							Found=false;
-							for (std::string ExtContent : *ExtContentList) {
-								DString::RemoveChars(ExtContent,"*");
-								DString::RemoveChars(ExtContent,".");
-								if (ExtWholeWord) {
-									// Ricerca parola intera
-									if (CurrExt == ExtContent) {
-										Found=true;
-										break;
-									}
-								}
-								else {
-									// Ricerca al''interno dell'estensione
-									if (CurrExt.find(ExtContent) != std::string::npos) {
-										Found=true;
-										break;
-									}
-								}
-							}
-						}
-					}
-
-					if (Found) {
-						Tot++;
-						if (Result != NULL) {
-							Result->push_back(iterator->path());
-						}
-					}
-*/
 				}
 			}
 			return(Tot);
@@ -1021,7 +878,7 @@ namespace DTools
 		/**
 		* Ricerca tramite una stringa per nome e una stringa per l'estensione
 		*
-		* @param Result			->	Puntatore ad una array di path da popolare con i risultati, se NULL ritorna solo il conteggio
+		* @param Result			->	Puntatore ad una array di path da popolare con i risultati, se nullptr ritorna solo il conteggio
 		* @param PathToScan		->	Directory di partenza
 		* @param Recoursive		->	Se true va in ricorsione (solo se non è un ordine Prodig)
 		* @param NameContent	->	Stringa di ricerca per il nome, vuota equilave a tutto
@@ -1050,10 +907,10 @@ namespace DTools
 		*
 		* @param PathToScan		->	Directory di partenza
 		* @param Recoursive			->	Se true va in ricorsione (solo se non è un ordine Prodig)
-		* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), NULL o vuoto equivale a tutto
+		* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), nullptr o vuoto equivale a tutto
 		*								N.B. Tutte le stringhe devo essere contenute nel nome
 		* @param NameWholeWord		->	Se true confronta la ricerca con l'intero nome (Ignorato se @ref NameContentList contiene più di una stringa)
-		* @param ExtList			->	Puntatore ad un array di estensioni da cercare, NULL o vuoto equivale a tutto
+		* @param ExtList			->	Puntatore ad un array di estensioni da cercare, nullptr o vuoto equivale a tutto
 		*								N.B. Tutte le stringhe devo essere contenute nell'estensione
 		* @param ExtWholeWord		->	Se true confronta la ricerca con l'intera estensione (Ignorato se @ref ExtContentList contiene più di una stringa)
 		* @param FindAll			->	Se true esegue una ricerca di tipo AND: tutte le stringhe di @ref NameContent e @ExtContent devono essere trovate in ogni nome ed estensione

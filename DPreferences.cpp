@@ -1,3 +1,4 @@
+#define BOOST_BIND_GLOBAL_PLACEHOLDERS
 #include "DPreferences.h"
 #include "DFilesystem.h"
 #include <boost/property_tree/json_parser.hpp>
