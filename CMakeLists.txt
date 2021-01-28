@@ -1,14 +1,13 @@
 cmake_minimum_required(VERSION 3.8)
 
 # Use this snippet *after* PROJECT(xxx):
-  SET(CMAKE_INSTALL_PREFIX "E:/Programming/Lib/cpp/libdpp/install" CACHE PATH "cambiato" FORCE)
+  #SET(CMAKE_INSTALL_PREFIX "E:/Programming/Lib/cpp/libdpp/install" CACHE PATH "cambiato" FORCE)
 
 project(libdpp
-        VERSION 0.2.0.2
+        VERSION 0.2.1.2
         DESCRIPTION "Cpp extension library for boost, beast, asio"
         LANGUAGES CXX
 )
-
 
 message(">> CMake version: ${CMAKE_VERSION}")
 message(">> gcc c++ version: ${CMAKE_CXX_COMPILER_VERSION}")
@@ -66,6 +65,30 @@ endif()
 #    CXX_EXTENSIONS NO
 #    )
 
-include(cmake/install.cmake)
+# Testing
+if (BUILD_TESTS)
+  message(">> Configuring tests")
+  enable_testing()
+  #find_package(GTest REQUIRED)
+  #include_directories(${GTEST_INCLUDE_DIR})
+  #add_subdirectory(deps/googletest)
+  #add_subdirectory(test)
+  # FetchContent added in CMake 3.11, downloads during the configure step
+  # FetchContent_MakeAvailable was not added until CMake 3.14
+  include(FetchContent)
 
+  FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    )
+  FetchContent_MakeAvailable(googletest)
+
+  FetchContent_GetProperties(googletest)
+  if(NOT googletest_POPULATED)
+    FetchContent_Populate(googletest)
+    add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
+  endif()
+endif()
+
+#include(cmake/install.cmake)
 message("CMAKE_INSTALL_PREFIX=" ${CMAKE_INSTALL_PREFIX})
