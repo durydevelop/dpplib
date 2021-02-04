@@ -2,8 +2,8 @@
 
 #include <string>
 #include <regex>
-#include <sstream>
-#include <iostream>
+//#include <sstream>
+//#include <iostream>
 
 namespace DTools {
 namespace DNetwork {
@@ -16,11 +16,9 @@ DUri::DUri (std::string Uri)
 bool DUri::Set(std::string Uri)
 {
     UriString=Uri;
+    Valid=false;
     if (!UriString.empty()) {
-        Parse();
-    }
-    else {
-        Valid=false;
+        Valid=Parse();
     }
     return(Valid);
 }
@@ -39,22 +37,20 @@ void DUri::Clear(void)
     Port.clear();
 }
 
-void DUri::Parse()
+bool DUri::Parse()
 {
-    Valid=false;
     std::cmatch MatchUri;
     std::cmatch MatchAuthority;
-    if (!std::regex_match(UriString.c_str(), MatchUri, std::regex(RFC2396_REGEX))) {
-        std::cerr << "Wrong Uri format" << std::endl;
-        return;
+    // Validate Uri
+    if (!std::regex_match(UriString.c_str(), MatchUri, std::regex(URI_VALIDATE_REGEX))) {
+        Error("Wrong Uri format");
+        return false;
     }
-/*
-    // Print regex matches
-    std::cout << "Uri:" << std::endl;
-    for (size_t rX=0; rX < MatchUri.size(); rX++) {
-      std::cout << "Match" << rX << " " << std::string(MatchUri[rX].first, MatchUri[rX].second) << std::endl;
+    // Split Uri
+    if (!std::regex_match(UriString.c_str(), MatchUri, std::regex(RFC2396_SPLIT_REGEX))) {
+        Error("Uri can not be splitted");
+        return false;
     }
-*/
     // Uri parts
     Scheme.assign(MatchUri[MATCH_URI_SCHEME].first, MatchUri[MATCH_URI_SCHEME].second);
     Authority=std::string(MatchUri[MATCH_URI_AUTHORITY].first, MatchUri[MATCH_URI_AUTHORITY].second);
@@ -65,17 +61,11 @@ void DUri::Parse()
 
     if (!Authority.empty()) {
         // Authority present
-        if (!std::regex_match(Authority.c_str(), MatchAuthority, std::regex(AUTHORITY_REGEX))) {
-            std::cerr << "Wrong Authority format" << std::endl;
-            return;
+        if (!std::regex_match(Authority.c_str(), MatchAuthority, std::regex(AUTHORITY_SPLIT_REGEX))) {
+            Error("Wrong Authority format");
+            return false;
         }
-/*
-        // Print regex matches
-        std::cout << "Authority:" << std::endl;
-        for (size_t rX=0; rX < MatchAuthority.size(); rX++) {
-            std::cout << "Match" << rX << " " << std::string(MatchAuthority[rX].first, MatchAuthority[rX].second) << std::endl;
-        }
-*/
+
         // Authority parts
         User.assign(MatchAuthority[MATCH_AUTH_USER].first, MatchAuthority[MATCH_AUTH_USER].second);
         Pwd.assign(MatchAuthority[MATCH_AUTH_PWD].first, MatchAuthority[MATCH_AUTH_PWD].second);
@@ -99,7 +89,7 @@ void DUri::Parse()
             if (Scheme == "ldaps")      Port="636";
         }
     }
-    Valid=true;
+    return true;
 }
 
 bool DUri::IsValid(void)
@@ -187,5 +177,39 @@ std::string DUri::decode(const std::string& EncodedUri)
     return DecodedUri;
 }
 
+// ****************************  Log/error functions *************************************
+/**
+* @brief Set LastStrStatus and make log callback.
+* @param LogMsg	->  Message to log.
+*
+* N.B. If LogMsg is empty, callback with LastStrStatus is performed.
+**/
+void DUri::Log(std::string LogMsg)
+{
+	if (!LogMsg.empty()) {
+		LastStrStatus="INFO: "+LogMsg;
+	}
 }
+
+/**
+* @brief Set LastStrStatus and make error callback.
+* @param ErrorMsg	->  Error message.
+*
+* N.B. If LogMsg is empty, callback with LastStrStatus is performed.
+**/
+void DUri::Error(std::string ErrorMsg)
+{
+	if (!ErrorMsg.empty()) {
+		LastStrStatus="ERROR: "+ErrorMsg;
+	}
 }
+
+//! @return LastStrStatus string.
+std::string DUri::GetLastStatus(void)
+{
+	return(LastStrStatus);
+}
+// ***************************************************************************************
+
+} // DTools
+} // DNetwork

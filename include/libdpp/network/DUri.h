@@ -80,8 +80,10 @@ namespace DNetwork {
 
 class DUri {
     private:
-        const std::string RFC2396_REGEX=R"(^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?)";
-        const std::string AUTHORITY_REGEX=R"((?:([^@:]*)(?::([^@]*))?@)?(\[[^\]]*\]|[^\[:]*)(?::(\d*))?)";
+        const std::string URI_VALIDATE_REGEX=R"([a-z][a-z0-9+.-]*:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()!@:%_\+.~#?&\/\/=]*))";
+        const std::string URL_VALIDATE_REGEX=R"(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()!@:%_\+.~#?&\/\/=]*))";
+        const std::string RFC2396_SPLIT_REGEX=R"(^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?)";
+        const std::string AUTHORITY_SPLIT_REGEX=R"((?:([^@:]*)(?::([^@]*))?@)?(\[[^\]]*\]|[^\[:]*)(?::(\d*))?)";
         /*
               "(?:([^@:]*)(?::([^@]*))?@)?" // username, password
               "(\\[[^\\]]*\\]|[^\\[:]*)" // host (IP-literal (e.g. '['+IPv6+']',
@@ -104,6 +106,11 @@ class DUri {
         };
 
         bool Valid;
+        std::string LastStrStatus;
+
+        bool Parse(void);
+        void Log(std::string LogMsg);
+        void Error(std::string ErrorMsg);
 
     public:
 
@@ -124,7 +131,6 @@ class DUri {
         DUri (std::string Uri = std::string());
         bool Set(std::string Uri);
         void Clear(void);
-        void Parse(void);
         bool IsValid(void);
         std::string PrintUriParts(void);
         static std::string EncodeUserInfo(const std::string& UserInfoStr);
@@ -134,6 +140,7 @@ class DUri {
         static std::string EncodeFragment(const std::string& FragmentStr);
         static std::string Encode(std::string Uri, std::string Ignore = std::string());
         static std::string decode(const std::string& EncodedUri);
+        std::string GetLastStatus(void);
 
 };
 

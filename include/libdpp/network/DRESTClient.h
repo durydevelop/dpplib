@@ -85,7 +85,7 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
         enum DHttpVersion {HTTP_1_0 =   10,
                            HTTP_1_1 =   11
         };
-        enum DContentType {CONTENT_TYPE_NONE, CONTENT_TYPE_TEXT_PLAIN, CONTENT_TYPE_URL_ENCODED};
+        enum DContentType {CONTENT_TYPE_TEXT_PLAIN, CONTENT_TYPE_URL_ENCODED, CONTENT_TYPE_NONE, CONTENT_TYPE_CUSTOM};
         enum DEncodeType  {ENCODE_USER_INFO, ENCODE_HOST, ENCODE_PATH, ENCODE_QUERY, ENCODE_FRAGMENT, ENCODE_ALL, ENCODE_NONE};
         // Redefined types
         typedef boost::beast::http::response<boost::beast::http::string_body> DHttpResponse;
@@ -101,21 +101,25 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
         explicit DRESTClient(boost::asio::io_context& ioc);
         void SetTimeout(uint8_t Sec);
         uint8_t GetTimeout(void);
-        void SetUrl(const std::string Url);
+        bool SetUrl(const std::string Url);
         void SetHttpVersion(DHttpVersion dHttpVersion);
+        void SetHttpVersion(std::string HttpVersionString);
         void SetContentType(DContentType dContentType);
+        void SetContentType(std::string ContentTypeString);
         void SetEncodeType(DEncodeType dEncodeType);
         void SetKeepAlive(bool Enable);
         DEncodeType GetEncodeType(void);
-        DContentType GetContentType(void);
+        std::string GetContentTypeStr(void);
         DHttpRequest GetHttpRequest(DRequestType dRequestType);
         bool GetKeepAlive(void);
         void SetReqHdrBodyParams(std::map<std::string,std::string> Params);
         void SetReqBodyParams(std::map<std::string,std::string> Params);
+        void SetHdrBody(std::string HdrBodyStr);
+        void SetBody(std::string BodyStr);
         void AddReqHdrBodyParam(std::string Key, std::string Value);
         void AddReqBodyParam(std::string Key, std::string Value);
-        void ClearHrdBodyParams(void);
-        void ClearBodyParams(void);
+        void ClearHrdBody(void);
+        void ClearBody(void);
         void Clear(void);
         DUri& GetUri(void);
         bool Connect(bool Force = false);
@@ -151,7 +155,8 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
         uint8_t TimeoutSec;
         std::string UserAgent;
         DHttpVersion HttpVersion;
-        DContentType ContentType;
+        //DContentType ContentType;
+        std::string ContentTypeStr;
         DEncodeType EncodeType;
         bool KeepAlive;
         DUri dUri;
@@ -160,6 +165,8 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
         DHttpResponse HttpResponse;
         std::map<std::string,std::string> HttpReqHdrBodyParams;
         std::map<std::string,std::string> HttpReqBodyParams;
+        std::string HdrBody;
+        std::string Body;
 
     private:
         struct DContent {
@@ -167,9 +174,10 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
                 std::string Verb;
         };
         inline static const struct DContent DContents[] = {
-            {   CONTENT_TYPE_NONE           ,   ""                                  },
             {   CONTENT_TYPE_TEXT_PLAIN     ,   "text/plain"                        },
             {   CONTENT_TYPE_URL_ENCODED    ,   "application/x-www-form-urlencoded" },
+            {   CONTENT_TYPE_NONE           ,   ""                                  },
+            {   CONTENT_TYPE_CUSTOM         ,   ""                                  },
         };
 
     // Callback Stuffs

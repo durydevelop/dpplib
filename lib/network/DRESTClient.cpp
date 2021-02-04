@@ -5,14 +5,13 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-#include <iostream>
+//#include <iostream>
 
 namespace asio  =   boost::asio;
 namespace beast =   boost::beast;
 namespace http  =   beast::http;
 namespace pt    =   boost::property_tree;
 using     tcp   =   boost::asio::ip::tcp;
-
 
 #define DEFAULT_HTTP_VERSION HTTP_1_1
 #define DEFAULT_CONTENT_TYPE CONTENT_TYPE_NONE
@@ -21,7 +20,7 @@ using     tcp   =   boost::asio::ip::tcp;
 #define DEFAULT_USER_AGENT "DRESTClient/0.1"
 //#define DEFAULT_USER_AGENT BOOST_BEAST_VERSION_STRING
 
-#define DEBUG
+//#define DEBUG
 
 namespace DTools {
 namespace DNetwork {
@@ -38,18 +37,28 @@ DRESTClient::DRESTClient(boost::asio::io_context& io_context) :
     TimeoutSec=DEFAULT_TIMEOUT_SEC;
     UserAgent=DEFAULT_USER_AGENT;
     HttpVersion=DEFAULT_HTTP_VERSION;
-    ContentType=DEFAULT_CONTENT_TYPE;
+    ContentTypeStr=DContents[DEFAULT_CONTENT_TYPE].Verb;
     EncodeType=DEFAULT_ENCODE;
     KeepAlive=true;
 }
 
 /**
  * @brief Set version of http protocol.
- * @param Version   ->  Can be HTTP_1_0 or HTTP_1_1 (default HTTP_1_1).
+ * @param dHttpVersion   ->  Can be HTTP_1_0 or HTTP_1_1.
  */
 void DRESTClient::SetHttpVersion(DRESTClient::DHttpVersion dHttpVersion)
 {
     HttpVersion=dHttpVersion;
+}
+
+/**
+ * @brief Set version of http protocol directly as string.
+ * @param HttpVersionString   ->  Version string, can be "1.0" or "1.1".
+ * N.B. If HttpVersionString is not "1.0" HTTP_1_1 is set.
+ */
+void DRESTClient::SetHttpVersion(std::string HttpVersionString)
+{
+    HttpVersion=HttpVersionString == "1.0" ? HTTP_1_0 : HTTP_1_1;
 }
 
 /**
@@ -58,7 +67,16 @@ void DRESTClient::SetHttpVersion(DRESTClient::DHttpVersion dHttpVersion)
  */
 void DRESTClient::SetContentType(DRESTClient::DContentType dContentType)
 {
-    ContentType=dContentType;
+    ContentTypeStr=DContents[dContentType].Verb;
+}
+
+/**
+ * @brief Set content-type header field directly as string.
+ * @param ContentTypeStr  ->  Sting containing a valid http content type.
+ */
+void DRESTClient::SetContentType(std::string ContentTypeString)
+{
+    ContentTypeStr=ContentTypeString;
 }
 
 /**
@@ -80,16 +98,21 @@ void DRESTClient::SetTimeout(uint8_t Sec)
 }
 
 /**
- * @brief Set client request url
- * @param Url   ->  REST service url
+ * @brief Set client request url.
+ * @param Url   ->  REST service url.
+ * @return false if url is not valid, otherwise true.
  */
-void DRESTClient::SetUrl(const std::string Url)
+bool DRESTClient::SetUrl(const std::string Url)
 {
-    dUri.Set(Url);
+    if (!dUri.Set(Url)) {
+        LastStrStatus=dUri.GetLastStatus();
+        return false;
+    }
+    return true;
 }
 
 /**
- * @brief Set keep-alive option in request
+ * @brief Set keep-alive option in request.
  * @param Enabled   ->  It true "in http header "Connection: keep-alive" is add to header.
  */
 void DRESTClient::SetKeepAlive(bool Enabled)
@@ -116,6 +139,24 @@ void DRESTClient::SetReqBodyParams(std::map<std::string,std::string> Params)
 }
 
 /**
+ * @brief Fill header body with a string.
+ * @param BodyStr   ->  Header body content as string.
+ */
+void DRESTClient::SetHdrBody(std::string HdrBodyStr)
+{
+    HdrBody.assign(HdrBodyStr);
+}
+
+/**
+ * @brief Fill body with a string.
+ * @param BodyStr   ->  Header body content as string.
+ */
+void DRESTClient::SetBody(std::string BodyStr)
+{
+    Body.assign(BodyStr);
+}
+
+/**
  * @brief Add key=value param to body field of header.
  * @param Key   ->  Key string.
  * @param Value ->  Value string.
@@ -138,17 +179,19 @@ void DRESTClient::AddReqBodyParam(std::string Key, std::string Value)
 /**
  * @brief Clear body section in header.
  */
-void DRESTClient::ClearHrdBodyParams(void)
+void DRESTClient::ClearHrdBody(void)
 {
     HttpReqHdrBodyParams.clear();
+    HdrBody.clear();
 }
 
 /**
  * @brief Clear request body.
  */
-void DRESTClient::ClearBodyParams(void)
+void DRESTClient::ClearBody(void)
 {
     HttpReqBodyParams.clear();
+    Body.clear();
 }
 
 /**
@@ -163,12 +206,14 @@ void DRESTClient::Clear(void)
     dUri.Clear();
     HttpReqHdrBodyParams.clear();
     HttpReqBodyParams.clear();
+    HdrBody.clear();
+    Body.clear();
     Connected=false;
     DisconnectAfter=false;
     TimeoutSec=DEFAULT_TIMEOUT_SEC;
     UserAgent=DEFAULT_USER_AGENT;
     HttpVersion=DEFAULT_HTTP_VERSION;
-    ContentType=DEFAULT_CONTENT_TYPE;
+    ContentTypeStr=DContents[DEFAULT_CONTENT_TYPE].Verb;
     EncodeType=DEFAULT_ENCODE;
 }
 
@@ -191,9 +236,9 @@ DRESTClient::DEncodeType DRESTClient::GetEncodeType(void)
 /**
  * @return current content-type as DContentType
  */
-DRESTClient::DContentType DRESTClient::GetContentType(void)
+std::string DRESTClient::GetContentTypeStr(void)
 {
-    return(ContentType);
+    return(ContentTypeStr);
 }
 
 /**
@@ -364,7 +409,7 @@ size_t DRESTClient::Encode(std::string& Content, std::string& ResultStr, DEncode
         case ENCODE_NONE:
             break;
         default:
-            std::cerr << "EncodeType not supported" << std::endl;
+            Error("EncodeType not supported");
     }
     return(ResultStr.size());
 }
@@ -391,42 +436,34 @@ std::string DRESTClient::Encode(std::string& Content, DEncodeType dEncodeType)
 bool DRESTClient::Connect(bool Force)
 {
     if (Connected && !Force) {
-        std::cerr << "Already connected" << std::endl;
+        Error("Already connected");
         return false;
     }
     else if (dUri.Host.empty()) {
-        std::cerr << "Missing host in url";
+        Error("Missing host in url");
         return false;
     }
     else if (dUri.Port.empty()) {
-        std::cerr << "Missing port in url";
+        Error("Missing port in url");
         return false;
     }
 
     Connected=false;
 
     beast::error_code ec;
-    // Print Resolver info
-    boost::asio::ip::tcp::resolver::iterator iter = TcpResolver.resolve(dUri.Host,dUri.Port,ec);
-    boost::asio::ip::tcp::resolver::iterator end;
-    while (iter != end) {
-        boost::asio::ip::tcp::endpoint endpoint = *iter++;
-        std::cout << endpoint << std::endl;
-    }
     // Sync resolve
     asio::ip::tcp::resolver::results_type results=TcpResolver.resolve(dUri.Host,dUri.Port,ec);
     if (ec) {
-        std::cerr << "error resolve" << ": " << ec.message() << "\n";
+        Error("Error resolve: "+ec.message());
         return false;
     }
     // Sync connect
     TcpStream.expires_after(std::chrono::seconds(TimeoutSec));
     TcpStream.connect(results,ec);
     if (ec) {
-        std::cerr << "error connect" << ": " << ec.value() << ": " << ec.message() << "\n";
+        Error("Error connect: "+ec.message());
         return false;
     }
-    std::cout << "Connected" << std::endl;
     Connected=true;
     return true;
 }
@@ -438,15 +475,15 @@ bool DRESTClient::Connect(bool Force)
 void DRESTClient::AsyncConnect(bool Force)
 {
     if (Connected && !Force) {
-        std::cerr << "Already connected" << std::endl;
+        Error("Already connected");
         return;
     }
     else if (dUri.Host.empty()) {
-        std::cerr << "Missing host in url";
+        Error("Missing host in url");
         return;
     }
     else if (dUri.Port.empty()) {
-        std::cerr << "Missing port in url";
+        Error("Missing port in url");
         return;
     }
 
@@ -454,13 +491,13 @@ void DRESTClient::AsyncConnect(bool Force)
     // Async resolve
     TcpResolver.async_resolve(dUri.Host,dUri.Port, [this] (boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results) {
         if (ec) {
-            std::cerr << "resolve" << ": " << ec.message() << "\n";
+            Error("Error resolve: "+ec.message());
         }
         // Async connect
         TcpStream.expires_after(std::chrono::seconds(30));
         TcpStream.async_connect(results,[this](boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type::endpoint_type) {
             if (ec) {
-                std::cerr << "connect" << ": " << ec.message() << "\n";
+                Error("Error connect: "+ec.message());
             }
             Connected=true;
         });
@@ -483,10 +520,10 @@ bool DRESTClient::Disconnect(bool Force)
     TcpStream.socket().shutdown(tcp::socket::shutdown_both, ec);
 
     if (ec && ec != beast::errc::not_connected) {
-        std::cerr << "error shutdown" << ": " << ec.message() << "\n";
+        Error("Error shutdown: "+ec.message());
         return false;
     }
-    std::cout << "Disconnected" << std::endl;
+    Error("Disconnected");
     Connected=false;
     return true;
 }
@@ -514,14 +551,20 @@ void DRESTClient::PrepareHttpRequest(DRESTClient::DRequestType dReqestType)
     // Keep alive
     HttpRequest.keep_alive(KeepAlive);
     // Content type
-    HttpRequest.set(http::field::content_type,DContents[ContentType].Verb);
+    HttpRequest.set(http::field::content_type,ContentTypeStr);
     // Header body
     if (HttpReqHdrBodyParams.size() > 0) {
         HttpRequest.set(http::field::body,GetReqHdrBodyAsString(EncodeType));
     }
+    else if (!HdrBody.empty()) {
+        HttpRequest.set(http::field::body,HdrBody);
+    }
     // Body
     if (HttpReqBodyParams.size() > 0) {
         HttpRequest.body()=GetReqBodyAsString(EncodeType);
+    }
+    else if (!Body.empty()) {
+        HttpRequest.body()=Body;
     }
     // Build request
     HttpRequest.prepare_payload();
@@ -559,12 +602,12 @@ void DRESTClient::Send(void)
     if (!Connected) {
         if (!Connect()) {
             DisconnectAfter=true;
-            std::cerr << "Connection failed" << std::endl;
+            Error("Connection failed:");
             return;
         }
     }
     else if (dUri.Host.empty()) {
-        std::cerr << "Missing host in url";
+        Error("Missing host in url");
         return;
     }
 
@@ -598,7 +641,7 @@ void DRESTClient::OnWrite(boost::beast::error_code ec, std::size_t bytes_transfe
 {
     boost::ignore_unused(bytes_transferred);
     if (ec) {
-        std::cerr << "write" << ": " << ec.message() << "\n";
+        Error("Error write: "+ec.message());
         return;
     }
     AsyncRead();
@@ -623,7 +666,7 @@ void DRESTClient::OnRead(boost::beast::error_code ec, std::size_t bytes_transfer
 {
     boost::ignore_unused(bytes_transferred);
     if (ec) {
-        std::cerr << "read" << ": " << ec.message() << "\n";
+        Error("Error read: "+ec.message());
     }
 
     //std::cout << std::endl << "HttpResponse:" << std::endl;
@@ -778,26 +821,6 @@ std::string DRESTClient::GetLastStatus(void)
 	return(LastStrStatus);
 }
 // ***************************************************************************************
-
-/*
-void RESTClient::createGetRequest(char const* host, char const* target, int version) {
-    m_httpRequest.version(version);
-    m_httpRequest.method(http::verb::get);
-    m_httpRequest.target(target);
-    m_httpRequest.set(http::field::host, host);
-    m_httpRequest.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-}
-
-
-std::string RESTClient::createBody() {
-    pt::ptree tree;
-    pt::json_parser::read_json("test.json",tree);
-    std::basic_stringstream<char> jsonStream;
-    pt::json_parser::write_json(jsonStream, tree, false);
-    std::cout << "json stream :" << jsonStream.str() << std::endl;
-    return jsonStream.str();
-}
-*/
 
 } // DNetwork
 } // DTools
