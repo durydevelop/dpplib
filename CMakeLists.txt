@@ -44,7 +44,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Create Target
 add_subdirectory(lib)
 add_subdirectory(include)
-if (BUILD_EXAMPLES)
+if (${PROJECT_NAME}_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
 message(${DSTATUS} "Build examples: " ${BUILD_EXAMPLES})
