@@ -14,7 +14,7 @@ project(DPPLIB
 ######
 # User overrides
 set(BOOST_ROOT "E:/Programming/Lib/cpp/boost")
-option(BUILD_EXAMPLES "Build examples" OFF)
+option(${PROJECT_NAME}_BUILD_EXAMPLES "Build examples" OFF)
 
 ######
 # Initial stuffs
@@ -75,7 +75,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC "${PROJECT_NAME}_DEBUG=$<CONFI
 ######
 # Find Boost
 if (NOT Boost_FOUND)
-    message(${PROJECT_NAME} "-" ${DSTATUS} "Finding boost library...")
+    message(${DSTATUS} "Finding boost library...")
     if (DEFINED BOOST_ROOT)
         message(${DSTATUS} "BOOST_ROOT forced to " ${BOOST_ROOT})
     endif()
