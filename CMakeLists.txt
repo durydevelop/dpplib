@@ -8,16 +8,33 @@ project(DPPLIB
 
 ######
 # TODO
-# STATIC SHARE INTERFACE modes
+# STATIC OK
+# SHARE OK
+# INTERFACE
+# TESTS
 #
+# Helpers for debug print
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(DPrintHelpers)
 
 ######
-# User overrides
+# Options
 set(BOOST_ROOT "E:/Programming/Lib/cpp/boost")
+option(${PROJECT_NAME}_BUILD_SHARED_LIBS "Build as shared library" OFF)
+option(${PROJECT_NAME}_BUILD_INTERFACE_LIBS "Build as interface lib" OFF)
 option(${PROJECT_NAME}_BUILD_EXAMPLES "Build examples" OFF)
+option(${PROJECT_NAME}_BUILD_TESTS "Build tests" OFF)
 
 ######
-# Initial stuffs
+# Init stuffs
+# Set everything up for c++ 17 features
+set(CMAKE_CXX_STANDARD 17)
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+endif(MSVC)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Set DSTATUS prefix for messages
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # Stand-alone project
     set(DSTATUS ">> ")
@@ -27,50 +44,105 @@ else()
     message(${DSTATUS} "Library ${PROJECT_NAME} included as external project <<<<")
 endif()
 
+# Start messages
 message(${DSTATUS} "CMake version: ${CMAKE_VERSION}")
 message(${DSTATUS} "gcc c++ version: ${CMAKE_CXX_COMPILER_VERSION}")
-# Helpers for debug print
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(DPrintHelpers)
 
-# Set everything up for c++ 17 features
-set(CMAKE_CXX_STANDARD 17)
-if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
-endif(MSVC)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# Handle STATIC/SHARED/INTERFACE build option
+if (${PROJECT_NAME}_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
+    # BUILD_SHARED_LIBS has prececence
+    message(${DSTATUS} "Build as: SHARED LIB")
+    # Set SHARED ON
+    set(${PROJECT_NAME}_BUILD_SHARED_LIBS ON)
+    set(BUILD_SHARED_LIBS ON)
+    # Set INTERFACE OFF
+    set(${PROJECT_NAME}_BUILD_INTERFACE_LIBS OFF)
+    set(BUILD_INTERFACE_LIBS OFF)
+elseif(${PROJECT_NAME}_BUILD_INTERFACE_LIBS OR BUILD_INTERFACE_LIBS)
+    message(${DSTATUS} "Build as: INTERFACE LIB")
+    # Set INTERFACE ON
+    set(${PROJECT_NAME}_BUILD_INTERFACE_LIBS ON)
+    set(BUILD_INTERFACE_LIBS ON)
+    # Set SHARED OFF
+    set(${PROJECT_NAME}_BUILD_SHARED_LIBS OFF)
+    set(BUILD_SHARED_LIBS OFF)
+else()
+    # STATIC
+    message(${DSTATUS} "Build as: STATIC LIB")
+    # Set SHARED OFF
+    set(${PROJECT_NAME}_BUILD_SHARED_LIBS OFF)
+    set(BUILD_SHARED_LIBS OFF)
+    # Set INTERFACE OFF
+    set(${PROJECT_NAME}_BUILD_INTERFACE_LIBS OFF)
+    set(BUILD_INTERFACE_LIBS OFF)
+endif()
 
-######
+# Handle builing examples option
+if (${PROJECT_NAME}_BUILD_EXAMPLES OR BUILD_EXAMPLES)
+    set(${PROJECT_NAME}_BUILD_EXAMPLES ON)
+    set(BUILD_EXAMPLES ON)
+else()
+    set(${PROJECT_NAME}_BUILD_EXAMPLES OFF)
+    set(BUILD_EXAMPLES OFF)
+endif()
+
+# Handle builing tests option
+if (${PROJECT_NAME}_BUILD_TESTS OR BUILD_TESTS)
+    set(${PROJECT_NAME}_BUILD_TESTS ON)
+    set(BUILD_TESTS ON)
+else()
+    set(${PROJECT_NAME}_BUILD_TESTES OFF)
+    set(BUILD_TESTS OFF)
+endif()
+
+message(${DSTATUS} "Build examples: " ${BUILD_EXAMPLES})
+message(${DSTATUS} "Build tests: " ${BUILD_TESTS})
+
+###################################################################
 # Create Target
+# CMakeFiles.txt in lib and include dirs set SRC_FILES with source files list
 add_subdirectory(lib)
 add_subdirectory(include)
-if (${PROJECT_NAME}_BUILD_EXAMPLES)
+if (BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
-message(${DSTATUS} "Build examples: " ${BUILD_EXAMPLES})
+if (BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
 
-# lib and include CMakeFiles set a variable SRC_FILES that contains source files list
-add_library(${PROJECT_NAME} ${SRC_FILES})
+if (${BUILS_INTERFACE_LIBS})
+    # Build as interfcae
+    add_library(${PROJECT_NAME} INTERFACE)
+else()
+    # Build controlled bu BUILD_SHARED_LIBS prop
+    add_library(${PROJECT_NAME} ${SRC_FILES})
+endif()
 
+if (NOT ${BUILD_INTERFACE_LIBS})
+    target_link_libraries(${PROJECT_NAME} stdc++fs pthread)
+    # winsock
+    if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        target_link_libraries(${PROJECT_NAME} ws2_32 wsock32)
+    endif()
+endif()
 
+# Install
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # generate install directive only if stand-alone project
     include(Install)
 endif()
 
-#print_target_prop(DPPLIB)
-#print_var("TARGET")
-#print_target_ver(DPPLIB)
-
 ######
-# Properties of targets
+# Debug/Release config
+ADD_CUSTOM_TARGET(debug
+  COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Debug ${CMAKE_SOURCE_DIR}
+  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
+  COMMENT "Creating the executable in the debug mode.")
 
-# Add definitions for targets
-# Values:
-#   * Debug: -D${PROJECT_NAME}_DEBUG=1
-#   * Release: -D${PROJECT_NAME}_DEBUG=0
-#   * other: -D${PROJECT_NAME}_DEBUG=0
-target_compile_definitions(${PROJECT_NAME} PUBLIC "${PROJECT_NAME}_DEBUG=$<CONFIG:Debug>")
+ADD_CUSTOM_TARGET(release
+  COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release ${CMAKE_SOURCE_DIR}
+  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
+  COMMENT "Creating the executable in the release mode.")
 
 ######
 # Find Boost
@@ -116,20 +188,9 @@ target_include_directories(
 set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
 
-#[[
-## Includes
-include_directories(${${PROJECT_NAME}_SOURCE_DIR}/src ${${PROJECT_NAME}_SOURCE_DIR}/include)
-#add_subdirectory(example)
-
-install(DIRECTORY include DESTINATION ".")
-
-#if (${CMAKE_CXX_COMPILER_ID} MATCHES GNU AND ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-#  target_link_libraries(${PROJECT_NAME} ws2_32 wsock32 stdc++fs)
-#endif()
-
-# Testing
+# Setup GoolgeTest library
 if (BUILD_TESTS)
-  message(">> Configuring tests")
+  message(">> Configuring GoogleTest")
   enable_testing()
   #find_package(GTest REQUIRED)
   #include_directories(${GTEST_INCLUDE_DIR})
@@ -138,7 +199,9 @@ if (BUILD_TESTS)
   # FetchContent added in CMake 3.11, downloads during the configure step
   # FetchContent_MakeAvailable was not added until CMake 3.14
   include(FetchContent)
-
+  set(FETCHCONTENT_QUIET OFF)
+  set(FETCHCONTENT_UPDATES_DISCONNECTED OFF)
+  set(FETCHCONTENT_BASE_DIR deps)
   FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
@@ -151,44 +214,3 @@ if (BUILD_TESTS)
     add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
   endif()
 endif()
-
-#include(cmake/install.cmake)
-message(">>>> CMAKE_CURRENT_SOURCE_DIR " ${CMAKE_CURRENT_SOURCE_DIR})
-message(">>>> CMAKE_SOURCE_DIR " ${CMAKE_SOURCE_DIR})
-
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
-
-set(INCLUDE_INSTALL_DIR include/)
-set(LIBRARY_INSTALL_DIR lib/)
-set(SYSCONFIG_INSTALL_DIR etc/${PROJECT_NAME}/)
-
-message(">>>> INCLUDE_INSTALL_DIR " ${INCLUDE_INSTALL_DIR})
-message(">>>> LIBRARY_INSTALL_DIR " ${LIBRARY_INSTALL_DIR})
-message(">>>> SYSCONFIG_INSTALL_DIR " ${SYSCONFIG_INSTALL_DIR})
-
-configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-    INSTALL_DESTINATION
-        cmake
-    PATH_VARS
-        INCLUDE_INSTALL_DIR
-        SYSCONFIG_INSTALL_DIR
-)
-
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-    VERSION
-        ${PROJECT_VERSION}
-    COMPATIBILITY
-        SameMajorVersion
-)
-install(
-    FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-    DESTINATION
-        cmake
-)
-#]]
