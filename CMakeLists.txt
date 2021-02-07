@@ -24,6 +24,7 @@ option(${PROJECT_NAME}_BUILD_SHARED_LIBS "Build as shared library" OFF)
 option(${PROJECT_NAME}_BUILD_INTERFACE_LIBS "Build as interface lib" OFF)
 option(${PROJECT_NAME}_BUILD_EXAMPLES "Build examples" OFF)
 option(${PROJECT_NAME}_BUILD_TESTS "Build tests" OFF)
+option(CMAKE_BUILD_TYPE "Debug" "Debug")
 
 ######
 # Init stuffs
@@ -114,7 +115,7 @@ if (${BUILS_INTERFACE_LIBS})
     # Build as interfcae
     add_library(${PROJECT_NAME} INTERFACE)
 else()
-    # Build controlled bu BUILD_SHARED_LIBS prop
+    # Build controlled by BUILD_SHARED_LIBS prop
     add_library(${PROJECT_NAME} ${SRC_FILES})
 endif()
 
@@ -126,7 +127,7 @@ if (NOT ${BUILD_INTERFACE_LIBS})
     endif()
 endif()
 
-# Install
+# Install directives
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # generate install directive only if stand-alone project
     include(Install)
@@ -134,12 +135,12 @@ endif()
 
 ######
 # Debug/Release config
-ADD_CUSTOM_TARGET(debug
+add_custom_target(debug
   COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Debug ${CMAKE_SOURCE_DIR}
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
   COMMENT "Creating the executable in the debug mode.")
 
-ADD_CUSTOM_TARGET(release
+add_custom_target(release
   COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release ${CMAKE_SOURCE_DIR}
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
   COMMENT "Creating the executable in the release mode.")
@@ -147,7 +148,7 @@ ADD_CUSTOM_TARGET(release
 ######
 # Find Boost
 if (NOT Boost_FOUND)
-    message(${DSTATUS} "Finding boost library...")
+    message(${DSTATUS} "${PROJECT} finding boost library...")
     if (DEFINED BOOST_ROOT)
         message(${DSTATUS} "BOOST_ROOT forced to " ${BOOST_ROOT})
     endif()
@@ -183,21 +184,16 @@ target_include_directories(
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
     "$<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>"
+    include
 )
 
-set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
-set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
+#set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
+#set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
 
 # Setup GoolgeTest library
 if (BUILD_TESTS)
-  message(">> Configuring GoogleTest")
+  message(">> Configuring GoogleTest library")
   enable_testing()
-  #find_package(GTest REQUIRED)
-  #include_directories(${GTEST_INCLUDE_DIR})
-  #add_subdirectory(deps/googletest)
-  #add_subdirectory(test)
-  # FetchContent added in CMake 3.11, downloads during the configure step
-  # FetchContent_MakeAvailable was not added until CMake 3.14
   include(FetchContent)
   set(FETCHCONTENT_QUIET OFF)
   set(FETCHCONTENT_UPDATES_DISCONNECTED OFF)
