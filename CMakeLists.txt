@@ -177,14 +177,20 @@ if (NOT Boost_FOUND)
         message(FATAL_ERROR ${DSTATUS} "Boost not found")
     endif()
 endif()
-
+#[[
 target_include_directories(
     ${PROJECT_NAME} PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/lib>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
     "$<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>"
+)
+#]]
+target_include_directories(
+    ${PROJECT_NAME} PUBLIC
+    lib
     include
+    ${Boost_INCLUDE_DIR}
 )
 
 #set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
