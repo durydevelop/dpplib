@@ -1,11 +1,12 @@
 #ifndef DSyncFileH
 #define DSyncFileH
 
-#include "DFilesystem.h"
+#include "libdpp/DFilesystem.h"
 #include <string>
-#include "DPath.h"
+#include "libdpp/DPath.h"
 
-namespace DTools {
+namespace DTools
+{
 	class DSyncFile {
 		public:
 			enum DSyncStatus {SYNC_ERROR=-1, SYNC_NOT_YET=0, SYNC_NO_NEEDED=1, SYNC_DONE=2, CALLBACK_STR_MSG=16};

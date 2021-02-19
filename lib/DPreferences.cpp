@@ -7,7 +7,8 @@
 
 namespace pt=boost::property_tree;
 
-namespace DTools {
+namespace DTools
+{
 	//! Constructor
 	DPreferences::DPreferences(std::string Filename, bool CreateIfNotExists)
 	{

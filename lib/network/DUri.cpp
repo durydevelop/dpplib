@@ -42,7 +42,8 @@ bool DUri::Parse()
     std::cmatch MatchUri;
     std::cmatch MatchAuthority;
     // Validate Uri
-    if (!std::regex_match(UriString.c_str(), MatchUri, std::regex(URI_VALIDATE_REGEX))) {
+    //if (!std::regex_match(UriString.c_str(), MatchUri, std::regex(URI_VALIDATE_REGEX))) {
+    if (!IsValidUri(UriString)) {
         Error("Wrong Uri format");
         return false;
     }
@@ -156,7 +157,7 @@ std::string DUri::Encode(std::string Uri, std::string Ignore)
 }
 
 
-std::string DUri::decode(const std::string& EncodedUri)
+std::string DUri::Decode(const std::string& EncodedUri)
 {
     std::string DecodedUri=EncodedUri;
     std::smatch sm;
@@ -175,6 +176,34 @@ std::string DUri::decode(const std::string& EncodedUri)
         dynamicLength=DecodedUri.size() - 2;
     }
     return DecodedUri;
+}
+
+/**
+ * @brief Validate an URI string.
+ * @param UriString ->  uri string to check.
+ * @return true if UriString is a valid URI format, otherwise false.
+ */
+bool DUri::IsValidUri(std::string UriString)
+{
+    std::cmatch MatchUri;
+    if (!std::regex_match(UriString.c_str(), MatchUri, std::regex(URI_VALIDATE_REGEX))) {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * @brief Validate an URL string.
+ * @param UriString ->  url string to check.
+ * @return true if UriString is a valid URL format, otherwise false.
+ */
+bool DUri::IsValidUrl(std::string UrlString)
+{
+    std::cmatch MatchUrl;
+    if (!std::regex_match(UrlString.c_str(), MatchUrl, std::regex(URL_VALIDATE_REGEX))) {
+        return false;
+    }
+    return true;
 }
 
 // ****************************  Log/error functions *************************************

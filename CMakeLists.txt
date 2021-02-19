@@ -107,9 +107,6 @@ add_subdirectory(include)
 if (BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
-if (BUILD_TESTS)
-    add_subdirectory(tests)
-endif()
 
 if (${BUILS_INTERFACE_LIBS})
     # Build as interfcae
@@ -195,21 +192,22 @@ message("CMAKE_CURRENT_SOURCE_DIR=" ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Setup GoolgeTest library
 if (BUILD_TESTS)
-  message(">> Configuring GoogleTest library")
-  enable_testing()
-  include(FetchContent)
-  set(FETCHCONTENT_QUIET OFF)
-  set(FETCHCONTENT_UPDATES_DISCONNECTED OFF)
-  set(FETCHCONTENT_BASE_DIR deps)
-  FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
+    message(">> Configuring GoogleTest library")
+    enable_testing()
+    include(FetchContent)
+    set(FETCHCONTENT_QUIET OFF)
+    set(FETCHCONTENT_UPDATES_DISCONNECTED OFF)
+    set(FETCHCONTENT_BASE_DIR deps)
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
     )
-  FetchContent_MakeAvailable(googletest)
+    FetchContent_MakeAvailable(googletest)
 
-  FetchContent_GetProperties(googletest)
-  if(NOT googletest_POPULATED)
-    FetchContent_Populate(googletest)
-    add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
-  endif()
+    FetchContent_GetProperties(googletest)
+    if(NOT googletest_POPULATED)
+        FetchContent_Populate(googletest)
+        add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
+    endif()
+    add_subdirectory(tests)
 endif()

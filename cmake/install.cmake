@@ -81,7 +81,8 @@ install(
     DIRECTORY
         ${CMAKE_SOURCE_DIR}/include/
     DESTINATION
-        ${CMAKE_INSTALL_INCLUDEDIR})
+        ${CMAKE_INSTALL_INCLUDEDIR}
+)
 
 install(
     FILES

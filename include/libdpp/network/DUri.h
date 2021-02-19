@@ -80,8 +80,8 @@ namespace DNetwork {
 
 class DUri {
     private:
-        const std::string URI_VALIDATE_REGEX=R"([a-z][a-z0-9+.-]*:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()!@:%_\+.~#?&\/\/=]*))";
-        const std::string URL_VALIDATE_REGEX=R"(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()!@:%_\+.~#?&\/\/=]*))";
+        inline static const std::string URI_VALIDATE_REGEX=R"([a-z][a-z0-9+.-]*:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()!@:%_\+.~#?&\/\/=]*))";
+        inline static const std::string URL_VALIDATE_REGEX=R"(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()!@:%_\+.~#?&\/\/=]*))";
         const std::string RFC2396_SPLIT_REGEX=R"(^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?)";
         const std::string AUTHORITY_SPLIT_REGEX=R"((?:([^@:]*)(?::([^@]*))?@)?(\[[^\]]*\]|[^\[:]*)(?::(\d*))?)";
         /*
@@ -139,7 +139,9 @@ class DUri {
         static std::string EncodeQuery(const std::string& QueryStr);
         static std::string EncodeFragment(const std::string& FragmentStr);
         static std::string Encode(std::string Uri, std::string Ignore = std::string());
-        static std::string decode(const std::string& EncodedUri);
+        static std::string Decode(const std::string& EncodedUri);
+        static bool IsValidUri(std::string Uri);
+        static bool IsValidUrl(std::string Url);
         std::string GetLastStatus(void);
 
 };

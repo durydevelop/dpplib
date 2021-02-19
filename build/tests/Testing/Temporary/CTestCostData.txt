@@ -1,0 +1,5 @@
+DPathTest 4 0.0515769
+dpath_test 0 0
+dpath_test_dirs 1 0.1634
+dpath_test_files 1 0.194285
+---

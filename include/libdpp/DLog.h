@@ -16,7 +16,8 @@
 #include <iomanip>
 #include <iostream>
 
-namespace DTools {
+namespace DTools
+{
     /**
     * @class DLog
     *

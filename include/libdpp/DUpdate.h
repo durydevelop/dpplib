@@ -1,9 +1,13 @@
+#ifndef DUpdateH
+#define DUpdateH
+
 #include <string>
 #include <future>
-#include "DFilesystem.h"
-#include "DPreferences.h"
+#include "libdpp/DFilesystem.h"
+#include "libdpp/DPreferences.h"
 
-namespace DTools {
+namespace DTools
+{
     class DUpdate {
         public:
             // Public callback stuffs
@@ -20,8 +24,9 @@ namespace DTools {
             ~DUpdate();
 
             bool SetRepositoryFromFile(DTools::fs::path Filename);
-            void SetRepository(std::string RepoType,std::string RepoUri, std::string RepoSubUri, bool Authenticate, std::string RepoUser, std::string RepoPwd);
+            bool SetRepository(std::string RepoType,std::string RepoUri, std::string RepoSubUri, bool Authenticate, std::string RepoUser, std::string RepoPwd);
             bool IsValidRepository(void);
+            bool IsReady(void);
 
            // Public callback stuffs
             void SetGlobalCallback(DGlobalCallback callback);
@@ -69,3 +74,5 @@ namespace DTools {
             std::string GetLastStatus(void);
     };
 }
+
+#endif

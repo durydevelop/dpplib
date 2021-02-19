@@ -7,7 +7,10 @@
 	#include <windows.h>
 #endif
 
-namespace DShell {
+namespace DTools
+{
+namespace DShell
+{
 	bool Execute(std::string Filename, std::string Args, bool Visible);
 	bool Execute(std::string Filename, std::string Args);
 	bool ShutDown(void);
@@ -19,7 +22,8 @@ namespace DShell {
 		DWORD ShellEseguiEx(AnsiString NomeFile, bool Visibile, AnsiString Parametri);
 		bool ShellFind(AnsiString sCerca, AnsiString sPercorso);
 */
-};
+} // DShell
+} // DTools
 
 
 #endif

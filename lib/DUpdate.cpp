@@ -8,12 +8,6 @@ namespace fs=DTools::fs;
 namespace err=DTools::err;
 namespace pt=boost::property_tree;
 
-// Repo info file content
-#ifdef _WIN32
-    #define FILE_INFO           "UpRepoInfoWin.json"
-#else
-    #define FILE_INFO           "UpRepoInfoNix.json"
-#endif
 #define SECTION_UPGRADE_INFO    "UpgradeInfo"
 #define SECTION_FILES           "Files"
 #define SECTION_REPLACE         "Replace"
@@ -33,10 +27,17 @@ namespace pt=boost::property_tree;
 #define PARAM_CASE_SENSITIVE    "CaseSensitive"
 #define PARAM_MAIN_EXE          "MainExe"
 
-#define UPDATER_FILENAME        "DuryUpdater.exe"
-#define JUST_UPDATE_FILENAME    ".justupdate"
+// File in remote repository containing update rules.
+#define FILENAME_REPO_RULES     "UpdateRules.json"
+// Local file containing repo location data (if exists in root path of executable, it will be used to setup repository in class constructor).
+#define FILENAME_REPO_DATA      "UpdateRepo.json"
+// Filename used to execute update process.
+#define FILENAME_UPDATER_EXE    "DuryUpdater.exe"
+// Used to avoid unwanted loop if newst update make some issues.
+#define FILENAME_JUST_UPDATE    ".justupdate"
 
-namespace DTools {
+namespace DTools
+{
     /**
      * @brief Contructor
      * @param ApplicationName   ->  Name used to ensure to use right update
@@ -109,16 +110,25 @@ namespace DTools {
             Ready=true;
         }
 
-        LocalInfoFilename=UpdateTempDir / FILE_INFO;
+        // Local rules filename
+        LocalInfoFilename=UpdateTempDir / FILENAME_REPO_RULES;
 
+        // App name
         CurrAppName=ApplicationName;
         if (CurrAppName.empty()) {
+            Log("Updater: App name is empty");
             Ready=false;
         }
 
+        // App version
         CurrVersionNr=DString::ToNumber<int>(DString::RemoveNotDigitCopy(CurrentVersion));
         UpdateData=nullptr;
         UpdateNeeded=false;
+
+        // Populate repo if repo info file is present
+        if (DTools::fs::exists(DTools::fs::current_path() / FILENAME_REPO_DATA)) {
+            Ready=SetRepositoryFromFile(DTools::fs::current_path() / FILENAME_REPO_DATA);
+        }
     }
 
     /**
@@ -149,14 +159,14 @@ namespace DTools {
             return false;
         }
 
-        SetRepository(RepoFile.ReadString(SECTION_REPO,PARAM_REPO_TYPE,""),
-                      RepoFile.ReadString(SECTION_REPO,PARAM_REPO_URI,""),
-                      RepoFile.ReadString(SECTION_REPO,PARAM_REPO_SUB_URI,""),
-                      RepoFile.ReadBool(SECTION_REPO,PARAM_REPO_AUTH,false),
-                      RepoFile.ReadString(SECTION_REPO,PARAM_REPO_USER,""),
-                      RepoFile.ReadString(SECTION_REPO,PARAM_REPO_PWD,""));
+        Ready=SetRepository(RepoFile.ReadString(SECTION_REPO,PARAM_REPO_TYPE,""),
+                            RepoFile.ReadString(SECTION_REPO,PARAM_REPO_URI,""),
+                            RepoFile.ReadString(SECTION_REPO,PARAM_REPO_SUB_URI,""),
+                            RepoFile.ReadBool(SECTION_REPO,PARAM_REPO_AUTH,false),
+                            RepoFile.ReadString(SECTION_REPO,PARAM_REPO_USER,""),
+                            RepoFile.ReadString(SECTION_REPO,PARAM_REPO_PWD,""));
 
-        return (IsValidRepository());
+        return(Ready);
     }
 
     /**
@@ -168,13 +178,20 @@ namespace DTools {
      * @param RepoUser      ->  User for authentication. If empty in ftp, "anonymous" is used.
      * @param RepoPwd       ->  Password for authentication (actually encryption is not suprted).
      */
-    void DUpdate::SetRepository(std::string RepoType,std::string RepoUri, std::string RepoSubUri, bool Authenticate, std::string RepoUser, std::string RepoPwd) {
+    bool DUpdate::SetRepository(std::string RepoType,std::string RepoUri, std::string RepoSubUri, bool Authenticate, std::string RepoUser, std::string RepoPwd) {
         dRepository.RepoType=RepoType;
         dRepository.MainUri=RepoUri;
         dRepository.SubUri=RepoSubUri;
         dRepository.NeedAuth=Authenticate;
         dRepository.User=RepoUser;
         dRepository.Password=RepoPwd;
+
+        Ready=IsValidRepository();
+
+        if (Ready) {
+            Log("Found valid repository: "+dRepository.MainUri);
+        }
+        return(Ready);
     }
 
     /**
@@ -182,11 +199,16 @@ namespace DTools {
      */
     bool DUpdate::IsValidRepository(void) {
         if (dRepository.MainUri.empty()) {
-            Log("Updater: repo Uri "+dRepository.MainUri+" not valid");
+            Log("Missing repo");
             return false;
         }
 
         if (dRepository.RepoType == REPO_TYPE_FOLDER) {
+            if (!fs::exists(dRepository.MainUri)) {
+                Log("Updater: repo "+dRepository.MainUri+" does not exist");
+                return false;
+            }
+
             if (dRepository.NeedAuth) {
                 // TODO
             }
@@ -204,6 +226,11 @@ namespace DTools {
         return false;
     }
 
+    bool DUpdate::IsReady(void)
+    {
+        return(Ready);
+    }
+
     /**
      * @brief Check for pendings operations.
      * If process filename is UPDATER_FILENAME, start files upgrade.
@@ -211,8 +238,8 @@ namespace DTools {
      */
     void DUpdate::CheckPendings(void) {
         // Check for upgrade operations pending
-        ExeName=DPath::GetExePath();
-        if (ExeName.filename() == UPDATER_FILENAME) {
+        ExeName=DPath::GetExeFilename();
+        if (ExeName.filename() == FILENAME_UPDATER_EXE) {
             Log("Updater: detect run as executable updater");
             // Run as updater
             ParseLocalRepoInfoFile();
@@ -221,12 +248,12 @@ namespace DTools {
             if (ApplyUpdate()) {
                 // Apply update and re-run main exe
                 Log("Updater: update apply sucessfully");
-                std::ofstream File(JUST_UPDATE_FILENAME);
+                std::ofstream File(FILENAME_JUST_UPDATE);
                 if (File.is_open()) {
                     File.close();
                 }
                 else {
-                    Log("Updater: cannot create file " JUST_UPDATE_FILENAME);
+                    Log("Updater: cannot create file " FILENAME_JUST_UPDATE);
                 }
                 DShell::Execute(UpdateData->ReadDotString(SECTION_UPGRADE_INFO,PARAM_MAIN_EXE,""),"");
                 exit(0);
@@ -235,13 +262,13 @@ namespace DTools {
                 Log("Updater: ERROR applying update");
             }
         }
-        else if (fs::exists(JUST_UPDATE_FILENAME)) {
-            Log("Updater: detected " JUST_UPDATE_FILENAME " : first time after upgrade, to avoid unwanted loop, update is disabled.");
+        else if (fs::exists(FILENAME_JUST_UPDATE)) {
+            Log("Updater: detected " FILENAME_JUST_UPDATE " : first time after upgrade, to avoid unwanted loop, update is disabled.");
             err::error_code ec;
-            if (!fs::remove(JUST_UPDATE_FILENAME,ec)) {
+            if (!fs::remove(FILENAME_JUST_UPDATE,ec)) {
                 Log("Updater: ERROR "+ec.message());
             }
-            if (!fs::remove(UPDATER_FILENAME,ec)) {
+            if (!fs::remove(FILENAME_UPDATER_EXE,ec)) {
                 Log("Updater: ERROR "+ec.message());
             }
             Ready=false;
@@ -279,8 +306,9 @@ namespace DTools {
 
         Log("Updater: create executable updater.");
         // Create executable updater copy from myself
-        fs::path UpdaterFilename=DPath::GetExePath().parent_path() / UPDATER_FILENAME;
-        DTools::DPath::Copy_File(DPath::GetExePath().string().c_str(),UpdaterFilename.string().c_str(),true);
+        fs::path ExeFilename=DPath::GetExeFilename();
+        fs::path UpdaterFilename=ExeFilename.parent_path() / FILENAME_UPDATER_EXE;
+        DTools::DPath::Copy_File(ExeFilename.string().c_str(),UpdaterFilename.string().c_str(),true);
 
         Log("Updater: run executable updater and exit.");
         // Run updater and exit
@@ -294,7 +322,7 @@ namespace DTools {
      */
     bool DUpdate::DownloadRemoteInfoFile(void) {
         if (!Ready) return false;
-        fs::path RemoteInfoFilename=fs::path(dRepository.MainUri) / dRepository.SubUri / FILE_INFO;
+        fs::path RemoteInfoFilename=fs::path(dRepository.MainUri) / dRepository.SubUri / FILENAME_REPO_RULES;
         if (dRepository.RepoType == REPO_TYPE_FOLDER) {
             // Copy from remote network folder
             if (dRepository.NeedAuth) {
@@ -367,7 +395,7 @@ namespace DTools {
      */
     bool DUpdate::DownloadFiles(void) {
         if (!Ready) return false;
-        fs::path RemoteInfoFilename=fs::path(dRepository.MainUri) / dRepository.SubUri / FILE_INFO;
+        fs::path RemoteInfoFilename=fs::path(dRepository.MainUri) / dRepository.SubUri / FILENAME_REPO_RULES;
         if (dRepository.RepoType == REPO_TYPE_FOLDER) {
             // Copy from remote network folder
             if (dRepository.NeedAuth) {

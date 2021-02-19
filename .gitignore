@@ -1,3 +1,6 @@
+CMakeLists.txt.user
+build/
+
 #Common minimal
 _SYNCAPP/**
 Downloaded/**

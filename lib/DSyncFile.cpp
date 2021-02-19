@@ -1,7 +1,8 @@
 #include "libdpp/DSyncFile.h"
 #include "libdpp/DString.h"
 
-namespace DTools {
+namespace DTools
+{
 	/**
 	* @class DSyncFile
 	*

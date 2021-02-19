@@ -7,11 +7,12 @@
 
 namespace DTools
 {
-	namespace DCsv {
-		size_t ReadCSVRow(std::vector<std::string> &DestList, std::string Row, char cSep, size_t MaxFieldsCount = 0);
-        std::vector<std::string> CsvToVector(std::string CsvString, char cSep);
-		std::string ReadCSVField(std::string Row, char cSep, size_t FieldNr);
-		std::string ReplaceCSVField_Copy(std::string Row, char cSep, size_t Index, std::string ReplaceStr);
+namespace DCsv
+{
+    size_t ReadCSVRow(std::vector<std::string> &DestList, std::string Row, char cSep, size_t MaxFieldsCount = 0);
+    std::vector<std::string> CsvToVector(std::string CsvString, char cSep);
+    std::string ReadCSVField(std::string Row, char cSep, size_t FieldNr);
+    std::string ReplaceCSVField_Copy(std::string Row, char cSep, size_t Index, std::string ReplaceStr);
 /* TODO
 		class DListaCSV {
 	public:
@@ -235,6 +236,6 @@ namespace DTools
 		}
 };
 */
-	}
-}
+} // DCsv
+} // DTools
 #endif

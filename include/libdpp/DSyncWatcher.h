@@ -1,23 +1,26 @@
 #ifndef DSyncWatcherH
 #define DSyncWatcherH
 
-#include "DFilesystem.h"
-#include "DPath.h"
-#include "DSyncFile.h"
+#include "libdpp/DFilesystem.h"
+#include "libdpp/DPath.h"
+#include "libdpp/DSyncFile.h"
 #include <thread>
 #include <chrono>
 #include <future>
 
-namespace DTools {
+namespace DTools
+{
     class DSyncWatcher {
         public:
-            DSyncWatcher(fs::path SourceFilename, fs::path DestFilename, bool SyncNow);
+            DSyncWatcher(void);
+            ~DSyncWatcher();
             void SetInterval(size_t MSec);
             size_t GetSyncCount(void);
-            DSyncFile::DSyncStatus Check(void);
+            void Check(void);
             bool Start(void);
             void Stop(void);
-            bool StopAndWait(size_t MSec = 0);
+            bool StopAndWait(size_t TimeoutMSec = 0);
+            bool Clear(size_t TimeoutMSec = 0);
             bool IsWatching(void);
             size_t AddSync(fs::path SourceFilename, fs::path DestFilename, bool SyncNow);
             void SetSafeMode(bool Enabled);

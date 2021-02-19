@@ -1,12 +1,13 @@
 #ifndef DPathWatcherH
 #define DPathWatcherH
 
-#include "DFilesystem.h"
-#include "DPath.h"
+#include "libdpp/DFilesystem.h"
+#include "libdpp/DPath.h"
 #include <chrono>
 #include <future>
 
-namespace DTools {
+namespace DTools
+{
     class DPathWatcher {
         public:
             enum DChangeStatus {CHANGE_STATUS_NONE=0, CHANGE_STATUS_CREATED=1, CHANGE_STATUS_ERASED=2, CHANGE_STATUS_MODIFIED=3, CALLBACK_STR_MSG=16};

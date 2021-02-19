@@ -1,7 +1,8 @@
 #include "libdpp/DPathWatcher.h"
 #include <thread>
 
-namespace DTools {
+namespace DTools
+{
     /**
     * @class DPathWatcher
     *

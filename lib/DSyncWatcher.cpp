@@ -1,8 +1,9 @@
 #include "libdpp/DSyncWatcher.h"
-#include "libdpp/DSyncFile.h"
+//#include "libdpp/DSyncFile.h"
 
 
-namespace DTools {
+namespace DTools
+{
     /**
     * @class DSyncWatcher
     *
@@ -19,24 +20,27 @@ namespace DTools {
     * \section futures_sec Futures
     **/
 
-    /**
-     * @brief Constructor.
-     * @param PathToWatch   ->  Filename or Dir to add to WatchList. If no Path is specified, watch list is empty and it is possible to add path with AddPath() method.
+/**
+     * @brief DSyncWatcher::DSyncWatcher
+     * @param SourceFilename
+     * @param DestFilename
+     * @param SyncNow
      */
-    DSyncWatcher::DSyncWatcher(fs::path SourceFilename, fs::path DestFilename, bool SyncNow) {
+    DSyncWatcher::DSyncWatcher(void) {
         GlobalCallback=nullptr;
         MemberCallback=nullptr;
         MemberCalbackObj=nullptr;
-        if (!SourceFilename.empty() && !DestFilename.empty()) {
-            AddSync(SourceFilename,DestFilename,SyncNow);
-        }
-        else {
-            Log("no watches yet");
-        }
         Watching=false;
         NeedToQuit=false;
         SafeMode=false;
         IntervalMSec=1000;
+    }
+
+    /**
+     * @brief Destructor. Wait 5 seconds for thread to terminate.
+     */
+    DSyncWatcher::~DSyncWatcher() {
+        Clear(5);
     }
 
     /**
@@ -48,12 +52,15 @@ namespace DTools {
     }
 
     /**
-     * @brief Add path to watch list
-     * @param PathToWatch   ->  Filename or Dir to add to WatchList.
-     * @return number of all watches.
+     * @brief DSyncWatcher::AddSync
+     * @param SourceFilename
+     * @param DestFilename
+     * @param SyncNow
+     * @return
      */
     size_t DSyncWatcher::AddSync(fs::path SourceFilename, fs::path DestFilename, bool SyncNow) {
         DSyncFile dSyncFile(SourceFilename,DestFilename,SyncNow);
+        dSyncFile.SetSafeMode(SafeMode);
         Log(dSyncFile.LastStrStatus);
         SyncList.push_back(dSyncFile);
         return(SyncList.size());
@@ -66,6 +73,10 @@ namespace DTools {
         return(SyncList.size());
     }
 
+    /**
+     * @brief Safe mode enable a workaround in DPath::Copy_File to bypass gcc 7 filesystem bug that doen't overwrite existing files
+     * @param Enabled use SafeMode workaround
+     */
     void DSyncWatcher::SetSafeMode(bool Enabled) {
         SafeMode=Enabled;
         for (DSyncFile& Sync : SyncList) {
@@ -76,6 +87,14 @@ namespace DTools {
 	bool DSyncWatcher::GetSafeMode(void) {
 		return(SafeMode);
 	}
+
+    bool DSyncWatcher::Clear(size_t TimeoutMSec) {
+        if (!StopAndWait(TimeoutMSec)) {
+            return false;
+        }
+        SyncList.clear();
+        return true;
+    }
 
     /**
      * @return true if WatchThread is running
@@ -88,7 +107,7 @@ namespace DTools {
      * @brief Execute a one shot check of all watches.
      * One callback is fired for each file change detected.
      */
-    DSyncFile::DSyncStatus DSyncWatcher::Check(void) {
+    void DSyncWatcher::Check(void) {
         DSyncFile::DSyncStatus SyncStatus=DSyncFile::SYNC_NO_NEEDED;
         for (DSyncFile& Sync : SyncList) {
             SyncStatus=Sync.DoSync();
@@ -96,10 +115,9 @@ namespace DTools {
                 DoCallback(SyncStatus,Sync.Source);
             }
             else if (SyncStatus == DSyncFile::SYNC_ERROR) {
-                DoCallback(SyncStatus,Sync.Source);
+                DoCallback(SyncStatus,Sync.Source,Sync.LastStrStatus);
             }
         }
-        return(SyncStatus);
     }
 
     /**
@@ -121,16 +139,25 @@ namespace DTools {
         ThreadFuture=PromiseEnded.get_future();
 
         WatchThread=std::thread([&]() {
-            Log("Sync thread started");
+            //Log("Sync thread started");
             Watching=true;
             NeedToQuit=false;
             while (!NeedToQuit) {
                 auto delta=std::chrono::steady_clock::now() + std::chrono::milliseconds(IntervalMSec);
-                Check();
+                DSyncFile::DSyncStatus SyncStatus=DSyncFile::SYNC_NO_NEEDED;
+                for (DSyncFile& Sync : SyncList) {
+                    SyncStatus=Sync.DoSync();
+                    if (SyncStatus == DSyncFile::SYNC_DONE) {
+                        DoCallback(SyncStatus,Sync.Source);
+                    }
+                    else if (SyncStatus == DSyncFile::SYNC_ERROR) {
+                        //DoCallback(SyncStatus,Sync.Source,Sync.LastStrStatus);
+                    }
+                }
                 std::this_thread::sleep_until(delta);
             }
             Watching=false;
-            Log("Sync thread ended");
+            //Log("Sync thread ended");
             PromiseEnded.set_value_at_thread_exit(true);
         });
 

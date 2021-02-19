@@ -1,85 +1,90 @@
 #include "libdpp/DShell.h"
 
-#ifdef _WIN32
-    bool DShell::Execute(std::string Filename, std::string Args) {
-        return(Execute(Filename,Args,true));
-    }
-
-    bool DShell::Execute(std::string Filename, std::string Args, bool Visible) {
-        SHELLEXECUTEINFO exec_info;
-
-        if (Visible) {
-            exec_info.nShow = SW_SHOW;
-        }
-        else {
-            exec_info.nShow = SW_HIDE;
-        }
-
-        exec_info.cbSize = sizeof(SHELLEXECUTEINFO);
-        exec_info.fMask = SEE_MASK_FLAG_DDEWAIT | SEE_MASK_FLAG_NO_UI | SEE_MASK_NOCLOSEPROCESS;
-        exec_info.hwnd = NULL;
-        exec_info.lpVerb = NULL;
-        exec_info.lpFile = Filename.c_str();
-        exec_info.lpParameters = Args.c_str();
-        exec_info.lpDirectory = NULL;
-
-        return(ShellExecuteEx(&exec_info));
-    }
-#elif __linux__
-    bool DShell::Execute(std::string Filename, std::string Args) {
-        char *my_args[4];
-
-          my_args[0] = "child.exe";
-          my_args[1] = "arg1";
-          my_args[2] = "arg2";
-          my_args[3] = NULL;
-
-          puts("Spawning child with spawnv");
-
-          spawnv( P_WAIT, "child.exe", my_args);
-    }
-#endif
-
-//! Start a shutdown procedure
-bool DShell::ShutDown(void)
+namespace DTools
 {
-    #if defined _WIN32 || defined _WIN64
-        // Windows API shutdown code
-        HANDLE hToken;
-        // Get a token for this process.
-        if (!OpenProcessToken(GetCurrentProcess(),TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,&hToken)) {
-            return(FALSE);
+namespace DShell
+{
+    #ifdef _WIN32
+        bool Execute(std::string Filename, std::string Args) {
+            return(Execute(Filename,Args,true));
         }
 
-        TOKEN_PRIVILEGES tkp;
-        // Get the LUID for the shutdown privilege.
-        LookupPrivilegeValue(NULL,SE_SHUTDOWN_NAME,&tkp.Privileges[0].Luid);
+        bool Execute(std::string Filename, std::string Args, bool Visible) {
+            SHELLEXECUTEINFO exec_info;
 
-        tkp.PrivilegeCount=1;  // one privilege to set
-        tkp.Privileges[0].Attributes=SE_PRIVILEGE_ENABLED;
+            if (Visible) {
+                exec_info.nShow = SW_SHOW;
+            }
+            else {
+                exec_info.nShow = SW_HIDE;
+            }
 
-        // Get the shutdown privilege for this process.
-        AdjustTokenPrivileges(hToken,FALSE,&tkp,0,(PTOKEN_PRIVILEGES)NULL,0);
+            exec_info.cbSize = sizeof(SHELLEXECUTEINFO);
+            exec_info.fMask = SEE_MASK_FLAG_DDEWAIT | SEE_MASK_FLAG_NO_UI | SEE_MASK_NOCLOSEPROCESS;
+            exec_info.hwnd = NULL;
+            exec_info.lpVerb = NULL;
+            exec_info.lpFile = Filename.c_str();
+            exec_info.lpParameters = Args.c_str();
+            exec_info.lpDirectory = NULL;
 
-        if (GetLastError() != ERROR_SUCCESS) {
-            return FALSE;
+            return(ShellExecuteEx(&exec_info));
         }
+    #elif __linux__
+        bool Execute(std::string Filename, std::string Args) {
+            char *my_args[4];
 
-        // Shut down the system and force all applications to close.
-        if (!ExitWindowsEx(EWX_SHUTDOWN | EWX_FORCE, SHTDN_REASON_MAJOR_OPERATINGSYSTEM | SHTDN_REASON_MINOR_UPGRADE | SHTDN_REASON_FLAG_PLANNED)) {
-            return FALSE;
+              my_args[0] = "child.exe";
+              my_args[1] = "arg1";
+              my_args[2] = "arg2";
+              my_args[3] = NULL;
+
+              puts("Spawning child with spawnv");
+
+              spawnv( P_WAIT, "child.exe", my_args);
         }
-
-        return TRUE;
-    #elif defined __unix__
-        #if defined QT_CORE_LIB
-            return(QProcess::startDetached("shutdown -P now"));
-        #else
-            return(system("shutdown -P now"));
-        #endif
     #endif
-}
 
+    //! Start a shutdown procedure
+    bool ShutDown(void)
+    {
+        #if defined _WIN32 || defined _WIN64
+            // Windows API shutdown code
+            HANDLE hToken;
+            // Get a token for this process.
+            if (!OpenProcessToken(GetCurrentProcess(),TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,&hToken)) {
+                return(FALSE);
+            }
+
+            TOKEN_PRIVILEGES tkp;
+            // Get the LUID for the shutdown privilege.
+            LookupPrivilegeValue(NULL,SE_SHUTDOWN_NAME,&tkp.Privileges[0].Luid);
+
+            tkp.PrivilegeCount=1;  // one privilege to set
+            tkp.Privileges[0].Attributes=SE_PRIVILEGE_ENABLED;
+
+            // Get the shutdown privilege for this process.
+            AdjustTokenPrivileges(hToken,FALSE,&tkp,0,(PTOKEN_PRIVILEGES)NULL,0);
+
+            if (GetLastError() != ERROR_SUCCESS) {
+                return FALSE;
+            }
+
+            // Shut down the system and force all applications to close.
+            if (!ExitWindowsEx(EWX_SHUTDOWN | EWX_FORCE, SHTDN_REASON_MAJOR_OPERATINGSYSTEM | SHTDN_REASON_MINOR_UPGRADE | SHTDN_REASON_FLAG_PLANNED)) {
+                return FALSE;
+            }
+
+            return TRUE;
+        #elif defined __unix__
+            #if defined QT_CORE_LIB
+                return(QProcess::startDetached("shutdown -P now"));
+            #else
+                return(system("shutdown -P now"));
+            #endif
+        #endif
+    }
+} // DShell
+} // DTools
 
 /*
     HANDLE DShell::ShellEsegui(AnsiString NomeFile, bool Visibile, AnsiString Parametri, unsigned long mSecAttesa)
