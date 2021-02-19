@@ -12,7 +12,8 @@ project(DPPLIB
 # SHARE OK
 # INTERFACE
 # TESTS
-#
+
+######
 # Helpers for debug print
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(DPrintHelpers)
