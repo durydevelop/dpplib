@@ -11,7 +11,7 @@ set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/DUpdate.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DWindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/network/DNetwork.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/network/DRestClient.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/network/DRESTClient.cpp
     #${CMAKE_CURRENT_SOURCE_DIR}/network/DTcpServer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/network/DUdpServer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/network/DUri.cpp

@@ -1,4 +1,15 @@
 #include "libdpp/DShell.h"
+#include "libdpp/DCsv.h"
+
+#ifdef __linux__
+    #include <spawn.h>
+    #include <string.h>
+#endif
+
+#if defined QT_CORE_LIB
+    #include <QProcess>
+#endif
+
 
 namespace DTools
 {
@@ -31,16 +42,25 @@ namespace DShell
         }
     #elif __linux__
         bool Execute(std::string Filename, std::string Args) {
-            char *my_args[4];
-
-              my_args[0] = "child.exe";
-              my_args[1] = "arg1";
-              my_args[2] = "arg2";
-              my_args[3] = NULL;
-
-              puts("Spawning child with spawnv");
-
-              spawnv( P_WAIT, "child.exe", my_args);
+            // String to std::vector
+            std::vector<std::string> vArgs=DCsv::CsvToVector(Args,' ');
+            // Insert filename as firts arg
+            vArgs.insert(vArgs.begin(),Filename);
+            // std::vector to array of char*
+            char *pArgs[vArgs.size()];
+            for(size_t ixA=1;ixA<vArgs.size();ixA++) {
+                size_t len=vArgs[ixA].size();
+                pArgs[ixA]=new char[len+1];
+                strncpy(pArgs[ixA],vArgs[ixA].c_str(),len);
+                *pArgs[len]='\0';
+            }
+            // Spawn process
+            pid_t pid;
+            if (posix_spawn(&pid,Filename.c_str(),NULL,NULL,pArgs,NULL) != 0) {
+                return false;
+            }
+            // TODO wait
+            return true;
         }
     #endif
 
@@ -77,7 +97,7 @@ namespace DShell
             return TRUE;
         #elif defined __unix__
             #if defined QT_CORE_LIB
-                return(QProcess::startDetached("shutdown -P now"));
+                return(QProcess::startDetached("shutdown",QStringList({"-P","now"})));
             #else
                 return(system("shutdown -P now"));
             #endif

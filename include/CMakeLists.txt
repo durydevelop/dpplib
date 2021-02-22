@@ -1,7 +1,7 @@
 set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DCsv.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DFilesystem.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/Dlog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DLog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DPath.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DPathWatcher.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DPreferences.h
@@ -14,7 +14,7 @@ set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DVector.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DWindow.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DNetwork.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DRestClient.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DRESTClient.h
     #${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DTcpServer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DUdpServer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DUri.h
