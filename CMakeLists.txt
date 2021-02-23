@@ -20,7 +20,7 @@ include(DPrintHelpers)
 
 ######
 # Options
-set(BOOST_ROOT "E:/Programming/Lib/cpp/boost")
+set(BOOST_ROOT "" CACHE STRING "Boost root dir")
 option(${PROJECT_NAME}_BUILD_SHARED_LIBS "Build as shared library" OFF)
 option(${PROJECT_NAME}_BUILD_INTERFACE_LIBS "Build as interface lib" OFF)
 option(${PROJECT_NAME}_BUILD_EXAMPLES "Build examples" OFF)
@@ -147,7 +147,7 @@ add_custom_target(release
 # Find Boost
 if (NOT Boost_FOUND)
     message(${DSTATUS} "${PROJECT} finding boost library...")
-    if (DEFINED BOOST_ROOT)
+    if (${BOOST_ROOT})
         message(${DSTATUS} "BOOST_ROOT forced to " ${BOOST_ROOT})
     endif()
     if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -164,7 +164,7 @@ if (NOT Boost_FOUND)
     if (Boost_FOUND)
         #include_directories(${Boost_INCLUDE_DIR})
         message(${DSTATUS} "\tFound ${Boost_VERSION_STRING}")
-        if (${Boost_VERSION_STRING} VERSION_LESS 1.66)
+        if (${Boost_VERSION_STRING} AND ${Boost_VERSION_STRING} VERSION_LESS 1.66)
             message(FATAL_ERROR "This lib requre Boost 1.66 or greater")
         endif()
         message(${DSTATUS} "\tBoost include dir: ${Boost_INCLUDE_DIR}")
@@ -186,8 +186,6 @@ target_include_directories(
     #"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
 )
-message("CMAKE_CURRENT_LIST_DIR=" ${CMAKE_CURRENT_LIST_DIR})
-message("CMAKE_CURRENT_SOURCE_DIR=" ${CMAKE_CURRENT_SOURCE_DIR})
 #set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 #set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
 

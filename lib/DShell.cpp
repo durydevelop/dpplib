@@ -64,6 +64,8 @@ namespace DShell
         }
     #endif
 
+
+
     //! Start a shutdown procedure
     bool ShutDown(void)
     {
