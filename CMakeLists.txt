@@ -7,18 +7,6 @@ project(DPPLIB
 )
 
 ######
-# TODO
-# STATIC OK
-# SHARE OK
-# INTERFACE
-# TESTS
-
-######
-# Helpers for debug print
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(DPrintHelpers)
-
-######
 # Options
 set(BOOST_ROOT "" CACHE STRING "Boost root dir")
 option(${PROJECT_NAME}_BUILD_SHARED_LIBS "Build as shared library" OFF)
@@ -28,27 +16,9 @@ option(${PROJECT_NAME}_BUILD_TESTS "Build tests" OFF)
 option(CMAKE_BUILD_TYPE "Debug" "Debug")
 
 ######
-# Init stuffs
-# Set everything up for c++ 17 features
-set(CMAKE_CXX_STANDARD 17)
-if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
-endif(MSVC)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# Set DSTATUS prefix for messages
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    # Stand-alone project
-    set(DSTATUS ">> ")
-else()
-    # Part of other project
-    set(DSTATUS ">>>> ")
-    message(${DSTATUS} "Library ${PROJECT_NAME} included as external project <<<<")
-endif()
-
-# Start messages
-message(${DSTATUS} "CMake version: ${CMAKE_VERSION}")
-message(${DSTATUS} "gcc c++ version: ${CMAKE_CXX_COMPILER_VERSION}")
+# CMake helper scripts
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(DMainHelper)
 
 # Handle STATIC/SHARED/INTERFACE build option
 if (${PROJECT_NAME}_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
@@ -125,56 +95,15 @@ if (NOT ${BUILD_INTERFACE_LIBS})
     endif()
 endif()
 
+include(DBoostFinder)
+
 # Install directives
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # generate install directive only if stand-alone project
-    include(Install)
+    include(DInstall)
 endif()
 
-######
-# Debug/Release config
-add_custom_target(debug
-  COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Debug ${CMAKE_SOURCE_DIR}
-  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
-  COMMENT "Creating the executable in the debug mode.")
-
-add_custom_target(release
-  COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release ${CMAKE_SOURCE_DIR}
-  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
-  COMMENT "Creating the executable in the release mode.")
-
-######
-# Find Boost
-if (NOT Boost_FOUND)
-    message(${DSTATUS} "${PROJECT} finding boost library...")
-    if (${BOOST_ROOT})
-        message(${DSTATUS} "BOOST_ROOT forced to " ${BOOST_ROOT})
-    endif()
-    if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        message(${DSTATUS} "\tfor Windows")
-        if (BOOST_ROOT)
-            message(${DSTATUS} "\tFound BOOST_ROOT=" ${BOOST_ROOT})
-        endif()
-        find_package(Boost)
-    elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        message(${DSTATUS} "\tFor Linux")
-        find_package(Boost)
-    endif()
-
-    if (Boost_FOUND)
-        #include_directories(${Boost_INCLUDE_DIR})
-        message(${DSTATUS} "\tFound ${Boost_VERSION_STRING}")
-        if (${Boost_VERSION_STRING} AND ${Boost_VERSION_STRING} VERSION_LESS 1.66)
-            message(FATAL_ERROR "This lib requre Boost 1.66 or greater")
-        endif()
-        message(${DSTATUS} "\tBoost include dir: ${Boost_INCLUDE_DIR}")
-        if (Boost_LIBRARY_DIR)
-            message(${DSTATUS} "\tBoost lib: ${Boost_LIBRARY_DIR}")
-        endif()
-    else()
-        message(FATAL_ERROR ${DSTATUS} "Boost not found")
-    endif()
-endif()
+include(DMakeOptions)
 
 target_include_directories(
     ${PROJECT_NAME} PUBLIC
@@ -189,24 +118,4 @@ target_include_directories(
 #set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 #set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
 
-# Setup GoolgeTest library
-if (BUILD_TESTS)
-    message(">> Configuring GoogleTest library")
-    enable_testing()
-    include(FetchContent)
-    set(FETCHCONTENT_QUIET OFF)
-    set(FETCHCONTENT_UPDATES_DISCONNECTED OFF)
-    set(FETCHCONTENT_BASE_DIR deps)
-    FetchContent_Declare(
-        googletest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-    )
-    FetchContent_MakeAvailable(googletest)
-
-    FetchContent_GetProperties(googletest)
-    if(NOT googletest_POPULATED)
-        FetchContent_Populate(googletest)
-        add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
-    endif()
-    add_subdirectory(tests)
-endif()
+include(DGoogleTestHelper)

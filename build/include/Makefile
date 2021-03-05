@@ -67,10 +67,10 @@ RM = C:/msys64/mingw64/bin/cmake.exe -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = E:/Programming/Lib/cpp/libdpp
+CMAKE_SOURCE_DIR = E:/Dev/cpp/lib/libdpp
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = E:/Programming/Lib/cpp/libdpp/build
+CMAKE_BINARY_DIR = E:/Dev/cpp/lib/libdpp/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -143,27 +143,16 @@ edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
 
-# Special rule for the target test
-test:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running tests..."
-	C:/msys64/mingw64/bin/ctest.exe --force-new-ctest-process $(ARGS)
-.PHONY : test
-
-# Special rule for the target test
-test/fast: test
-
-.PHONY : test/fast
-
 # The main all target
 all: cmake_check_build_system
-	cd E:/Programming/Lib/cpp/libdpp/build && $(CMAKE_COMMAND) -E cmake_progress_start E:/Programming/Lib/cpp/libdpp/build/CMakeFiles E:/Programming/Lib/cpp/libdpp/build/include//CMakeFiles/progress.marks
-	cd E:/Programming/Lib/cpp/libdpp/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 include/all
-	$(CMAKE_COMMAND) -E cmake_progress_start E:/Programming/Lib/cpp/libdpp/build/CMakeFiles 0
+	cd E:/Dev/cpp/lib/libdpp/build && $(CMAKE_COMMAND) -E cmake_progress_start E:/Dev/cpp/lib/libdpp/build/CMakeFiles E:/Dev/cpp/lib/libdpp/build/include//CMakeFiles/progress.marks
+	cd E:/Dev/cpp/lib/libdpp/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 include/all
+	$(CMAKE_COMMAND) -E cmake_progress_start E:/Dev/cpp/lib/libdpp/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd E:/Programming/Lib/cpp/libdpp/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 include/clean
+	cd E:/Dev/cpp/lib/libdpp/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 include/clean
 .PHONY : clean
 
 # The main clean target
@@ -173,17 +162,17 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd E:/Programming/Lib/cpp/libdpp/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 include/preinstall
+	cd E:/Dev/cpp/lib/libdpp/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 include/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd E:/Programming/Lib/cpp/libdpp/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 include/preinstall
+	cd E:/Dev/cpp/lib/libdpp/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 include/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd E:/Programming/Lib/cpp/libdpp/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd E:/Dev/cpp/lib/libdpp/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Help Target
@@ -198,7 +187,6 @@ help:
 	@echo "... install/strip"
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
-	@echo "... test"
 .PHONY : help
 
 
@@ -210,6 +198,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd E:/Programming/Lib/cpp/libdpp/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd E:/Dev/cpp/lib/libdpp/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

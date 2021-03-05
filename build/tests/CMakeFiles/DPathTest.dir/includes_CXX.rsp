@@ -1,1 +1,0 @@
--IE:/Programming/Lib/cpp/libdpp/include -IE:/Programming/Lib/cpp/libdpp/lib -IE:/Programming/Lib/cpp/libdpp/build -IE:/Programming/Lib/cpp/boost -isystem E:/Programming/Lib/cpp/libdpp/build/deps/googletest-src/googletest/include -isystem E:/Programming/Lib/cpp/libdpp/build/deps/googletest-src/googletest

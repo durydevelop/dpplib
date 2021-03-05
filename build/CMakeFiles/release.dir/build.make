@@ -62,10 +62,10 @@ RM = C:/msys64/mingw64/bin/cmake.exe -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = E:/Programming/Lib/cpp/libdpp
+CMAKE_SOURCE_DIR = E:/Dev/cpp/lib/libdpp
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = E:/Programming/Lib/cpp/libdpp/build
+CMAKE_BINARY_DIR = E:/Dev/cpp/lib/libdpp/build
 
 # Utility rule file for release.
 
@@ -73,9 +73,9 @@ CMAKE_BINARY_DIR = E:/Programming/Lib/cpp/libdpp/build
 include CMakeFiles/release.dir/progress.make
 
 CMakeFiles/release:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=E:/Programming/Lib/cpp/libdpp/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Creating the executable in the release mode."
-	C:/msys64/mingw64/bin/cmake.exe -DCMAKE_BUILD_TYPE=Release E:/Programming/Lib/cpp/libdpp
-	C:/msys64/mingw64/bin/cmake.exe --build E:/Programming/Lib/cpp/libdpp/build --target all
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=E:/Dev/cpp/lib/libdpp/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Creating the executable in the release mode."
+	C:/msys64/mingw64/bin/cmake.exe -DCMAKE_BUILD_TYPE=Release E:/Dev/cpp/lib/libdpp
+	C:/msys64/mingw64/bin/cmake.exe --build E:/Dev/cpp/lib/libdpp/build --target all
 
 release: CMakeFiles/release
 release: CMakeFiles/release.dir/build.make
@@ -92,6 +92,6 @@ CMakeFiles/release.dir/clean:
 .PHONY : CMakeFiles/release.dir/clean
 
 CMakeFiles/release.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" E:/Programming/Lib/cpp/libdpp E:/Programming/Lib/cpp/libdpp E:/Programming/Lib/cpp/libdpp/build E:/Programming/Lib/cpp/libdpp/build E:/Programming/Lib/cpp/libdpp/build/CMakeFiles/release.dir/DependInfo.cmake --color=$(COLOR)
+	$(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" E:/Dev/cpp/lib/libdpp E:/Dev/cpp/lib/libdpp E:/Dev/cpp/lib/libdpp/build E:/Dev/cpp/lib/libdpp/build E:/Dev/cpp/lib/libdpp/build/CMakeFiles/release.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/release.dir/depend
 
