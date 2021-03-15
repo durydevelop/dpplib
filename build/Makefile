@@ -67,10 +67,10 @@ RM = C:/msys64/mingw64/bin/cmake.exe -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = E:/Programming/Lib/cpp/libdpp
+CMAKE_SOURCE_DIR = E:/Dev/cpp/lib/libdpp
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = E:/Programming/Lib/cpp/libdpp/build
+CMAKE_BINARY_DIR = E:/Dev/cpp/lib/libdpp/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -143,22 +143,11 @@ edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
 
-# Special rule for the target test
-test:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running tests..."
-	C:/msys64/mingw64/bin/ctest.exe --force-new-ctest-process $(ARGS)
-.PHONY : test
-
-# Special rule for the target test
-test/fast: test
-
-.PHONY : test/fast
-
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start E:/Programming/Lib/cpp/libdpp/build/CMakeFiles E:/Programming/Lib/cpp/libdpp/build//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start E:/Dev/cpp/lib/libdpp/build/CMakeFiles E:/Dev/cpp/lib/libdpp/build//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start E:/Programming/Lib/cpp/libdpp/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start E:/Dev/cpp/lib/libdpp/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -226,95 +215,17 @@ DPPLIB/fast:
 .PHONY : DPPLIB/fast
 
 #=============================================================================
-# Target rules for targets named gmock_main
+# Target rules for targets named rest-client
 
 # Build rule for target.
-gmock_main: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gmock_main
-.PHONY : gmock_main
+rest-client: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 rest-client
+.PHONY : rest-client
 
 # fast build rule for target.
-gmock_main/fast:
-	$(MAKE) $(MAKESILENT) -f deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/build.make deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/build
-.PHONY : gmock_main/fast
-
-#=============================================================================
-# Target rules for targets named gmock
-
-# Build rule for target.
-gmock: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gmock
-.PHONY : gmock
-
-# fast build rule for target.
-gmock/fast:
-	$(MAKE) $(MAKESILENT) -f deps/googletest-build/googlemock/CMakeFiles/gmock.dir/build.make deps/googletest-build/googlemock/CMakeFiles/gmock.dir/build
-.PHONY : gmock/fast
-
-#=============================================================================
-# Target rules for targets named gtest_main
-
-# Build rule for target.
-gtest_main: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest_main
-.PHONY : gtest_main
-
-# fast build rule for target.
-gtest_main/fast:
-	$(MAKE) $(MAKESILENT) -f deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/build.make deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/build
-.PHONY : gtest_main/fast
-
-#=============================================================================
-# Target rules for targets named gtest
-
-# Build rule for target.
-gtest: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest
-.PHONY : gtest
-
-# fast build rule for target.
-gtest/fast:
-	$(MAKE) $(MAKESILENT) -f deps/googletest-build/googletest/CMakeFiles/gtest.dir/build.make deps/googletest-build/googletest/CMakeFiles/gtest.dir/build
-.PHONY : gtest/fast
-
-#=============================================================================
-# Target rules for targets named dupdate_test
-
-# Build rule for target.
-dupdate_test: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 dupdate_test
-.PHONY : dupdate_test
-
-# fast build rule for target.
-dupdate_test/fast:
-	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/dupdate_test.dir/build.make tests/CMakeFiles/dupdate_test.dir/build
-.PHONY : dupdate_test/fast
-
-#=============================================================================
-# Target rules for targets named dpath_test_files
-
-# Build rule for target.
-dpath_test_files: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 dpath_test_files
-.PHONY : dpath_test_files
-
-# fast build rule for target.
-dpath_test_files/fast:
-	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/dpath_test_files.dir/build.make tests/CMakeFiles/dpath_test_files.dir/build
-.PHONY : dpath_test_files/fast
-
-#=============================================================================
-# Target rules for targets named dpath_test_dirs
-
-# Build rule for target.
-dpath_test_dirs: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 dpath_test_dirs
-.PHONY : dpath_test_dirs
-
-# fast build rule for target.
-dpath_test_dirs/fast:
-	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/dpath_test_dirs.dir/build.make tests/CMakeFiles/dpath_test_dirs.dir/build
-.PHONY : dpath_test_dirs/fast
+rest-client/fast:
+	$(MAKE) $(MAKESILENT) -f examples/rest-client/CMakeFiles/rest-client.dir/build.make examples/rest-client/CMakeFiles/rest-client.dir/build
+.PHONY : rest-client/fast
 
 lib/DCsv.obj: lib/DCsv.cpp.obj
 
@@ -733,17 +644,10 @@ help:
 	@echo "... install/strip"
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
-	@echo "... test"
 	@echo "... debug"
 	@echo "... release"
 	@echo "... DPPLIB"
-	@echo "... dpath_test_dirs"
-	@echo "... dpath_test_files"
-	@echo "... dupdate_test"
-	@echo "... gmock"
-	@echo "... gmock_main"
-	@echo "... gtest"
-	@echo "... gtest_main"
+	@echo "... rest-client"
 	@echo "... lib/DCsv.obj"
 	@echo "... lib/DCsv.i"
 	@echo "... lib/DCsv.s"

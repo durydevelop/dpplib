@@ -1,8 +1,8 @@
-# Install script for directory: E:/Programming/Lib/cpp/libdpp/lib
+# Install script for directory: E:/Dev/cpp/lib/libdpp/lib
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "E:/Programming/Lib/cpp/libdpp/build/install")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/DPPLIB")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 

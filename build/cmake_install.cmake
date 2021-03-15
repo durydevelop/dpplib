@@ -1,8 +1,8 @@
-# Install script for directory: E:/Programming/Lib/cpp/libdpp
+# Install script for directory: E:/Dev/cpp/lib/libdpp
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "E:/Programming/Lib/cpp/libdpp/build/install")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/DPPLIB")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -38,32 +38,31 @@ if(NOT DEFINED CMAKE_OBJDUMP)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "E:/Programming/Lib/cpp/libdpp/build/libDPPLIB.a")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "E:/Dev/cpp/lib/libdpp/build/libDPPLIB.a")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   if("${CMAKE_INSTALL_CONFIG_NAME}" MATCHES "^([Rr][Ee][Ll][Ee][Aa][Ss][Ee])$")
-    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "E:/Programming/Lib/cpp/libdpp/build/libDPPLIB.a")
+    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "E:/Dev/cpp/lib/libdpp/build/libDPPLIB.a")
   endif("${CMAKE_INSTALL_CONFIG_NAME}" MATCHES "^([Rr][Ee][Ll][Ee][Aa][Ss][Ee])$")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE DIRECTORY FILES "E:/Programming/Lib/cpp/libdpp/include/")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE DIRECTORY FILES "E:/Dev/cpp/lib/libdpp/include/")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake" TYPE FILE FILES
-    "E:/Programming/Lib/cpp/libdpp/build/DPPLIBConfig.cmake"
-    "E:/Programming/Lib/cpp/libdpp/build/DPPLIBConfigVersion.cmake"
+    "E:/Dev/cpp/lib/libdpp/build/DPPLIBConfig.cmake"
+    "E:/Dev/cpp/lib/libdpp/build/DPPLIBConfigVersion.cmake"
     )
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("E:/Programming/Lib/cpp/libdpp/build/lib/cmake_install.cmake")
-  include("E:/Programming/Lib/cpp/libdpp/build/include/cmake_install.cmake")
-  include("E:/Programming/Lib/cpp/libdpp/build/deps/googletest-build/cmake_install.cmake")
-  include("E:/Programming/Lib/cpp/libdpp/build/tests/cmake_install.cmake")
+  include("E:/Dev/cpp/lib/libdpp/build/lib/cmake_install.cmake")
+  include("E:/Dev/cpp/lib/libdpp/build/include/cmake_install.cmake")
+  include("E:/Dev/cpp/lib/libdpp/build/examples/cmake_install.cmake")
 
 endif()
 
@@ -75,5 +74,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "E:/Programming/Lib/cpp/libdpp/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "E:/Dev/cpp/lib/libdpp/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

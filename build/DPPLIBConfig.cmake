@@ -26,9 +26,9 @@ endmacro()
 
 ####################################################################################
 
-set_and_check(DPPLIB_INCLUDE_DIR   "E:/Programming/Lib/cpp/libdpp/build/install/include" )
-set_and_check(DPPLIB_LIBRARY_DIR   "E:/Programming/Lib/cpp/libdpp/build/install/lib" )
-set_and_check(DPPLIB_DATA_DIR   "E:/Programming/Lib/cpp/libdpp/build/install/" )
+set_and_check(DPPLIB_INCLUDE_DIR   "C:/Program Files (x86)/DPPLIB/include" )
+set_and_check(DPPLIB_LIBRARY_DIR   "C:/Program Files (x86)/DPPLIB/lib" )
+set_and_check(DPPLIB_DATA_DIR   "C:/Program Files (x86)/DPPLIB/" )
 
 check_required_components(DPPLIB)
 
