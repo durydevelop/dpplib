@@ -1,6 +1,16 @@
 ######
-# Initial stuffs
-set(DSTATUS ">> ")
+## Initial stuffs
+
+# Set DSTATUS prefix for messages
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    # Stand-alone project
+    set(DSTATUS ">> ")
+else()
+    # Part of other project
+    set(DSTATUS ">>>> ")
+    message(${DSTATUS} "Library ${PROJECT_NAME} included as external project <<<<")
+endif()
+
 message(${DSTATUS} "CMake version: ${CMAKE_VERSION}")
 message(${DSTATUS} "gcc c++ version: ${CMAKE_CXX_COMPILER_VERSION}")
 

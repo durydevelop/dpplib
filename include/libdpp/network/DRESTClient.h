@@ -4,7 +4,6 @@
 #include <map>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
-#include <boost/beast/core>
 #include <boost/asio/ip/tcp.hpp>
 #include "libdpp/network/DUri.h"
 
