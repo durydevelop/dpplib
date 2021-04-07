@@ -108,7 +108,7 @@ namespace DTools
             template<typename ... Args>
             void i(const std::string& format, Args ... args)
             {
-                size_t size = snprintf(nullptr,0,format.c_str(),args ...)+1;
+                size_t size = snprintf(nullptr,0,"%s", format.c_str(),args ...)+1;
                 if( size <= 0 ){
                     Write(OUTPUT_ERROR,"Log formatting failed");
                 }

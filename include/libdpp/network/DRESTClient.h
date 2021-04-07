@@ -1,8 +1,10 @@
 #ifndef DRESTClientH
 #define DRESTClientH
 
+#include <map>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include "libdpp/network/DUri.h"
 
 /*

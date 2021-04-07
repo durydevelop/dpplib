@@ -128,6 +128,66 @@ namespace DPath
 		return(tptime);
 	}
 
+    std::string GetPermissions(fs::path Path) {
+        fs::perms p=fs::status(Path).permissions();
+        std::stringstream ss;
+        ss << ((p & fs::perms::owner_read) != fs::perms::none ? "r" : "-")
+           << ((p & fs::perms::owner_write) != fs::perms::none ? "w" : "-")
+           << ((p & fs::perms::owner_exec) != fs::perms::none ? "x" : "-")
+           << ((p & fs::perms::group_read) != fs::perms::none ? "r" : "-")
+           << ((p & fs::perms::group_write) != fs::perms::none ? "w" : "-")
+           << ((p & fs::perms::group_exec) != fs::perms::none ? "x" : "-")
+           << ((p & fs::perms::others_read) != fs::perms::none ? "r" : "-")
+           << ((p & fs::perms::others_write) != fs::perms::none ? "w" : "-")
+           << ((p & fs::perms::others_exec) != fs::perms::none ? "x" : "-");
+
+        return(ss.str());
+    }
+
+    bool CanAccess(fs::path Path) {
+#ifdef _WIN32
+        /**
+        * @param genericAccessRights	->	GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE | GENERIC_ALL
+        **/
+        bool DFiles::CanAccessFolder(AnsiString Path,DWORD genericAccessRights)
+        {
+            bool bRet = false;
+            DWORD length = 0;
+            if (!GetFileSecurity(Path.c_str(), OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, NULL, NULL, &length ) && ERROR_INSUFFICIENT_BUFFER == ::GetLastError()) {
+                PSECURITY_DESCRIPTOR security = static_cast< PSECURITY_DESCRIPTOR >( ::malloc( length ) );
+                if (security && GetFileSecurity(Path.c_str(),OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, security, length, &length )) {
+                    HANDLE hToken = NULL;
+                    if (OpenProcessToken(GetCurrentProcess(),TOKEN_IMPERSONATE | TOKEN_QUERY | TOKEN_DUPLICATE | STANDARD_RIGHTS_READ, &hToken)) {
+                        HANDLE hImpersonatedToken = NULL;
+                        if (DuplicateToken( hToken, SecurityImpersonation, &hImpersonatedToken)) {
+                            GENERIC_MAPPING mapping = { 0xFFFFFFFF };
+                            PRIVILEGE_SET privileges = { 0 };
+                            DWORD grantedAccess = 0, privilegesLength = sizeof( privileges );
+                            BOOL result = FALSE;
+
+                            mapping.GenericRead = FILE_GENERIC_READ;
+                            mapping.GenericWrite = FILE_GENERIC_WRITE;
+                            mapping.GenericExecute = FILE_GENERIC_EXECUTE;
+                            mapping.GenericAll = FILE_ALL_ACCESS;
+
+                            MapGenericMask( &genericAccessRights, &mapping );
+                            if (AccessCheck(security,hImpersonatedToken,genericAccessRights,&mapping,&privileges,&privilegesLength,&grantedAccess,&result)) {
+                                bRet = (result == TRUE);
+                            }
+                            CloseHandle( hImpersonatedToken );
+                        }
+                        CloseHandle( hToken );
+                    }
+                    free( security );
+                }
+            }
+
+            return bRet;
+        }
+#endif
+        return true;
+    }
+
 	//! TODO provare
 	std::uintmax_t space_to_be_freed(const fs::path& dir, unsigned int percent_free_required) {
 		const fs::space_info space_info = fs::space(dir) ;
