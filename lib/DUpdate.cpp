@@ -36,6 +36,57 @@ namespace pt=boost::property_tree;
 // Used to avoid unwanted loop if newst update make some issues.
 #define FILENAME_JUST_UPDATE    ".justupdate"
 
+/**
+    1_Create UpdateRepo.json as here:
+    {
+        "Repo": {
+                "RepoType": "FOLDER",
+                "RepoUri": "\\\\smbserver\\path\\to\\folder",
+                "RepoSubUri": "Update",
+                "Authenticate": "false",
+                "User": "",
+                "Pwd": ""
+        }
+    }
+    2_Put file in program folder
+    3_create UpdateRules.json as here:
+    {
+        "UpgradeInfo": {
+            "AppName": "DuryFinder",
+            "Version": "0.2.0.2",
+            "MainExe": "DuryFinder.exe"
+        },
+        "Files": {
+            "Replace": {
+                "DuryFinder.agg": "DuryFinder.exe"
+            },
+            "Modify": {
+                "test.txt": {
+                    "CaseSensitive": "true",
+                    "List": {
+                        "Text1 to replace": "Replaced text1",
+                        "Text2 to replace": "Replaced text2"
+                    }
+                }
+            }
+        }
+    }
+    "AppName" must be the same as ApplicationName string used in contructor
+    "Version" in this file must corresponds to "MainExe" version in reposiroty
+    4_Add source code to your app:
+    @code
+    void MainWindow::CheckForUpdate(void) {
+        std::string Version=FILE_VERSION_STR;
+        DTools::DUpdate dUpdate(PROGRAM_NAME,Version,MainWindow::UpdaterCallback,this);
+        //dUpdate.SetMemberCallback(MainWindow::UpdaterCallback,this); // use this api to set callback not in contructor
+        //if (!dUpdate.SetRepositoryFromFile(DTools::fs::current_path() / "repo.json")) return; // Use this api to manual set file with repository info (default "UpdateRepo.json")
+        if (dUpdate.IsValidRepository()) {
+            dUpdate.DoUpgrade(); // All in one upgrade
+        }
+    }
+    @endcode
+ */
+
 namespace DTools
 {
     /**

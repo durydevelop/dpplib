@@ -1,5 +1,9 @@
-CMakeLists.txt.user
+*.user
 build/
+.codelite/
+*.mk
+*.workspace
+makefile
 
 #Common minimal
 _SYNCAPP/**
