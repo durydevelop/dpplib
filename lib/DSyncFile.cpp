@@ -35,7 +35,7 @@ namespace DTools
 		}
 		else {
 			LastSyncStatus=SYNC_NOT_YET;
-			LastStrStatus=Source.string()+" sync on creation not required";
+            //LastStrStatus=Source.string()+" sync on creation not required";
 		}
 	}
 
@@ -55,7 +55,7 @@ namespace DTools
 		}
 
 		Ready=true;
-		LastStrStatus=Source.string()+" : ";
+        LastStrStatus=Source.string()+" -> ";
 
 		if (!fs::exists(Dest)) {
 			LastStrStatus.append("not present, sync ");
@@ -81,7 +81,7 @@ namespace DTools
 			LastSyncTime=DTools::DString::FormatNow();
 
 		} catch (fs::filesystem_error& e) {
-			LastStrStatus.append("sync error : "+std::string(e.what()));
+            LastStrStatus.append("sync error: "+std::string(e.what()));
 			LastSyncStatus=SYNC_ERROR;
 		}
 		return(LastSyncStatus);
