@@ -149,6 +149,11 @@ namespace DTools
                 return(LogPrintLevel);
             }
 
+            void SetVerbose(bool Enabled) {
+                LogToStdout=Enabled;
+            }
+
+            //! Log current settings
             void PrintStatus(void) {
                 if (LogToStdout) {
                     i("DLog to Stdout: enabled");

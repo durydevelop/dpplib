@@ -8,7 +8,7 @@ namespace DTools
 {
 	class DPreferences {
 		public:
-			DPreferences(std::string PrefFilename, bool CreateIfNotExists = true);
+			DPreferences(std::string PrefFilename = std::string(), bool CreateIfNotExists = true);
 			virtual ~DPreferences();
 			bool Load(void);
 			bool Save(bool BackupBefore = false);

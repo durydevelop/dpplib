@@ -3,6 +3,7 @@ set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/DPath.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DPathWatcher.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DPreferences.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/DSettings.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DShell.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DString.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DStringGrid.cpp
