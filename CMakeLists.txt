@@ -17,7 +17,7 @@ option(CMAKE_BUILD_TYPE "Debug" "Debug")
 
 ######
 # CMake helper scripts
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/helpers_cmake")
 include(DMainHelper)
 
 # Handle STATIC/SHARED/INTERFACE build option
