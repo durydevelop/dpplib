@@ -1,3 +1,0 @@
-[submodule "helpers_cmake"]
-	path = helpers_cmake
-	url = git@gitlab.com:durydevelop/cpp/helpers_cmake.git
