@@ -99,6 +99,7 @@ include(DBoostFinder)
 
 # Install directives
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    message(${DSTATUS} "Generate Install directive")
     # generate install directive only if stand-alone project
     include(DInstall)
 endif()
