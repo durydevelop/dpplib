@@ -6,18 +6,18 @@
 
 namespace DTools
 {
-class DSettings
-{
-    public:
-        DSettings(bool CreateLogDir = false, bool CreateDataDir = false);
-        virtual ~DSettings();
+    class DSettings
+    {
+        public:
+            DSettings(bool CreateLogDir = false, bool CreateDataDir = false);
+            virtual ~DSettings();
 
-        std::string StationName;
-        int StationID;
-        DTools::fs::path DataDir;
-        DTools::fs::path LogDir;
-        std::string LastStatus;
-};
+            std::string StationName;
+            int StationID;
+            DTools::fs::path DataDir;
+            DTools::fs::path LogDir;
+            std::string LastStatus;
+    };
 }
 
 #endif
