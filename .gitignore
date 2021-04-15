@@ -4,6 +4,7 @@ build/
 *.mk
 *.workspace
 makefile
+CMakeLists.txt.user
 
 #Common minimal
 _SYNCAPP/**
