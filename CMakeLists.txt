@@ -1,14 +1,18 @@
 cmake_minimum_required(VERSION 3.11)
 
 project(DPPLIB
-        VERSION 0.2.1.2
+        VERSION 0.2.1.4
         DESCRIPTION "DppLib is a Cpp extension library for boost, beast, asio"
         LANGUAGES CXX
 )
 
 ######
 # Options
-set(BOOST_ROOT "" CACHE STRING "Boost root dir")
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    # only if stand-alone project
+    set(BOOST_ROOT "" CACHE STRING "Boost root dir")
+endif()
+
 option(${PROJECT_NAME}_BUILD_SHARED_LIBS "Build as shared library" OFF)
 option(${PROJECT_NAME}_BUILD_INTERFACE_LIBS "Build as interface lib" OFF)
 option(${PROJECT_NAME}_BUILD_EXAMPLES "Build examples" OFF)
@@ -29,7 +33,7 @@ FetchContent_Declare(
 # Check if population has already been performed
 FetchContent_GetProperties(dcmake)
 if(NOT helpers_cmake_POPULATED)
-    message(${DSTATUS} "Not populated")
+    #message(${DSTATUS} "Not populated")
     FetchContent_Populate(dcmake)
 endif()
 FetchContent_MakeAvailable(dcmake)
@@ -76,7 +80,7 @@ else()
     set(BUILD_EXAMPLES OFF)
 endif()
 
-# Handle builing tests option
+# Handle building tests option
 if (${PROJECT_NAME}_BUILD_TESTS OR BUILD_TESTS)
     set(${PROJECT_NAME}_BUILD_TESTS ON)
     set(BUILD_TESTS ON)
@@ -117,8 +121,8 @@ include(DBoostFinder)
 
 # Install directives
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    message(${DSTATUS} "Generate Install directive")
     # generate install directive only if stand-alone project
+    message(${DSTATUS} "Generate Install directive")
     include(DInstall)
 endif()
 
