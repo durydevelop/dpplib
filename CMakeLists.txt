@@ -16,8 +16,26 @@ option(${PROJECT_NAME}_BUILD_TESTS "Build tests" OFF)
 option(CMAKE_BUILD_TYPE "Debug" "Debug")
 
 ######
-# CMake helper scripts
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/helpers_cmake")
+# CMake helper scripts from git
+include(FetchContent)
+set(FETCHCONTENT_QUIET OFF)
+set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
+set(FETCHCONTENT_BASE_DIR deps)
+FetchContent_Declare(
+    dcmake
+    GIT_REPOSITORY git@gitlab.com:durydevelop/cpp/helpers_cmake.git
+    #GIT_PROGRESS TRUE
+)
+# Check if population has already been performed
+FetchContent_GetProperties(dcmake)
+if(NOT helpers_cmake_POPULATED)
+    message(${DSTATUS} "Not populated")
+    FetchContent_Populate(dcmake)
+endif()
+FetchContent_MakeAvailable(dcmake)
+
+# Now set CMAKE_MODULE_PATH
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${dcmake_SOURCE_DIR})
 include(DMainHelper)
 
 # Handle STATIC/SHARED/INTERFACE build option
