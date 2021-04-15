@@ -12,6 +12,11 @@ namespace DTools
 	//! Constructor
 	DPreferences::DPreferences(std::string Filename, bool CreateIfNotExists)
 	{
+		if (Filename.empty()) {
+        	// Default name
+        	Filename=fs::path(fs::current_path() / "Settings.json").string();
+    	}
+
 		PrefFile=Filename;
 		if (!fs::exists(PrefFile)) {
 			if (CreateIfNotExists) {

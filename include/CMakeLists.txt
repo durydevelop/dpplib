@@ -5,6 +5,7 @@ set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DPath.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DPathWatcher.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DPreferences.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DSettings.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DShell.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DString.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DStringGrid.h
