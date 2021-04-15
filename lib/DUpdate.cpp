@@ -37,7 +37,20 @@ namespace pt=boost::property_tree;
 #define FILENAME_JUST_UPDATE    ".justupdate"
 
 /**
-    1_Create UpdateRepo.json as here:
+* @class DLog
+*
+* @brief C++ std class to manage program upgrade.
+*
+* @author $Author
+*
+* \mainpage DUpdate class
+*
+* \section intro_sec Intro
+*
+*
+*
+* \section futures_sec How to use:
+* 1_Create UpdateRepo.json as here:
     {
         "Repo": {
                 "RepoType": "FOLDER",
@@ -85,7 +98,7 @@ namespace pt=boost::property_tree;
         }
     }
     @endcode
- */
+**/
 
 namespace DTools
 {
