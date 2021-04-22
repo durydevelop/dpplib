@@ -27,15 +27,15 @@ namespace DTools
             bool SetRepository(std::string RepoType,std::string RepoUri, std::string RepoSubUri, bool Authenticate, std::string RepoUser, std::string RepoPwd);
             bool IsValidRepository(void);
             bool IsReady(void);
-
-           // Public callback stuffs
-            void SetGlobalCallback(DGlobalCallback callback);
-            void SetMemberCallback(DMemberCallback callback, void *ClassObj);
             void CheckPendings(void);
             void DoUpgrade(void);
+            void SendFiles(std::vector<std::string> FilesList, std::string DestRepoSubPath);
+
+            void SetGlobalCallback(DGlobalCallback callback);
+            void SetMemberCallback(DMemberCallback callback, void *ClassObj);
 
         private:
-            typedef struct {
+            typedef struct _DRepository{
                 std::string RepoType="";
                 std::string MainUri;
                 std::string SubUri;

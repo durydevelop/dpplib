@@ -47,6 +47,8 @@ namespace pt=boost::property_tree;
 *
 * \section intro_sec Intro
 *
+* \section to_do TODO
+* -Send files to repo
 *
 *
 * \section futures_sec How to use:
@@ -341,7 +343,6 @@ namespace DTools
 
     /**
      * @brief Execute all needed operations to Upgrade.
-     * @return true on succeed otherwise false (use GelLastStatus() to retrive error text).
      */
     void DUpdate::DoUpgrade(void) {
         CheckPendings();
@@ -378,6 +379,10 @@ namespace DTools
         // Run updater and exit
         DShell::Execute(UpdaterFilename.string(),"");
         exit(0);
+    }
+
+    void DUpdate::SendFiles(std::vector<std::string> FilesList, std::string DestRepoSubPath) {
+        // TODO
     }
 
     /**

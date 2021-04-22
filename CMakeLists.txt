@@ -6,24 +6,37 @@ project(DPPLIB
         LANGUAGES CXX
 )
 
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
 ######
 # Options
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    # only if stand-alone project
-    set(BOOST_ROOT "" CACHE STRING "Boost root dir")
-endif()
-
 option(${PROJECT_NAME}_BUILD_SHARED_LIBS "Build as shared library" OFF)
 option(${PROJECT_NAME}_BUILD_INTERFACE_LIBS "Build as interface lib" OFF)
 option(${PROJECT_NAME}_BUILD_EXAMPLES "Build examples" OFF)
 option(${PROJECT_NAME}_BUILD_TESTS "Build tests" OFF)
 option(CMAKE_BUILD_TYPE "Debug" "Debug")
+if (QT_FOUND)
+    # default ON if qt is already found
+    option(${PROJECT_NAME}_BUILD_QT "Build Qt extension lib" ON)
+else()
+    # default OFF if qt is not found
+    # set QT_DIR to force cmake find qt in
+    option(${PROJECT_NAME}_BUILD_QT "Build Qt extension lib" OFF)
+endif()
 
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    # only if stand-alone project
+    set(BOOST_ROOT "" CACHE STRING "Boost root dir")
+endif()
+
+#[[
 ######
 # CMake helper scripts from git
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)
-set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
+set(FETCHCONTENT_UPDATES_DISCONNECTED OFF)
 set(FETCHCONTENT_BASE_DIR deps)
 FetchContent_Declare(
     dcmake
@@ -33,10 +46,13 @@ FetchContent_Declare(
 # Check if population has already been performed
 FetchContent_GetProperties(dcmake)
 if(NOT helpers_cmake_POPULATED)
-    #message(${DSTATUS} "Not populated")
     FetchContent_Populate(dcmake)
 endif()
 FetchContent_MakeAvailable(dcmake)
+]]#
+
+## Temporaneo per testare le modifiche
+set(dcmake_SOURCE_DIR "/home/fabio/Dev/cpp/helpers_cmake")
 
 # Now set CMAKE_MODULE_PATH
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${dcmake_SOURCE_DIR})
@@ -45,7 +61,7 @@ include(DMainHelper)
 # Handle STATIC/SHARED/INTERFACE build option
 if (${PROJECT_NAME}_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
     # BUILD_SHARED_LIBS has prececence
-    message(${DSTATUS} "Build as: SHARED LIB")
+    message_c(${BOLD_CYAN} "Build as: SHARED LIB")
     # Set SHARED ON
     set(${PROJECT_NAME}_BUILD_SHARED_LIBS ON)
     set(BUILD_SHARED_LIBS ON)
@@ -53,7 +69,7 @@ if (${PROJECT_NAME}_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
     set(${PROJECT_NAME}_BUILD_INTERFACE_LIBS OFF)
     set(BUILD_INTERFACE_LIBS OFF)
 elseif(${PROJECT_NAME}_BUILD_INTERFACE_LIBS OR BUILD_INTERFACE_LIBS)
-    message(${DSTATUS} "Build as: INTERFACE LIB")
+    message_c(${BOLD_CYAN} "Build as: INTERFACE LIB")
     # Set INTERFACE ON
     set(${PROJECT_NAME}_BUILD_INTERFACE_LIBS ON)
     set(BUILD_INTERFACE_LIBS ON)
@@ -61,8 +77,8 @@ elseif(${PROJECT_NAME}_BUILD_INTERFACE_LIBS OR BUILD_INTERFACE_LIBS)
     set(${PROJECT_NAME}_BUILD_SHARED_LIBS OFF)
     set(BUILD_SHARED_LIBS OFF)
 else()
-    # STATIC
-    message(${DSTATUS} "Build as: STATIC LIB")
+    # STATIC (default)
+    message_c(${BOLD_CYAN} "Build as: STATIC LIB")
     # Set SHARED OFF
     set(${PROJECT_NAME}_BUILD_SHARED_LIBS OFF)
     set(BUILD_SHARED_LIBS OFF)
@@ -89,15 +105,25 @@ else()
     set(BUILD_TESTS OFF)
 endif()
 
-message(${DSTATUS} "Build examples: " ${BUILD_EXAMPLES})
-message(${DSTATUS} "Build tests: " ${BUILD_TESTS})
+# Handle building Qt extension lib
+if (${PROJECT_NAME}_BUILD_QT OR BUILD_QT)
+    set(${PROJECT_NAME}_BUILD_QT ON)
+    set(BUILD_QT ON)
+else()
+    set(${PROJECT_NAME}_BUILD_QT OFF)
+    set(BUILD_QT OFF)
+endif()
 
-###################################################################
+message_c(${BOLD_CYAN} "Build examples: ${BUILD_EXAMPLES}")
+message_c(${BOLD_CYAN} "Build tests: ${BUILD_TESTS}")
+message_c(${BOLD_CYAN} "Build Qt extension: ${BUILD_QT}")
+
+#############################################################################
 # Create Target
 # CMakeFiles.txt in lib and include dirs set SRC_FILES with source files list
 add_subdirectory(lib)
 add_subdirectory(include)
-if (BUILD_EXAMPLES)
+if (${BUILD_EXAMPLES})
     add_subdirectory(examples)
 endif()
 
@@ -117,17 +143,27 @@ if (NOT ${BUILD_INTERFACE_LIBS})
     endif()
 endif()
 
+# Find boost
 include(DBoostFinder)
 
-# Install directives
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    # generate install directive only if stand-alone project
-    message(${DSTATUS} "Generate Install directive")
-    include(DInstall)
-endif()
-
+# Set make commad option Debug/Release
 include(DMakeOptions)
 
+# Download and install Google test library if needed
+include(DGoogleTestHelper)
+
+# Config Qt stuffs
+if(${BUILD_QT})
+    message_c("Project <${PROJECT_NAME}> is finding Qt libraries...")
+    find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
+    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
+    message_c("\tFound Qt${QT_VERSION_MAJOR}")
+    if (NOT ${BUILD_INTERFACE_LIBS})
+        target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Widgets)
+    endif()
+endif()
+
+# Includes
 target_include_directories(
     ${PROJECT_NAME} PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/lib>"
@@ -141,4 +177,9 @@ target_include_directories(
 #set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 #set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
 
-include(DGoogleTestHelper)
+# Install directives
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    # generate install directive only if stand-alone project
+    message_c("Generate Install directive")
+    include(DInstall)
+endif()

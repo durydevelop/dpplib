@@ -9,19 +9,19 @@
 #ifndef DLogH
 #define DLogH
 
-#include <string>
 #include <sstream>
 #include <memory>
 #include <chrono>
 #include <iomanip>
 #include <iostream>
 
+
 namespace DTools
 {
     /**
     * @class DLog
     *
-    * @brief C++ std class for logging to stdout, stderr, file.
+    * @brief C++ std class for logging to stdout, stderr, file, stream.
     *
     * @author $Author
     *
@@ -40,7 +40,7 @@ namespace DTools
     class DLog {
         public:
             //! enum log deep level
-            enum DLogPrintLevel {PRINT_LEVEL_NORMAL, PRINT_LEVEL_DEEP};
+            enum DLogLevel {PRINT_LEVEL_NORMAL, PRINT_LEVEL_DEEP};
 
             /**
             * @brief Contructor
@@ -50,10 +50,10 @@ namespace DTools
             * @param Level          ->  PRINT_LEVEL_NORMAL: Print only i() and e() call.
             *                           PRINT_LEVEL_DEEP:   Print also d() and w() call.
             **/
-            DLog(std::string LogFilename = "", bool StdoutEnabled = true, DLogPrintLevel Level = PRINT_LEVEL_DEEP) {
+            DLog(std::string LogFilename = "", bool StdoutEnabled = true, std::ostream *OutputStream = nullptr, DLogLevel Level = PRINT_LEVEL_DEEP) {
                 LogToStdout=StdoutEnabled;
-                LogPrintLevel=Level;
-                //outStream=NULL;
+                LogLevel=Level;
+                OutStream=OutputStream;
                 Filename=LogFilename;
                 if (Filename == "") {
                     hFile=nullptr;
@@ -95,78 +95,109 @@ namespace DTools
             }
 
             template<typename ... Args>
-            void d(const std::string& format, Args ... args) {
-                size_t size = snprintf(nullptr,0,format.c_str(),args ...)+1;
+            void d(const std::string& formatStr, Args ... args) {
+                size_t size = snprintf(nullptr,0,formatStr.c_str(),args ...)+1;
                 if( size <= 0 ){
                     Write(OUTPUT_ERROR,"Log formatting failed");
                 }
                 std::unique_ptr<char[]> buf(new char[size]);
-                snprintf(buf.get(),size,format.c_str(),args ...);
+                snprintf(buf.get(),size,formatStr.c_str(),args ...);
                 Write(OUTPUT_DEBUG,buf.get());
             }
 
+            void d(const std::string& LogStr) {
+                Write(OUTPUT_DEBUG,LogStr);
+            }
+
             template<typename ... Args>
-            void i(const std::string& format, Args ... args)
+            void i(const std::string& formatStr, Args ... args)
             {
-                size_t size = snprintf(nullptr,0,"%s", format.c_str(),args ...)+1;
+                size_t size = snprintf(nullptr,0,formatStr.c_str(),args ...)+1;
                 if( size <= 0 ){
                     Write(OUTPUT_ERROR,"Log formatting failed");
                 }
                 std::unique_ptr<char[]> buf(new char[size]);
-                snprintf(buf.get(),size,format.c_str(),args ...);
+                snprintf(buf.get(),size,formatStr.c_str(),args ...);
                 Write(OUTPUT_INFO,buf.get());
             }
 
+            void i(const std::string& LogStr) {
+                Write(OUTPUT_INFO,LogStr);
+            }
+
             template<typename ... Args>
-            void w( const std::string& format, Args ... args)
+            void w( const std::string& formatStr, Args ... args)
             {
-                size_t size = snprintf(nullptr,0,format.c_str(),args ...)+1;
+                size_t size = snprintf(nullptr,0,formatStr.c_str(),args ...)+1;
                 if( size <= 0 ){
                     Write(OUTPUT_ERROR,"Log formatting failed");
                 }
                 std::unique_ptr<char[]> buf(new char[size]);
-                snprintf(buf.get(),size,format.c_str(),args ...);
+                snprintf(buf.get(),size,formatStr.c_str(),args ...);
                 Write(OUTPUT_WARNING,buf.get());
             }
 
+            void w(const std::string& LogStr) {
+                Write(OUTPUT_WARNING,LogStr);
+            }
+
             template<typename ... Args>
-            void e( const std::string& format, Args ... args)
+            void e( const std::string& formatStr, Args ... args)
             {
-                size_t size = snprintf(nullptr,0,format.c_str(),args ...)+1;
+                size_t size = snprintf(nullptr,0,formatStr.c_str(),args ...)+1;
                 if( size <= 0 ){
                     Write(OUTPUT_ERROR,"Log formatting failed" );
                 }
                 std::unique_ptr<char[]> buf(new char[size]);
-                snprintf(buf.get(),size,format.c_str(),args ...);
+                snprintf(buf.get(),size,formatStr.c_str(),args ...);
                 Write(OUTPUT_ERROR,buf.get());
             }
 
-            void SetLogPrintLevel(DLogPrintLevel Level) {
-                LogPrintLevel=Level;
+            void e(const std::string& LogStr) {
+                Write(OUTPUT_ERROR,LogStr);
             }
 
-            DLogPrintLevel GetLogPrintLevel(void) {
-                return(LogPrintLevel);
+            void SetLogLevel(DLogLevel Level) {
+                LogLevel=Level;
+            }
+
+            DLogLevel GetLogLevel(void) {
+                return(LogLevel);
             }
 
             void SetVerbose(bool Enabled) {
                 LogToStdout=Enabled;
             }
 
-            //! Log current settings
+            void SetOutputStream(std::ostream *OutputStream = nullptr) {
+                OutStream=OutputStream;
+            }
+
+            std::string GetFilename(void) {
+                return(Filename);
+            }
+
+            //! Log current settings as info
             void PrintStatus(void) {
                 if (LogToStdout) {
-                    i("DLog to Stdout: enabled");
+                    i("Log to Stdout: ON");
                 }
                 else {
-                    i("DLog to Stdout: disabled");
+                    i("Log to Stdout: OFF");
                 }
 
                 if (hFile == nullptr) {
-                    i("DLog to File: disabled");
+                    i("Log to File: OFF");
                 }
                 else {
-                    i("DLog to File: "+Filename);
+                    i("Log to File: "+Filename);
+                }
+
+                if (OutStream == nullptr) {
+                    i("Log to OutStream: OFF");
+                }
+                else {
+                    i("Log to OutStream: ON");
                 }
             }
 
@@ -176,7 +207,8 @@ namespace DTools
             FILE *hFile;
             bool LogToFile;
             bool LogToStdout;
-            DLogPrintLevel LogPrintLevel;
+            std::ostream *OutStream;
+            DLogLevel LogLevel;
 
             //! Colors defines for printf
             const std::string CL_RED        =   "\x1b[31m";
@@ -189,7 +221,7 @@ namespace DTools
 
             //! Write the the message on stdout, stderr, file
             void Write(DLogOutput Output,std::string LogMsg) {
-                if (LogPrintLevel == PRINT_LEVEL_NORMAL) {
+                if (LogLevel == PRINT_LEVEL_NORMAL) {
                     if (Output > OUTPUT_ERROR) {
                         return;
                     }
@@ -231,11 +263,9 @@ namespace DTools
                     printf("%s%s\n\r",(HdrMsg+Color+LevelMsg+LogMsg).c_str(),CL_DEFAULT.c_str());
                 }
 
-                /*
-                if (outStream != NULL) {
-                    *outStream << HdrMsg << LevelMsg << LogMsg;
+                if (OutStream) {
+                    *OutStream << HdrMsg << LevelMsg << LogMsg << std::endl;
                 }
-                */
 
                 fflush(hFile); // Scrivi subito
             }

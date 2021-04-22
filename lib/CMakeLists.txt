@@ -16,7 +16,7 @@ set(FILES
     #${CMAKE_CURRENT_SOURCE_DIR}/network/DTcpServer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/network/DUdpServer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/network/DUri.cpp
-    #${CMAKE_CURRENT_SOURCE_DIR}/qt/DQt.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/qt/DQt.cpp
 )
 
 #add_library(${TARGET_NAME} ${TARGET_SRC_FILES})
