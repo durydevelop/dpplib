@@ -2,6 +2,7 @@
 #include "libdpp/DStringGrid.h"
 #include "libdpp/DString.h"
 #include "libdpp/DCsv.h"
+#include <iostream>
 
 #include <fcntl.h>
 #ifndef O_BINARY
@@ -114,7 +115,7 @@ namespace DPath
 	}
 
 	/**
-	 * @brief Retrive the las modification time of file/dir.
+     * @brief Retrive the last modification time of file/dir.
 	 * @param Path	->	file/dir to check.
 	 * @return a time_point format time.
 	 */
@@ -128,8 +129,11 @@ namespace DPath
 		return(tptime);
 	}
 
-    std::string GetPermissions(fs::path Path) {
+    std::string GetPermissionsString(fs::path Path) {
         fs::perms p=fs::status(Path).permissions();
+    }
+
+    std::string GetPermissionsString(fs::perms p) {
         std::stringstream ss;
         ss << ((p & fs::perms::owner_read) != fs::perms::none ? "r" : "-")
            << ((p & fs::perms::owner_write) != fs::perms::none ? "w" : "-")
@@ -185,6 +189,7 @@ namespace DPath
             return bRet;
         }
 #endif
+        // TODO
         return true;
     }
 
@@ -210,6 +215,9 @@ namespace DPath
 			fs::copy_option options=OverwriteExisting ? fs::copy_option::overwrite_if_exists : fs::copy_option::none;
 		#endif
 
+        // Store file permission
+        fs::perms FilePerms=fs::status(From).permissions();
+
 		if (SafeMode) {
 			if (OverwriteExisting) {
 				if (fs::exists(To)) {
@@ -226,6 +234,12 @@ namespace DPath
 		else {
 			fs::copy_file(From,To,options,ec);
 		}
+
+        // Set permission
+        if (!ec) {
+            std::cout << "Restore permissions " << GetPermissionsString(FilePerms) << std::endl;
+            fs::permissions(To,FilePerms,ec);
+        }
 		return(ec);
 	}
 
@@ -238,8 +252,9 @@ namespace DPath
 	 * @param MemberCallbackClass	->	Pointer to Class containing callback funcion.
 	 * @param BufferSize			->	Size of buffer used to copy, if value is 0, file lenght is used (only one callback will be performed).
 	 * @return true on succes, otherwise false.
+     * TODO: Copy permissions
 	 */
-	bool Copy_File(const char* SourceFile, const char* DestFile, bool OverwriteExisting, DMemberCallback MemberCallback, void *MemberCallbackClass, size_t BufferSize) {
+    bool Copy_File_Posix(const char* SourceFile, const char* DestFile, bool OverwriteExisting, DMemberCallback MemberCallback, void *MemberCallbackClass, size_t BufferSize) {
 		int in=open(SourceFile, O_RDONLY | O_BINARY);
 		if (in < 0) {
 			//std::cout << "Can't open input file: " << inFile << std::endl;

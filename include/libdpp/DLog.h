@@ -21,7 +21,7 @@ namespace DTools
     /**
     * @class DLog
     *
-    * @brief C++ std class for logging to stdout, stderr, file, stream.
+    * @brief C++ std class for easy logging to stdout, stderr, file, stream.
     *
     * @author $Author
     *
@@ -45,8 +45,9 @@ namespace DTools
             /**
             * @brief Contructor
             * @details Create the log object
-            * @param LogFilename    ->  filename of a destination log file, if empty no file will be crated (default empty).
-            * @param StdoutEnabled  ->  if true al leg messages are output on stdout or stderr (default true).
+            * @param LogFilename    ->  Filename of a destination log file, if empty no file will be crated (default empty).
+            * @param StdoutEnabled  ->  If true al leg messages are output on stdout or stderr (default true).
+            * @param OutputStream   ->  Additional stream for output, set nullptr to disable.
             * @param Level          ->  PRINT_LEVEL_NORMAL: Print only i() and e() call.
             *                           PRINT_LEVEL_DEEP:   Print also d() and w() call.
             **/

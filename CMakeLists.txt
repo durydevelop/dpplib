@@ -132,7 +132,11 @@ if (${BUILS_INTERFACE_LIBS})
     add_library(${PROJECT_NAME} INTERFACE)
 else()
     # Build controlled by BUILD_SHARED_LIBS prop
-    add_library(${PROJECT_NAME} ${SRC_FILES})
+    add_library(${PROJECT_NAME}
+        ${SRC_FILES}
+        ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/TODO.md
+    )
 endif()
 
 if (NOT ${BUILD_INTERFACE_LIBS})

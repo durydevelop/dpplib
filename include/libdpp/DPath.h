@@ -35,11 +35,12 @@ namespace DPath
 	bool IsOlderThanHrs(const fs::path& Path, const int Hrs);
 	std::chrono::system_clock::time_point LastWriteTime(const fs::path Path);
 	std::vector<std::string> ReadAllExts(fs::path Path);
-    std::string GetPermissions(fs::path Path);
+    std::string GetPermissionsString(fs::path Path);
+    std::string GetPermissionsString(fs::perms p);
     bool CanAccess(fs::path Path);
 	std::uintmax_t space_to_be_freed(const fs::path& dir, unsigned int percent_free_required);
 	err::error_code Copy_File(const fs::path &From, const fs::path &To, bool OverwriteExisting, bool SafeMode = false);
-	bool Copy_File(const char* SourceFile, const char* DestFile, bool OverwriteExisting, DMemberCallback MemberCallback = nullptr, void *MemberCallbackClass = nullptr, size_t BufferSize = 0);
+    bool Copy_File_Posix(const char* SourceFile, const char* DestFile, bool OverwriteExisting, DMemberCallback MemberCallback = nullptr, void *MemberCallbackClass = nullptr, size_t BufferSize = 0);
 	err::error_code CopyDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DGlobalCallback Callback);
 	err::error_code MoveDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DGlobalCallback Callback);
 	err::error_code DeleteDir(fs::path Dir);
