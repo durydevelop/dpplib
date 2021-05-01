@@ -49,10 +49,9 @@ if(NOT helpers_cmake_POPULATED)
     FetchContent_Populate(dcmake)
 endif()
 FetchContent_MakeAvailable(dcmake)
-]]#
-
+#]]
 ## Temporaneo per testare le modifiche
-set(dcmake_SOURCE_DIR "/home/fabio/Dev/cpp/helpers_cmake")
+set(dcmake_SOURCE_DIR "/home/pi/Dev/cpp/helpers_cmake")
 
 # Now set CMAKE_MODULE_PATH
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${dcmake_SOURCE_DIR})
