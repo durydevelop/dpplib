@@ -131,6 +131,7 @@ namespace DPath
 
     std::string GetPermissionsString(fs::path Path) {
         fs::perms p=fs::status(Path).permissions();
+        return(GetPermissionsString(p));
     }
 
     std::string GetPermissionsString(fs::perms p) {

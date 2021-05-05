@@ -11,7 +11,9 @@ namespace DTools
 {
 namespace DShell
 {
-	bool Execute(std::string Filename, std::string Args, bool Visible);
+    #ifdef _WIN32
+        bool Execute(std::string Filename, std::string Args, bool Visible);
+    #endif
 	bool Execute(std::string Filename, std::string Args);
 	bool ShutDown(void);
 /*

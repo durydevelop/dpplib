@@ -41,7 +41,11 @@ class MainWindow : public QMainWindow
 
         void on_ButtonDPathSearch_clicked();
 
-    private:
+        void on_pushButton_2_clicked();
+
+        void on_ButtonDShellExecute_clicked();
+
+private:
         Ui::MainWindow *ui;
         DTools::DPathWatcher *Watcher;
         DTools::DLog *Log;

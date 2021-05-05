@@ -1,7 +1,7 @@
 #include <libdpp/DUpdate.h>
 #include <libdpp/DString.h>
 #include <libdpp/DPath.h>
-#include <libdpp/DShell.h>
+#include <libdpp/qt/DQt.h>
 #include <fstream>
 
 namespace fs=DTools::fs;
@@ -51,8 +51,9 @@ namespace pt=boost::property_tree;
 *
 * \section intro_sec Intro
 *
-* \section to_do TODO
+* \section todo_sec TODO
 * -Send files to repo
+* -Delete update files
 *
 *
 * \section futures_sec How to use:
@@ -309,7 +310,8 @@ namespace DTools
     void DUpdate::CheckPendings(void) {
         // Check for upgrade operations pending
         ExeName=DPath::GetExeFilename();
-        if (ExeName.filename() == FILENAME_UPDATER_EXE) {
+        Log("Exe name "+ExeName.stem().string());
+        if (ExeName.stem().string() == FILENAME_UPDATER_EXE) {
             Log("Updater: detect run as executable updater");
             // Run as updater
             ParseLocalRepoInfoFile();
@@ -325,7 +327,15 @@ namespace DTools
                 else {
                     Log("Updater: cannot create file " FILENAME_JUST_UPDATE);
                 }
-                DShell::Execute(UpdateData->ReadDotString(SECTION_UPGRADE_INFO,PARAM_MAIN_EXE,""),"");
+
+                std::string MainExecutable=UpdateData->ReadDotString(SECTION_UPGRADE_INFO,PARAM_MAIN_EXE,"");
+                Log("Updater: start main exe "+MainExecutable);
+                if (DShell::ExecuteDetached(MainExecutable.c_str())) {
+                    Log("Done");
+                }
+                else {
+                    Log("Error");
+                }
                 exit(0);
             }
             else {
@@ -382,10 +392,16 @@ namespace DTools
         //DTools::DPath::Copy_File(ExeFilename.string().c_str(),UpdaterFilename.string().c_str(),true);
         DTools::DPath::Copy_File(ExeFilename,UpdaterFilename,true);
 
-        Log("Updater: run updater "+UpdaterFilename.string()+" and exit.");
+        Log("Updater: run updater "+UpdaterFilename.string());
         // Run updater and exit
-        DShell::Execute(UpdaterFilename.string(),"");
-        //exit(0);
+        bool Ret=DShell::ExecuteDetached(UpdaterFilename.c_str());
+        if (Ret) {
+            Log("Updater: Done, exit");
+            exit(0);
+        }
+        else {
+            Log("Updater: Cannot run");
+        }
     }
 
     void DUpdate::SendFiles(std::vector<std::string> FilesList, std::string DestRepoSubPath) {
@@ -573,6 +589,11 @@ namespace DTools
                 Ready=false;
                 return false;
             }
+
+            if (DPath::DeleteFiles(UpdateTempDir,false) == -1) {
+                Log("Updater: cannot delete temporary udate files");
+            }
+
             Log("Updater: done "+LogMsg);
         }
         return true;

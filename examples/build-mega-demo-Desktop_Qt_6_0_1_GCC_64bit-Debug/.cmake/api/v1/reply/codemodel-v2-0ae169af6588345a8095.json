@@ -1,0 +1,181 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.14"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						3,
+						4,
+						5
+					]
+				},
+				{
+					"build" : "dep",
+					"childIndexes" : 
+					[
+						2,
+						3
+					],
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.14"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "/home/fabio/Dev/cpp/lib/libdpp",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						6,
+						7
+					]
+				},
+				{
+					"build" : "dep/lib",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.11"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "/home/fabio/Dev/cpp/lib/libdpp/lib"
+				},
+				{
+					"build" : "dep/include",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.11"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "/home/fabio/Dev/cpp/lib/libdpp/include"
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "MegaDEMO",
+					"targetIndexes" : 
+					[
+						3,
+						4,
+						5
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1,
+						2,
+						3
+					],
+					"name" : "DPPLIB",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						6,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "DPPLIB::@cb6ef46e689dd9ebba16",
+					"jsonFile" : "target-DPPLIB-Debug-b0a493ba1470e371d5ec.json",
+					"name" : "DPPLIB",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "DPPLIB_autogen::@cb6ef46e689dd9ebba16",
+					"jsonFile" : "target-DPPLIB_autogen-Debug-c43e0d04821e493ef7c4.json",
+					"name" : "DPPLIB_autogen",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "DPPLIB_autogen_timestamp_deps::@cb6ef46e689dd9ebba16",
+					"jsonFile" : "target-DPPLIB_autogen_timestamp_deps-Debug-103aec043db669745c51.json",
+					"name" : "DPPLIB_autogen_timestamp_deps",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "MegaDEMO::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-MegaDEMO-Debug-81cdcad09cdc613f5d7a.json",
+					"name" : "MegaDEMO",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "MegaDEMO_autogen::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-MegaDEMO_autogen-Debug-7e11c81514f3d2fdd162.json",
+					"name" : "MegaDEMO_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "MegaDEMO_autogen_timestamp_deps::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-MegaDEMO_autogen_timestamp_deps-Debug-5b7c121fc11a29acbc19.json",
+					"name" : "MegaDEMO_autogen_timestamp_deps",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "debug::@cb6ef46e689dd9ebba16",
+					"jsonFile" : "target-debug-Debug-9dcada6e01d1e9f72b4e.json",
+					"name" : "debug",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "release::@cb6ef46e689dd9ebba16",
+					"jsonFile" : "target-release-Debug-4b7ca7b497266b4890db.json",
+					"name" : "release",
+					"projectIndex" : 1
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/fabio/Dev/cpp/lib/libdpp/examples/build-mega-demo-Desktop_Qt_6_0_1_GCC_64bit-Debug",
+		"source" : "/home/fabio/Dev/cpp/lib/libdpp/examples/mega-demo"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 2
+	}
+}

@@ -55,7 +55,7 @@ namespace DShell
                 *pArgs[len]='\0';
             }
             // Spawn process
-            pid_t pid;
+            pid_t pid=0;
             if (posix_spawn(&pid,Filename.c_str(),NULL,NULL,pArgs,NULL) != 0) {
                 return false;
             }
@@ -108,118 +108,128 @@ namespace DShell
 } // DShell
 } // DTools
 
-/*
-    HANDLE DShell::ShellEsegui(AnsiString NomeFile, bool Visibile, AnsiString Parametri, unsigned long mSecAttesa)
-    {
-     HANDLE hProcesso;
+/* TODO:
+#include <spawn.h>
+      #include <stdint.h>
+      #include <stdio.h>
+      #include <unistd.h>
+      #include <stdlib.h>
+      #include <string.h>
+      #include <wait.h>
+      #include <errno.h>
 
-      hProcesso = ShellEsegui(NomeFile, Visibile, Parametri);
-      if (hProcesso == NULL) {
-        return(NULL);
+      #define errExit(msg)    do { perror(msg); \
+                                   exit(EXIT_FAILURE); } while (0)
+
+      #define errExitEN(en, msg) \
+                              do { errno = en; perror(msg); \
+                                   exit(EXIT_FAILURE); } while (0)
+
+      char **environ;
+
+      int
+      main(int argc, char *argv[])
+      {
+          pid_t child_pid;
+          int s, opt, status;
+          sigset_t mask;
+          posix_spawnattr_t attr;
+          posix_spawnattr_t *attrp;
+          posix_spawn_file_actions_t file_actions;
+          posix_spawn_file_actions_t *file_actionsp;
+
+          // Parse command-line options, which can be used to specify an
+          //   attributes object and file actions object for the child.
+
+          attrp = NULL;
+          file_actionsp = NULL;
+
+          while ((opt = getopt(argc, argv, "sc")) != -1) {
+              switch (opt) {
+              case 'c':       // -c: close standard output in child
+
+                  // Create a file actions object and add a "close"
+                  //   action to it.
+
+                  s = posix_spawn_file_actions_init(&file_actions);
+                  if (s != 0)
+                      errExitEN(s, "posix_spawn_file_actions_init");
+
+                  s = posix_spawn_file_actions_addclose(&file_actions,
+                                                        STDOUT_FILENO);
+                  if (s != 0)
+                      errExitEN(s, "posix_spawn_file_actions_addclose");
+
+                  file_actionsp = &file_actions;
+                  break;
+
+              case 's':       // -s: block all signals in child
+
+                  // Create an attributes object and add a "set signal mask"
+                  //   action to it.
+
+                  s = posix_spawnattr_init(&attr);
+                  if (s != 0)
+                      errExitEN(s, "posix_spawnattr_init");
+                  s = posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETSIGMASK);
+                  if (s != 0)
+                      errExitEN(s, "posix_spawnattr_setflags");
+
+                  sigfillset(&mask);
+                  s = posix_spawnattr_setsigmask(&attr, &mask);
+                  if (s != 0)
+                      errExitEN(s, "posix_spawnattr_setsigmask");
+
+                  attrp = &attr;
+                  break;
+              }
+          }
+
+          // Spawn the child. The name of the program to execute and the
+          //   command-line arguments are taken from the command-line arguments
+          //   of this program. The environment of the program execed in the
+          //   child is made the same as the parent's environment.
+
+          s = posix_spawnp(&child_pid, argv[optind], file_actionsp, attrp,
+                           &argv[optind], environ);
+          if (s != 0)
+              errExitEN(s, "posix_spawn");
+
+          // Destroy any objects that we created earlier
+
+          if (attrp != NULL) {
+              s = posix_spawnattr_destroy(attrp);
+              if (s != 0)
+                  errExitEN(s, "posix_spawnattr_destroy");
+          }
+
+          if (file_actionsp != NULL) {
+              s = posix_spawn_file_actions_destroy(file_actionsp);
+              if (s != 0)
+                  errExitEN(s, "posix_spawn_file_actions_destroy");
+          }
+
+          printf("PID of child: %jd\n", (intmax_t) child_pid);
+
+          // Monitor status of the child until it terminates.
+
+          do {
+              s = waitpid(child_pid, &status, WUNTRACED | WCONTINUED);
+              if (s == -1)
+                  errExit("waitpid");
+
+              printf("Child status: ");
+              if (WIFEXITED(status)) {
+                  printf("exited, status=%d\n", WEXITSTATUS(status));
+              } else if (WIFSIGNALED(status)) {
+                  printf("killed by signal %d\n", WTERMSIG(status));
+              } else if (WIFSTOPPED(status)) {
+                  printf("stopped by signal %d\n", WSTOPSIG(status));
+              } else if (WIFCONTINUED(status)) {
+                  printf("continued\n");
+              }
+          } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+          exit(EXIT_SUCCESS);
       }
-      else{
-        DWORD dwRet = WaitForSingleObject(hProcesso, mSecAttesa);
-        if ( dwRet == WAIT_TIMEOUT){
-            return NULL;
-        }
-        else if (dwRet == WAIT_FAILED){
-            return NULL;
-        }
-        else if (dwRet == WAIT_OBJECT_0){
-            return hProcesso;
-        }
-      }
-      return NULL;
-    }
-
-    HANDLE DShell::ShellEsegui(AnsiString NomeFile)
-    {
-        return(ShellEsegui(NomeFile,true,""));
-    }
-
-    DWORD DShell::ShellEseguiEx(AnsiString NomeFile, bool Visibile, AnsiString Parametri, unsigned long mSecAttesa)
-    {
-     DWORD exit_code;
-     HANDLE hProcesso;
-
-      hProcesso=ShellEsegui(NomeFile, Visibile, Parametri, mSecAttesa);
-      if (hProcesso == NULL) {
-        return (-1);
-      }
-
-      if (GetExitCodeProcess(hProcesso, &exit_code)){
-        return exit_code;
-      }
-      else{
-        return (-2);
-      }
-    }
-    DWORD DShell::ShellEseguiEx(AnsiString NomeFile, bool Visibile, AnsiString Parametri)
-    {
-        return(ShellEseguiEx(NomeFile,Visibile,Parametri, INFINITE));
-    }
-    //------------------------------------------------------------------------------
-
-    // ***********************************************************************
-    // ** Apre una finestra di explorer con selezionato                     **
-    // ** il primo file trovato che contiene la stringa <AnsiString sCerca> **
-    // ** AnsiString sCerca    -> Stringa da cercare                        **
-    // ** AnsiString sPercorso -> Percorso in cui cercare                   **
-    // ** Se trova un file o una directory in cui è presente la stringa     **
-    // ** <sCerca> apre explorer con l'oggetto selezionato                  **
-    // ** atrimenti apre explorer nella cartella <sPercorso>                **
-    // ***********************************************************************
-    bool DShell::ShellFind(AnsiString sCerca, AnsiString sPercorso)
-    {
-     SHELLEXECUTEINFO exec_info;
-     TSearchRec sr;
-     TCursor cCursor;
-     char sMess[255+40];
-     AnsiString sExplorer;
-
-        cCursor=Screen->Cursor;
-        Screen->Cursor=crHourGlass;
-        if (!sPercorso.IsPathDelimiter(sPercorso.Length())) {
-            sPercorso+="\\";
-        }
-        exec_info.lpParameters=sPercorso.c_str();
-        if (sCerca != "") {
-            if (FindFirst(sPercorso+"*.*",faAnyFile,sr) == 0) {
-                do {
-                    if (sr.Name.Pos(sCerca) > 0) {
-                        sExplorer="/select,"+sPercorso+sr.Name;
-                        exec_info.lpParameters=sExplorer.c_str();
-                        break;
-                    }
-                }while(FindNext(sr) == 0);
-                FindClose(sr);
-            }
-
-            if (exec_info.lpParameters[0] != '/') {
-                wsprintf(sMess,"<%s> non è stato trovato",sCerca.c_str());
-                MessageBox(NULL,sMess,"Attenzione",MB_OK);
-            }
-        }
-
-      exec_info.nShow=SW_SHOW;
-      exec_info.cbSize = sizeof(SHELLEXECUTEINFO);
-      exec_info.fMask =SEE_MASK_FLAG_DDEWAIT | SEE_MASK_FLAG_NO_UI; //SEE_MASK_NOCLOSEPROCESS |
-      exec_info.hwnd = NULL;
-      exec_info.lpVerb = NULL;
-      exec_info.lpFile="Explorer";
-      exec_info.lpDirectory = NULL;
-
-      ShellExecuteEx(&exec_info);
-      if (exec_info.hInstApp <= (HINSTANCE)32)
-        {
-         MessageBox(NULL, "Errore esecuzione Comando Shell", "ATTENZIONE", MB_OK );
-         //char serr[255];
-         //StoreErrorText(GetLastError(),serr,255);
-         return false;
-        }
-
-      Screen->Cursor=cCursor;
-    return true;
-    }
-#endif
 */

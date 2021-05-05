@@ -28,11 +28,6 @@ set(DSTATUS "@@ ")
 message(${DSTATUS} "CMake version: ${CMAKE_VERSION}")
 message(${DSTATUS} "gcc c++ version: ${CMAKE_CXX_COMPILER_VERSION}")
 
-# CMake helper scripts
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
-include(DPrintHelpers)
-include(generate_product_version)
-
 # set everything up for c++ 17 features
 set(CMAKE_CXX_STANDARD 17)
 if(MSVC)
@@ -58,7 +53,9 @@ add_executable(MegaDEMO
 
 ######
 # DPPLIB
-include_directories(../..)
+add_subdirectory(../.. dep)
+include_directories(../../include)
+target_link_libraries(${PROJECT_NAME} PUBLIC DPPLIB)
 
 ######
 ## Link libraries

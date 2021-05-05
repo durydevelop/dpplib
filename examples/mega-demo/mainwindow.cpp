@@ -4,6 +4,7 @@
 //#include <QTimer>
 #include <QFileDialog>
 #include <QtQuickWidgets/QQuickWidget>
+#include "libdpp/qt/DQt.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -168,4 +169,22 @@ void MainWindow::on_ButtonDPathSearch_clicked()
         n=DTools::DPath::CountDirs(ui->EditDPath->text().toStdString(),ui->CheckBoxDPathRecoursive->isChecked(),nameList,false,extList,false,ui->CheckBoxDPathCase->isChecked());
     }
     ui->TextEditLog->append(ui->EditDPath->text()+" : "+QString::number(n));
+}
+
+void MainWindow::on_pushButton_2_clicked()
+{
+
+}
+
+void MainWindow::on_ButtonDShellExecute_clicked()
+{
+    QString Filename=ui->EditDShell->text();
+    QStringList ArgList=ui->TextEditDShellArgs->toPlainText().split(QRegExp("[\n]"),Qt::SkipEmptyParts);
+    qint64 Pid;
+    if (ui->CheckBoxExecuteDetached->isChecked()) {
+        DTools::DShell::ExecuteDetached(Filename,ArgList,&Pid);
+    }
+    else {
+        DTools::DShell::Execute(Filename,ArgList,ui->SpinBoxWaitMillis->value(),&Pid);
+    }
 }
