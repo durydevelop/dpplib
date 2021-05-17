@@ -52,11 +52,13 @@ FetchContent_MakeAvailable(dcmake)
 ]]#
 
 ## Temporaneo per testare le modifiche
-set(dcmake_SOURCE_DIR "/home/fabio/Dev/cpp/helpers_cmake")
+get_filename_component(dcmake_SOURCE_DIR "../../helpers_cmake" ABSOLUTE)
 
 # Now set CMAKE_MODULE_PATH
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${dcmake_SOURCE_DIR})
+list(APPEND CMAKE_MODULE_PATH ${dcmake_SOURCE_DIR})
+list (REMOVE_DUPLICATES CMAKE_MODULE_PATH)
 include(DMainHelper)
+
 
 # Handle STATIC/SHARED/INTERFACE build option
 if (${PROJECT_NAME}_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
