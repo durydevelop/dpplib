@@ -1,0 +1,25 @@
+{
+    "Settings": {
+        "Station Name": "",
+        "Station ID": "1",
+        "GeneralDigit": {
+            "Path": ""
+        },
+        "Op Session Enabled": "true",
+        "Touch Mode Enabled": "false",
+        "Op Session Timeout": "5",
+        "Search Mode": "0",
+        "Queues Folder": "",
+        "Curr Style Sheet": "default",
+        "Tracking Folder": "",
+        "Curr Queues Group Name": ""
+    },
+    "Windows": {
+        "MainWindow": {
+            "X": "453",
+            "Y": "209",
+            "Width": "994",
+            "Height": "572"
+        }
+    }
+}

@@ -1,0 +1,23 @@
+dep/DPPLIB_autogen/timestamp: \
+	/home/fabio/Dev/cpp/helpers_cmake/DBoostFinder.cmake \
+	/home/fabio/Dev/cpp/helpers_cmake/DCMakeColors.cmake \
+	/home/fabio/Dev/cpp/helpers_cmake/DGoogleTestHelper.cmake \
+	/home/fabio/Dev/cpp/helpers_cmake/DMainHelper.cmake \
+	/home/fabio/Dev/cpp/helpers_cmake/DMakeOptions.cmake \
+	/home/fabio/Dev/cpp/helpers_cmake/DPrintHelpers.cmake \
+	/home/fabio/Dev/cpp/helpers_cmake/generate_product_version.cmake \
+	/home/fabio/Dev/cpp/lib/libdpp/CMakeLists.txt \
+	/home/fabio/Qt/5.15.2/gcc_64/lib/cmake/Qt5/Qt5Config.cmake \
+	/home/fabio/Qt/5.15.2/gcc_64/lib/cmake/Qt5/Qt5ConfigVersion.cmake \
+	/home/fabio/Qt/5.15.2/gcc_64/lib/cmake/Qt5/Qt5ModuleLocation.cmake \
+	/home/fabio/Qt/5.15.2/gcc_64/lib/cmake/Qt5Widgets/Qt5WidgetsConfig.cmake \
+	/home/fabio/Qt/5.15.2/gcc_64/lib/cmake/Qt5Widgets/Qt5WidgetsConfigVersion.cmake \
+	/home/fabio/Qt/Tools/CMake/share/cmake-3.19/Modules/CMakeParseArguments.cmake \
+	/home/fabio/Qt/Tools/CMake/share/cmake-3.19/Modules/FindBoost.cmake \
+	/home/fabio/Qt/Tools/CMake/share/cmake-3.19/Modules/FindPackageHandleStandardArgs.cmake \
+	/home/fabio/Qt/Tools/CMake/share/cmake-3.19/Modules/FindPackageMessage.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Boost-1.71.0/BoostConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Boost-1.71.0/BoostConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/boost_headers-1.71.0/boost_headers-config-version.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/boost_headers-1.71.0/boost_headers-config.cmake \
+	/home/fabio/Qt/Tools/CMake/bin/cmake

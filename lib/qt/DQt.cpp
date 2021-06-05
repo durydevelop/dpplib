@@ -8,11 +8,8 @@
 #include <QScreen>
 #include <QGuiApplication>
 #include <QUrl>
+#include <QProcess>
 #include "libdpp/DWindow.h"
-
-#if defined _WIN32 || defined _WIN64
-    //TODO
-#endif
 
 namespace DTools {
 namespace DWindow {
@@ -213,10 +210,37 @@ namespace DShell
             args << "end tell";
             args << "-e";
             args << "return";
-            if (!QProcess::execute("/usr/bin/osascript", args))
+            if (!QProcess::startDetached("/usr/bin/osascript", args))
                 return;
+        #else
+            QDesktopServices::openUrl(QUrl::fromLocalFile(info.isDir()? path : info.path()));
         #endif
-        QDesktopServices::openUrl(QUrl::fromLocalFile(info.isDir()? path : info.path()));
+    }
+
+    bool Execute(const QString& Filename, const QStringList& Args, int WaitMSecs, qint64 *Pid) {
+        QFileInfo info(Filename);
+        if (info.isDir()) return false;
+        QProcess Process;
+
+        Process.start(Filename,Args);
+        if (WaitMSecs != 0) {
+            if (!Process.waitForStarted(WaitMSecs)) {
+                return false;
+            }
+        }
+        if (Pid) *Pid=Process.processId();
+
+        if (WaitMSecs != 0) {
+            return(Process.waitForFinished(WaitMSecs));
+        }
+
+        return true;
+    }
+
+    bool ExecuteDetached(const QString& Filename, const QStringList& Args, qint64 *Pid) {
+        QFileInfo info(Filename);
+        if (info.isDir()) return false;
+        return(QProcess::startDetached(Filename,Args,"",Pid));
     }
 }
 }

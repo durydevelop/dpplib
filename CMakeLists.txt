@@ -51,11 +51,13 @@ endif()
 FetchContent_MakeAvailable(dcmake)
 #]]
 ## Temporaneo per testare le modifiche
-set(dcmake_SOURCE_DIR "/home/pi/Dev/cpp/helpers_cmake")
+get_filename_component(dcmake_SOURCE_DIR "../../helpers_cmake" ABSOLUTE)
 
 # Now set CMAKE_MODULE_PATH
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${dcmake_SOURCE_DIR})
+list(APPEND CMAKE_MODULE_PATH ${dcmake_SOURCE_DIR})
+list (REMOVE_DUPLICATES CMAKE_MODULE_PATH)
 include(DMainHelper)
+
 
 # Handle STATIC/SHARED/INTERFACE build option
 if (${PROJECT_NAME}_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
@@ -131,7 +133,11 @@ if (${BUILS_INTERFACE_LIBS})
     add_library(${PROJECT_NAME} INTERFACE)
 else()
     # Build controlled by BUILD_SHARED_LIBS prop
-    add_library(${PROJECT_NAME} ${SRC_FILES})
+    add_library(${PROJECT_NAME}
+        ${SRC_FILES}
+        ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/TODO.md
+    )
 endif()
 
 if (NOT ${BUILD_INTERFACE_LIBS})
