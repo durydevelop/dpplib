@@ -10,6 +10,9 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+# Check for Qt extansion (this will set QT_VERSION_MAJOR if it exists)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets)
+
 ######
 # Options
 option(${PROJECT_NAME}_BUILD_SHARED_LIBS "Build as shared library" OFF)
@@ -17,7 +20,7 @@ option(${PROJECT_NAME}_BUILD_INTERFACE_LIBS "Build as interface lib" OFF)
 option(${PROJECT_NAME}_BUILD_EXAMPLES "Build examples" OFF)
 option(${PROJECT_NAME}_BUILD_TESTS "Build tests" OFF)
 option(CMAKE_BUILD_TYPE "Debug" "Debug")
-if (QT_FOUND)
+if (DEFINED QT_VERSION_MAJOR)
     # default ON if qt is already found
     option(${PROJECT_NAME}_BUILD_QT "Build Qt extension lib" ON)
 else()
@@ -118,7 +121,7 @@ endif()
 
 message_c(${BOLD_CYAN} "Build examples: ${BUILD_EXAMPLES}")
 message_c(${BOLD_CYAN} "Build tests: ${BUILD_TESTS}")
-message_c(${BOLD_CYAN} "Build Qt extension: ${BUILD_QT}")
+message_c(${BOLD_CYAN} "Build Qt extension: ${BUILD_QT} ${QT_VERSION_MAJOR}")
 
 #############################################################################
 # Create Target
@@ -149,7 +152,9 @@ if (NOT ${BUILD_INTERFACE_LIBS})
     endif()
 endif()
 
-# Find boost
+## Find boost
+# Uncomment this line to force BOOST_ROOT folder
+get_filename_component(BOOST_ROOT "../boost" ABSOLUTE)
 include(DBoostFinder)
 
 # Set make commad option Debug/Release
@@ -161,7 +166,7 @@ include(DGoogleTestHelper)
 # Config Qt stuffs
 if(${BUILD_QT})
     message_c("Project <${PROJECT_NAME}> is finding Qt libraries...")
-    find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
+    #find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
     find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
     message_c("\tFound Qt${QT_VERSION_MAJOR}")
     if (NOT ${BUILD_INTERFACE_LIBS})

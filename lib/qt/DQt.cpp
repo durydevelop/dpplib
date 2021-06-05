@@ -7,8 +7,10 @@
 #include <QDesktopServices>
 #include <QScreen>
 #include <QGuiApplication>
+#include <QApplication>
 #include <QUrl>
 #include <QProcess>
+#include <QDir>
 #include "libdpp/DWindow.h"
 
 namespace DTools {
@@ -184,6 +186,26 @@ namespace DWindow {
             qWidget.restoreGeometry(qSettings.value(qWidget.objectName()+"/Geometry").toByteArray());
         }
         return(Status);
+    }
+
+    bool SetStyleSheetFromFile(fs::path QssFilename)
+    {
+        if (DTools::fs::exists(QssFilename)) {
+            QFile QssFile(QssFilename.string().c_str());
+            if (QssFile.open(QFile::ReadOnly)) {
+                qApp->setStyleSheet(QString(QssFile.readAll()));
+                //Log->d("Style Sheet "+Params->CurrStyleSheet+".qss caricato");
+                return true;
+            }
+            else {
+                //Log->e("Style Sheet "+Params->CurrStyleSheet+".qss ERRORE lettura");
+                return false;
+            }
+        }
+        else {
+            //Log->e("Style Sheet "+Params->CurrStyleSheet+".qss NON ESISTE");
+            return false;
+        }
     }
 }
 

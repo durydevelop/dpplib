@@ -7,6 +7,14 @@
 #include <functional>
 #include "libdpp/DFilesystem.h"
 
+#ifdef _WIN32
+    #include <windows.h>    //GetModuleFileNameW
+    //#include <winbase.h>    //GetFileSecurity
+#else
+    #include <limits.h>
+    #include <unistd.h>     //readlink
+#endif
+
 // Macro ridefined from basestd.h
 #define DIntToPtr(i) (void *)(uintptr_t)(i)
 
@@ -23,7 +31,9 @@ namespace DPath
 						};
 	#if defined _WIN32 || defined _WIN64
 		// Only for Windows
+		enum DAccessRights {ACCESS_READ = GENERIC_READ, ACCESS_WRITE = GENERIC_WRITE, ACCESS_EXECUTE = GENERIC_EXECUTE, ACCESS_ALL = GENERIC_ALL};
 		std::string GetFileVersion(std::string Filename=std::string(), bool TrimDots = true);
+		bool CanAccess(fs::path Path, DAccessRights AccessRights);
 	#endif
 
 	//typedef std::function<void(uint8_t,void*)> DCallback;

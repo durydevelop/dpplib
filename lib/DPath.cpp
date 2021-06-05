@@ -9,13 +9,6 @@
     #define O_BINARY 0
 #endif
 
-#ifdef _WIN32
-    #include <windows.h>    //GetModuleFileNameW
-#else
-    #include <limits.h>
-    #include <unistd.h>     //readlink
-#endif
-
 // Debug macro if DEBUG is defined, DEBUG_PRINT(Msg) macro prints Msg on stdout, otherwise do nothing (I use it to debug issues).
 //#define DEBUG
 #ifdef DEBUG
@@ -149,50 +142,53 @@ namespace DPath
         return(ss.str());
     }
 
-    bool CanAccess(fs::path Path) {
 #ifdef _WIN32
-        /**
-        * @param genericAccessRights	->	GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE | GENERIC_ALL
-        **/
-        bool DFiles::CanAccessFolder(AnsiString Path,DWORD genericAccessRights)
-        {
-            bool bRet = false;
-            DWORD length = 0;
-            if (!GetFileSecurity(Path.c_str(), OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, NULL, NULL, &length ) && ERROR_INSUFFICIENT_BUFFER == ::GetLastError()) {
-                PSECURITY_DESCRIPTOR security = static_cast< PSECURITY_DESCRIPTOR >( ::malloc( length ) );
-                if (security && GetFileSecurity(Path.c_str(),OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, security, length, &length )) {
-                    HANDLE hToken = NULL;
-                    if (OpenProcessToken(GetCurrentProcess(),TOKEN_IMPERSONATE | TOKEN_QUERY | TOKEN_DUPLICATE | STANDARD_RIGHTS_READ, &hToken)) {
-                        HANDLE hImpersonatedToken = NULL;
-                        if (DuplicateToken( hToken, SecurityImpersonation, &hImpersonatedToken)) {
-                            GENERIC_MAPPING mapping = { 0xFFFFFFFF };
-                            PRIVILEGE_SET privileges = { 0 };
-                            DWORD grantedAccess = 0, privilegesLength = sizeof( privileges );
-                            BOOL result = FALSE;
+    /**
+    * @param genericAccessRights	->	GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE | GENERIC_ALL
+    **/
+    bool CanAccess(fs::path Path, DAccessRights AccessRights) {
+        DWORD genericAccessRights=AccessRights;
+        bool bRet = false;
+        DWORD length = 0;
+         if (!GetFileSecurity(Path.string().c_str(), OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, NULL, 0, &length ) && ERROR_INSUFFICIENT_BUFFER == ::GetLastError()) {
+            PSECURITY_DESCRIPTOR security = static_cast< PSECURITY_DESCRIPTOR >( ::malloc( length ) );
+            if (security && GetFileSecurity(Path.string().c_str(),OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, security, length, &length )) {
+                HANDLE hToken = NULL;
+                if (OpenProcessToken(GetCurrentProcess(),TOKEN_IMPERSONATE | TOKEN_QUERY | TOKEN_DUPLICATE | STANDARD_RIGHTS_READ, &hToken)) {
+                    HANDLE hImpersonatedToken = NULL;
+                    if (DuplicateToken( hToken, SecurityImpersonation, &hImpersonatedToken)) {
+                        GENERIC_MAPPING mapping = { 0xFFFFFFFF ,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF };
+                        PRIVILEGE_SET privileges = {};
+                        DWORD grantedAccess = 0, privilegesLength = sizeof( privileges );
+                        BOOL result = FALSE;
 
-                            mapping.GenericRead = FILE_GENERIC_READ;
-                            mapping.GenericWrite = FILE_GENERIC_WRITE;
-                            mapping.GenericExecute = FILE_GENERIC_EXECUTE;
-                            mapping.GenericAll = FILE_ALL_ACCESS;
+                        mapping.GenericRead = FILE_GENERIC_READ;
+                        mapping.GenericWrite = FILE_GENERIC_WRITE;
+                        mapping.GenericExecute = FILE_GENERIC_EXECUTE;
+                        mapping.GenericAll = FILE_ALL_ACCESS;
 
-                            MapGenericMask( &genericAccessRights, &mapping );
-                            if (AccessCheck(security,hImpersonatedToken,genericAccessRights,&mapping,&privileges,&privilegesLength,&grantedAccess,&result)) {
-                                bRet = (result == TRUE);
-                            }
-                            CloseHandle( hImpersonatedToken );
+                        MapGenericMask( &genericAccessRights, &mapping );
+                        if (AccessCheck(security,hImpersonatedToken,genericAccessRights,&mapping,&privileges,&privilegesLength,&grantedAccess,&result)) {
+                            bRet = (result == TRUE);
                         }
-                        CloseHandle( hToken );
+                        CloseHandle( hImpersonatedToken );
                     }
-                    free( security );
+                    CloseHandle( hToken );
                 }
+                free( security );
             }
-
-            return bRet;
         }
-#endif
-        // TODO
-        return true;
+
+        return bRet;
     }
+#elif __linux__
+    bool CanAccess(fs::path Path, DAccessRights AccessRights) {
+        fs::perms p=fs::status(Path).permissions();
+
+        Ret=(p & fs::perms::owner_read) != fs::perms::none ? true : false;
+        return Ret;
+    }
+#endif
 
 	//! TODO provare
 	std::uintmax_t space_to_be_freed(const fs::path& dir, unsigned int percent_free_required) {
