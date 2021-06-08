@@ -9,6 +9,7 @@ project(DPPLIB
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
+#set(CMAKE_INCLUDE_CURRENT_DIR YES)
 
 # Check for Qt extansion (this will set QT_VERSION_MAJOR if it exists)
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets)
@@ -151,6 +152,8 @@ if (NOT ${BUILD_INTERFACE_LIBS})
         target_link_libraries(${PROJECT_NAME} ws2_32 wsock32)
     endif()
 endif()
+
+#set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC TRUE)
 
 ## Find boost
 # Uncomment this line to force BOOST_ROOT folder

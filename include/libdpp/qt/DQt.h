@@ -1,3 +1,6 @@
+#ifndef DQtH
+#define DQtH
+
 #ifdef QT_GUI_LIB
 
 #include <QWidget>
@@ -32,4 +35,5 @@ namespace DShell
     bool ExecuteDetached(const QString& Filename, const QStringList& Args = QStringList(),qint64 *Pid = nullptr);
 }
 }
+#endif
 #endif

@@ -1,4 +1,7 @@
 #include "libdpp/qt/DFormLog.h"
+
+#ifdef QT_GUI_LIB
+
 #include "ui_dformlog.h"
 #include "libdpp/qt/DQt.h"
 
@@ -72,3 +75,4 @@ void DFormLog::on_ButtonSendLogs_clicked()
 {
 
 }
+#endif

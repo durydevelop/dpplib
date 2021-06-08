@@ -18,9 +18,11 @@ set(FILES
     #${CMAKE_CURRENT_SOURCE_DIR}/network/DTcpServer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/network/DUdpServer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/network/DUri.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/qt/DCheckBoxDelegate.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/qt/DQt.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/qt/DFormLog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/qt/DFormLog.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/qt/DProgressDelegate.cpp
 )
 
 #add_library(${TARGET_NAME} ${TARGET_SRC_FILES})

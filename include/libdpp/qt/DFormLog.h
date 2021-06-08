@@ -1,6 +1,8 @@
 #ifndef DFORMLOG_H
 #define DFORMLOG_H
 
+#ifdef QT_GUI_LIB
+
 #include <QDialog>
 #include <QPlainTextEdit>
 #include "libdpp/DLog.h"
@@ -82,4 +84,5 @@ private:
     DTools::DPreferences *Prefs;
 };
 
+#endif
 #endif // DFORMLOG_H

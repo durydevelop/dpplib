@@ -20,8 +20,10 @@ set(FILES
     #${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DTcpServer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DUdpServer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DUri.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DQt.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DCheckBoxDelegate.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DFormLog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DProgressDelegate.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DQt.h
 )
 
 # Propagate sources to parent scope
