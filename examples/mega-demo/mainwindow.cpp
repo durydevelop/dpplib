@@ -13,6 +13,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     Log=new DTools::DLog();
     PrintLog("Start");
+    Log->d("__cplusplus = "+std::to_string(__cplusplus));
+    Log->d("__GNUCC__ = "+std::to_string(__GNUC__));
 
     //connect(this,&MainWindow::AddLog,this,&MainWindow::PrintLog); //,Qt::QueuedConnection);
 

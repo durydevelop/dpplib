@@ -39,10 +39,17 @@ namespace DCsv
 		return(DestList.size());
 	}
 
+    //! Extract all csv fields from string to a vector (copy version)
     std::vector<std::string> CsvToVector(std::string CsvString, char cSep) {
         std::vector<std::string> Result;
         ReadCSVRow(Result,CsvString,cSep);
         return(Result);
+    }
+
+    //! Extract all csv fields from string to a vector
+    size_t CsvToVector(std::vector<std::string>& DestVect, std::string CsvString, char cSep) {
+        ReadCSVRow(DestVect,CsvString,cSep);
+        return(DestVect.size());
     }
 
 	//! Extract a field from a csv string

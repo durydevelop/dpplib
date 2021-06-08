@@ -394,7 +394,7 @@ namespace DTools
 
         Log("Updater: run updater "+UpdaterFilename.string());
         // Run updater and exit
-        bool Ret=DShell::ExecuteDetached(UpdaterFilename.c_str());
+        bool Ret=DShell::ExecuteDetached(UpdaterFilename.string().c_str());
         if (Ret) {
             Log("Updater: Done, exit");
             exit(0);

@@ -10,13 +10,19 @@ set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/DSyncFile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DSyncWatcher.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DUpdate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/DValue.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/DVector.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DWindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/network/DNetwork.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/network/DRESTClient.cpp
     #${CMAKE_CURRENT_SOURCE_DIR}/network/DTcpServer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/network/DUdpServer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/network/DUri.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/qt/DCheckBoxDelegate.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/qt/DQt.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/qt/DFormLog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/qt/DFormLog.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/qt/DProgressDelegate.cpp
 )
 
 #add_library(${TARGET_NAME} ${TARGET_SRC_FILES})

@@ -1,3 +1,6 @@
+#ifndef DQtH
+#define DQtH
+
 #ifdef QT_GUI_LIB
 
 #include <QWidget>
@@ -6,6 +9,7 @@
 #include <QString>
 #include <QSettings>
 #include "libdpp/DPreferences.h"
+#include "libdpp/DFilesystem.h"
 
 namespace DTools
 {
@@ -21,6 +25,7 @@ namespace DWindow
     bool RestoreQWindowPosition(QDialog& qDialog, DTools::DPreferences *DestPrefs = nullptr);
     QSettings::Status RestoreQWindowGeometry(QMainWindow& qMainWindow, QString CompanyName = QString(), QString AppName = QString());
     QSettings::Status RestoreQWindowGeometry(QDialog& qDialog, QString CompanyName = QString(), QString AppName = QString());
+    bool SetStyleSheetFromFile(fs::path QssFilename);
 }
 
 namespace DShell
@@ -30,4 +35,5 @@ namespace DShell
     bool ExecuteDetached(const QString& Filename, const QStringList& Args = QStringList(),qint64 *Pid = nullptr);
 }
 }
+#endif
 #endif

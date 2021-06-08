@@ -12,6 +12,7 @@ set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DSyncFile.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DSyncWatcher.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DUpdate.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DValue.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DVector.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DWindow.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DNetwork.h
@@ -19,6 +20,9 @@ set(FILES
     #${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DTcpServer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DUdpServer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DUri.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DCheckBoxDelegate.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DFormLog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DProgressDelegate.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DQt.h
 )
 
