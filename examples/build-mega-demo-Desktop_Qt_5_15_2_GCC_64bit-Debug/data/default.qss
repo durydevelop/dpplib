@@ -1,3 +1,0 @@
-QStatusBar::item {border: 1px solid #4FC1E9;}
-#ButtonSelAll{qproperty-icon: url(:/res/icons/checkbox-checked_2.png)}
-#ButtonUnselAll{qproperty-icon: url(:/res/icons/checkbox-indicator-partially-checked.png)}
