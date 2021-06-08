@@ -53,8 +53,7 @@ if(NOT helpers_cmake_POPULATED)
     FetchContent_Populate(dcmake)
 endif()
 FetchContent_MakeAvailable(dcmake)
-]]#
-
+#]]
 ## Temporaneo per testare le modifiche
 get_filename_component(dcmake_SOURCE_DIR "../../helpers_cmake" ABSOLUTE)
 
