@@ -2,7 +2,7 @@
 
 #ifdef QT_GUI_LIB
 
-#include "ui_dformlog.h"
+#include "libdpp/qt/ui_dformlog.h"
 #include "libdpp/qt/DQt.h"
 
 /**
