@@ -62,10 +62,36 @@ bool DCheckBoxDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, co
 
         bool checked=index.model()->data(index,Qt::DisplayRole).toBool();
         int data=checked ? 0 : 1;
+        emit statusChanged(index,!checked);
         return(model->setData(index, data, Qt::EditRole));
     }
     else {
         return(QStyledItemDelegate::editorEvent(event, model, option, index));
     }
 }
+
+/*
+QWidget *DCheckBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    Q_UNUSED(option);
+    Q_UNUSED(index);
+    QCheckBox *editor = new QCheckBox(parent);
+    return editor;
+}
+
+void DCheckBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
+{
+    //set if checked or not
+    QCheckBox *cb = qobject_cast<QCheckBox *>(editor);
+    cb->setChecked(index.data().toBool());
+}
+
+void DCheckBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+{
+    QCheckBox *cb = static_cast<QCheckBox *>(editor);
+    int value = (cb->checkState()==Qt::Checked) ? 1 : 0;
+    model->setData(index, value, Qt::EditRole);
+}
+*/
+
 #endif

@@ -6,9 +6,9 @@ project(DPPLIB
         LANGUAGES CXX
 )
 
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
+#set(CMAKE_AUTOUIC ON)
+#set(CMAKE_AUTOMOC ON)
+#set(CMAKE_AUTORCC ON)
 #set(CMAKE_INCLUDE_CURRENT_DIR YES)
 
 # Check for Qt extansion (this will set QT_VERSION_MAJOR if it exists)
