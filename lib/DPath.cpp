@@ -185,7 +185,7 @@ namespace DPath
     bool CanAccess(fs::path Path, DAccessRights AccessRights) {
         fs::perms p=fs::status(Path).permissions();
 
-        Ret=(p & fs::perms::owner_read) != fs::perms::none ? true : false;
+        bool Ret=(((DAccessRights) p) & AccessRights) == AccessRights ? true : false;
         return Ret;
     }
 #endif
