@@ -28,9 +28,19 @@ namespace DPath
 						};
 	#if defined _WIN32 || defined _WIN64
 		// Only for Windows
-		enum DAccessRights {ACCESS_READ = GENERIC_READ, ACCESS_WRITE = GENERIC_WRITE, ACCESS_EXECUTE = GENERIC_EXECUTE, ACCESS_ALL = GENERIC_ALL};
+        enum DAccessRights {ACCESS_READ    =    GENERIC_READ,
+                            ACCESS_WRITE   =    GENERIC_WRITE,
+                            ACCESS_EXECUTE =    GENERIC_EXECUTE,
+                            ACCESS_ALL     =    GENERIC_ALL
+        };
 		std::string GetFileVersion(std::string Filename=std::string(), bool TrimDots = true);
 		bool CanAccess(fs::path Path, DAccessRights AccessRights);
+    #elif __linux__
+        enum DAccessRights {ACCESS_READ    =   (unsigned) fs::perms::others_read,
+                            ACCESS_WRITE   =   (unsigned) fs::perms::others_write,
+                            ACCESS_EXECUTE =   (unsigned) fs::perms::others_exec,
+                            ACCESS_ALL     =   (unsigned) fs::perms::others_all
+    };
 	#endif
 
 	// Callback
