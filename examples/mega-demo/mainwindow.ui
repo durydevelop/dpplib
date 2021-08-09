@@ -180,9 +180,9 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
-    <widget class="QWidget" name="widget">
+    <widget class="QWidget" name="TabDPath">
      <attribute name="title">
       <string>DPath</string>
      </attribute>
@@ -581,7 +581,7 @@
       </property>
      </widget>
     </widget>
-    <widget class="QWidget" name="widget_2">
+    <widget class="QWidget" name="TabDShell">
      <attribute name="title">
       <string>DShell</string>
      </attribute>
@@ -738,6 +738,197 @@
       </property>
       <property name="text">
        <string>Execute process</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="TabDRESTClient">
+     <attribute name="title">
+      <string>DRESTClient</string>
+     </attribute>
+     <widget class="QLineEdit" name="EditRestClientUrl">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>60</y>
+        <width>341</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>http://api.photorec.it/orders</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="ButtonRestClientCreate">
+      <property name="geometry">
+       <rect>
+        <x>390</x>
+        <y>100</y>
+        <width>93</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Create</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="ButtonRestClientConnect">
+      <property name="geometry">
+       <rect>
+        <x>390</x>
+        <y>190</y>
+        <width>93</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Connect</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="ButtonRestClientPost">
+      <property name="geometry">
+       <rect>
+        <x>390</x>
+        <y>220</y>
+        <width>93</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Post</string>
+      </property>
+     </widget>
+     <widget class="QTreeWidget" name="TreeWidgetRestClientBody">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>100</y>
+        <width>341</width>
+        <height>261</height>
+       </rect>
+      </property>
+      <property name="editTriggers">
+       <set>QAbstractItemView::AllEditTriggers</set>
+      </property>
+      <column>
+       <property name="text">
+        <string>Item</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Value</string>
+       </property>
+      </column>
+      <item>
+       <property name="text">
+        <string>customer</string>
+       </property>
+       <property name="text">
+        <string>99961</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>envelope</string>
+       </property>
+       <property name="text">
+        <string>745123</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>download_date</string>
+       </property>
+       <property name="text">
+        <string>20200802</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>tracking[status]</string>
+       </property>
+       <property name="text">
+        <string>corrected</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>tracking[date]</string>
+       </property>
+       <property name="text">
+        <string>2021-02-14T20:10:00Z</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>tacking[author]</string>
+       </property>
+       <property name="text">
+        <string>DuryLab ID 100</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>tracking[article_code]</string>
+       </property>
+       <property name="text">
+        <string>MED-STRONZIO</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>tracking[article_description]</string>
+       </property>
+       <property name="text">
+        <string>Stronzio fumante</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>tracking[details]</string>
+       </property>
+       <property name="text">
+        <string>Fatti i cazzi tuoi</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QPushButton" name="ButtonRestClientDIsconnect">
+      <property name="geometry">
+       <rect>
+        <x>390</x>
+        <y>250</y>
+        <width>93</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Disconnect</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="ButtonRestClientOneShot">
+      <property name="geometry">
+       <rect>
+        <x>390</x>
+        <y>330</y>
+        <width>93</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>One Shot Send</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="ButtonRestClientDelete">
+      <property name="geometry">
+       <rect>
+        <x>390</x>
+        <y>130</y>
+        <width>93</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Delete</string>
       </property>
      </widget>
     </widget>

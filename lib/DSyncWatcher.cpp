@@ -27,9 +27,7 @@ namespace DTools
      * @param SyncNow
      */
     DSyncWatcher::DSyncWatcher(void) {
-        GlobalCallback=nullptr;
-        MemberCallback=nullptr;
-        MemberCalbackObj=nullptr;
+        Callback=nullptr;
         Watching=false;
         NeedToQuit=false;
         SafeMode=false;
@@ -203,25 +201,17 @@ namespace DTools
     }
 
     // ******************************  Callback stuffs ***************************************
-    /**
-     * @brief Register a global callback.
-     * @param callback  ->  DGlobalCallback type function to register.
-     */
-    void DSyncWatcher::SetGlobalCallback(DGlobalCallback callback)	{
-            GlobalCallback=callback;
-            MemberCallback=nullptr;
-            MemberCalbackObj=nullptr;
-    }
-
 	/**
 	 * @brief Register a class member callback.
-	 * @param callback  ->  DMemberCallback type function to register (e.g. ClassName::CallbackFunc).
-	 * @param ClassObj  ->  Class pointer in which callback is called.
+	 * @param callback  ->  DCallback type function to bind like:
+	 * For thread safety, callback should be set in this way:
+	 * @code
+	 * auto callback=std::bind(&MainWindow::Callback,this,std::placeholders::_1,std::placeholders::_2,std::placeholders::_3);
+	 * RestClient.SetCallback(callback);
+	 * @endcode
 	 */
-	void DSyncWatcher::SetMemberCallback(DMemberCallback callback, void *ClassObj) {
-			GlobalCallback=nullptr;
-			MemberCallback=callback;
-			MemberCalbackObj=ClassObj;
+	void DSyncWatcher::SetCallback(DCallback callback) {
+			Callback=callback;
 	}
 
 	/**
@@ -230,11 +220,8 @@ namespace DTools
 	 * @param SyncStatus	->	Detected Change type. Can be CHANGE_STATUS_CREATED, CHANGE_STATUS_ERASED, CHANGE_STATUS_MODIFIED.
 	 */
 	void DSyncWatcher::DoCallback(DSyncFile::DSyncStatus SyncStatus, fs::path Path, std::string Msg) {
-		if(GlobalCallback != NULL) {
-			GlobalCallback(SyncStatus,Path,Msg);
-		}
-		else if((MemberCallback != NULL) && (MemberCalbackObj != NULL)) {
-			MemberCallback(MemberCalbackObj,SyncStatus,Path,Msg);
+		if(Callback) {
+			Callback(SyncStatus,Path,Msg);
 		}
 	}
 	// ***************************************************************************************

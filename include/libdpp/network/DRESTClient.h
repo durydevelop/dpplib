@@ -93,6 +93,7 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
         typedef boost::beast::http::response<boost::beast::http::string_body> DHttpResponse;
         typedef boost::beast::http::request<boost::beast::http::string_body> DHttpRequest;
         typedef boost::beast::http::verb DRequestType;
+        typedef boost::asio::io_context DContext;
         // Constants
         const DRequestType REQ_POST=DRequestType::post;
         const DRequestType REQ_PUT=DRequestType::put;
@@ -100,37 +101,51 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
         const DRequestType REQ_DELETE=DRequestType::delete_;
 
         // Functions
-        explicit DRESTClient(boost::asio::io_context& ioc);
+        //explicit DRESTClient(boost::asio::io_context& ioc);
+        DRESTClient();
+
         void SetTimeout(uint8_t Sec);
         uint8_t GetTimeout(void);
         bool SetUrl(const std::string Url);
         void SetHttpVersion(DHttpVersion dHttpVersion);
         void SetHttpVersion(std::string HttpVersionString);
-        void SetContentType(DContentType dContentType);
-        void SetContentType(std::string ContentTypeString);
-        void SetEncodeType(DEncodeType dEncodeType);
-        void SetKeepAlive(bool Enable);
-        DEncodeType GetEncodeType(void);
-        std::string GetContentTypeStr(void);
-        DHttpRequest GetHttpRequest(DRequestType dRequestType);
-        bool GetKeepAlive(void);
+        void SetHttpReqContentType(DContentType dContentType);
+        void SetHttpReqContentType(std::string ContentTypeString);
+        void SetHttpReqEncodeType(DEncodeType dEncodeType);
+        void SetHttpReqKeepAlive(bool Enable);
         void SetReqHdrBodyParams(std::map<std::string,std::string> Params);
         void SetReqBodyParams(std::map<std::string,std::string> Params);
-        void SetHdrBody(std::string HdrBodyStr);
-        void SetBody(std::string BodyStr);
         void AddReqHdrBodyParam(std::string Key, std::string Value);
         void AddReqBodyParam(std::string Key, std::string Value);
+        void SetHdrBody(std::string HdrBodyStr);
+        void SetBody(std::string BodyStr);
+
+        DHttpRequest GetHttpRequest(DRequestType dRequestType);
+        DEncodeType GetHttpReqEncodeType(void);
+        std::string GetHttpReqContentTypeStr(void);
+        bool GetHttpReqKeepAlive(void);
+
         void ClearHrdBody(void);
         void ClearBody(void);
         void Clear(void);
-        DUri& GetUri(void);
+
         bool Connect(bool Force = false);
-        void AsyncConnect(bool Force);
+        bool Connect(const std::string& Url, bool Force = false);
         bool Disconnect(bool Force = false);
-        void SendPOST(void);
-        void SendPUT(void);
-        void SendGET(void);
-        void SendDELETE(void);
+        bool SendPOST(bool WaitForResponse = true);
+        bool SendPUT(bool WaitForResponse = true);
+        bool SendGET(bool WaitForResponse = true);
+/*
+        void AsyncConnect(bool Force);
+        void AsyncRun(void);
+        void AsyncPoll(void);
+        void AsyncSendPOST(void);
+        void AsyncSendPUT(void);
+        void AsyncSendGET(void);
+*/
+        //void AsyncSendDELETE(void);
+
+        DUri& GetUri(void);
 
     private:
         size_t GetReqHdrBodyAsString(std::string &ResultStr);
@@ -142,25 +157,30 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
         size_t Encode(std::string& Content, std::string& ResultStr, DEncodeType dEncodeType);
         std::string Encode(std::string& Content, DEncodeType dEncodeType);
         void PrepareHttpRequest(DRequestType dRequestType);
-        void Send(void);
+
+        bool Send(void);
+        bool Write(void);
+        bool Read(void);
+/*
+
         void AsyncWrite(void);
         void AsyncRead(void);
         void OnWrite(boost::beast::error_code ec, std::size_t bytes_transferred);
         void OnRead(boost::beast::error_code ec, std::size_t bytes_transferred);
-
+*/
         bool Connected;
+        DContext ioc;
         boost::asio::ip::tcp::resolver TcpResolver;
         boost::beast::tcp_stream TcpStream;
 
-        bool DisconnectAfter;
+        //bool DisconnectAfter;
 
         uint8_t TimeoutSec;
         std::string UserAgent;
         DHttpVersion HttpVersion;
-        //DContentType ContentType;
-        std::string ContentTypeStr;
-        DEncodeType EncodeType;
-        bool KeepAlive;
+        std::string HttpReqContentTypeStr;
+        DEncodeType HttpReqEncodeType;
+        bool HttpReqKeepAlive;
         DUri dUri;
         boost::beast::flat_buffer Buffer;
         DHttpRequest HttpRequest;
@@ -182,39 +202,29 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
             {   CONTENT_TYPE_CUSTOM         ,   ""                                  },
         };
 
-    // Callback Stuffs
+    // Callbacks
     public:
         // Log
-        typedef std::function<void (std::string)> DGlobalCallbackLog;
-        typedef std::function<void (void*, std::string)> DMemberCallbackLog;
-        void SetOnLog(DGlobalCallbackLog callback);
-        void SetOnLog(DMemberCallbackLog callback, void *ClassObj);
+        typedef std::function<void (std::string)> DCallbackLog;
+        void SetOnLog(DCallbackLog callback);
         std::string GetLastStatus(void);
         // Response
-        typedef std::function<void (DHttpResponse&)> DGlobalCallbackResponse;
-        typedef std::function<void (void*,DHttpResponse&)> DMemberCallbackResponse;
-        void SetOnResponse(DGlobalCallbackResponse callback);
-        void SetOnResponse(DMemberCallbackResponse callback, void *ClassObj);
+        typedef std::function<void (DHttpResponse&)> DCallbackResponse;
+        void SetOnResponse(DCallbackResponse callback);
         // Error
-        typedef DGlobalCallbackLog DGlobalCallbackError;
-        typedef DMemberCallbackLog DMemberCallbackError;
-        void SetOnError(DGlobalCallbackError callback);
-        void SetOnError(DMemberCallbackError callback, void *ClassObj);
+        typedef DCallbackLog DCallbackError;
+        void SetOnError(DCallbackError callback);
     private:
-        void* MemberCalbackObj;
         // Log
-        DGlobalCallbackLog GlobalCallbackLog;
-        DMemberCallbackLog MemberCallbackLog;
+        DCallbackLog CallbackLog;
         void DoLogCallback(void);
         void Log(std::string);
         std::string LastStrStatus;
         // Response
-        DGlobalCallbackResponse GlobalCallbackResponse;
-        DMemberCallbackResponse MemberCallbackResponse;
+        DCallbackResponse CallbackResponse;
         void DoResponseCallback(void);
         // Error
-        DGlobalCallbackError GlobalCallbackError;
-        DMemberCallbackError MemberCallbackError;
+        DCallbackError CallbackError;
         void DoErrorCallback(void);
         void Error(std::string);
 };

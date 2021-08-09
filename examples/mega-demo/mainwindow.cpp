@@ -4,7 +4,9 @@
 //#include <QTimer>
 #include <QFileDialog>
 #include <QtQuickWidgets/QQuickWidget>
+#include <QTreeWidgetItem>
 #include "libdpp/qt/DQt.h"
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -190,3 +192,94 @@ void MainWindow::on_ButtonDShellExecute_clicked()
         DTools::DShell::Execute(Filename,ArgList,ui->SpinBoxWaitMillis->value(),&Pid);
     }
 }
+
+void MainWindow::OnResponse(DTools::DNetwork::DRESTClient::DHttpResponse HttpResponse)
+{
+    std::stringstream ss;
+    ss << "HttpResponse:" << std::endl;
+    ss << HttpResponse << std::endl;
+    Log->d(ss.str());
+}
+
+void MainWindow::OnLog(std::string LogMsg)
+{
+    Log->d("DEBUG : "+LogMsg);
+}
+
+void MainWindow::on_ButtonRestClientCreate_clicked()
+{
+    if (RESTClient) {
+        ui->TextEditLog->append("DRESTClient already created");
+        return;
+    }
+
+    RESTClient=std::make_shared<DTools::DNetwork::DRESTClient>();
+    if (RESTClient) {
+        ui->TextEditLog->append("DRESTClient created");
+    }
+
+    auto ResponseCallback=std::bind(&MainWindow::OnResponse,this,std::placeholders::_1);
+    RESTClient->SetOnResponse(ResponseCallback);
+    auto LogCallback=std::bind(&MainWindow::OnLog,this,std::placeholders::_1);
+    RESTClient->SetOnLog(LogCallback);
+}
+
+
+void MainWindow::on_ButtonRestClientConnect_clicked()
+{
+    //RESTClient->SetUrl(ui->EditRestClientUrl->text().toStdString());
+    if(RESTClient->Connect(ui->EditRestClientUrl->text().toStdString())) {
+        ui->TextEditLog->append(("DRESTClient Connected to "+RESTClient->GetUri().UriString).c_str());
+    }
+    else {
+        ui->TextEditLog->append(("Error connecting to "+RESTClient->GetUri().UriString+" : "+RESTClient->GetLastStatus()).c_str());
+    }
+}
+
+void MainWindow::on_ButtonRestClientPost_clicked()
+{
+    //RESTClient->ClearBody();
+    RESTClient->SetHttpReqContentType(DTools::DNetwork::DRESTClient::CONTENT_TYPE_URL_ENCODED);
+    RESTClient->SetHttpReqKeepAlive(true);
+
+    for (int ixI=0; ixI<ui->TreeWidgetRestClientBody->topLevelItemCount(); ixI++) {
+        QTreeWidgetItem *Item=ui->TreeWidgetRestClientBody->topLevelItem(ixI);
+        RESTClient->AddReqBodyParam(Item->data(0,Qt::EditRole).toString().toStdString(),Item->data(1,Qt::EditRole).toString().toStdString());
+    }
+
+    if (RESTClient->SendPOST()) {
+        ui->TextEditLog->append("Sent and back");
+    }
+    else {
+        ui->TextEditLog->append(("Error send : "+RESTClient->GetLastStatus()).c_str());
+    }
+
+    ui->TextEditLog->append("returned");
+}
+
+void MainWindow::on_ButtonRestClientDIsconnect_clicked()
+{
+    if (RESTClient->Disconnect()) {
+        ui->TextEditLog->append("Disconnected");
+    }
+    else {
+        ui->TextEditLog->append(("Error disconnect : "+RESTClient->GetLastStatus()).c_str());
+    }
+}
+
+
+void MainWindow::on_ButtonRestClientOneShot_clicked()
+{
+    on_ButtonRestClientConnect_clicked();
+    on_ButtonRestClientPost_clicked();
+    on_ButtonRestClientDIsconnect_clicked();
+}
+
+
+void MainWindow::on_ButtonRestClientDelete_clicked()
+{
+    if (RESTClient) {
+        RESTClient.reset();
+    }
+}
+

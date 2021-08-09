@@ -1,4 +1,5 @@
 set(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/DChrono.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DCsv.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DPath.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DPathWatcher.cpp

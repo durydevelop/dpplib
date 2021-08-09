@@ -29,12 +29,6 @@ namespace DTools
             std::vector<DSyncFile> SyncList;
             std::string LastStrStatus;
 
-            // Public callback stuffs
-            typedef std::function<void (DSyncFile::DSyncStatus, fs::path, std::string)> DGlobalCallback;
-            typedef std::function<void (void*, DSyncFile::DSyncStatus, fs::path, std::string)> DMemberCallback;
-            void SetGlobalCallback(DGlobalCallback callback);
-            void SetMemberCallback(DMemberCallback callback, void *ClassObj);
-
         private:
             void Log(std::string LogMsg);
             std::string GetLastStatus(void);
@@ -49,10 +43,12 @@ namespace DTools
             std::promise<bool> PromiseEnded;
             std::future<bool> ThreadFuture;
 
-            // Private callback stuffs
-            DGlobalCallback GlobalCallback;
-            DMemberCallback MemberCallback;
-            void* MemberCalbackObj;
+        // Callback
+        public:
+            typedef std::function<void (DSyncFile::DSyncStatus, fs::path, std::string)> DCallback;
+            void SetCallback(DCallback callback);
+        private:
+            DCallback Callback;
             void DoCallback(DSyncFile::DSyncStatus SyncStatus, fs::path Path, std::string Msg = std::string());
     };
 }

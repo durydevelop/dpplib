@@ -20,7 +20,15 @@ using     tcp   =   boost::asio::ip::tcp;
 #define DEFAULT_USER_AGENT "DRESTClient/0.1"
 //#define DEFAULT_USER_AGENT BOOST_BEAST_VERSION_STRING
 
-//#define DEBUG
+#define DEBUG
+
+/** TODO:
+ *  OK_Connect(std::string Url)
+ *  OK_Blocking Send e Read
+ *  _Async Send e Read
+ *  _OnAsyncConnect
+ *  OK_Aggiornare callbacks con std::funcion
+ **/
 
 namespace DTools {
 namespace DNetwork {
@@ -28,6 +36,36 @@ namespace DNetwork {
 // ***************************************************************************************
 // ***************************** DRESTClient class ***************************************
 // ***************************************************************************************
+
+/**
+ * @brief DRESTClient::DRESTClient constructor.
+ */
+DRESTClient::DRESTClient() :
+    ioc(),
+    TcpResolver(asio::make_strand(ioc)),
+    TcpStream(asio::make_strand(ioc))
+{
+    // Keep io_context alive
+    //boost::asio::executor_work_guard<boost::asio::io_context::executor_type> guard(boost::asio::make_work_guard(ioc));
+    Connected=false;
+    //DisconnectAfter=false;
+    TimeoutSec=DEFAULT_TIMEOUT_SEC;
+    UserAgent=DEFAULT_USER_AGENT;
+    HttpVersion=DEFAULT_HTTP_VERSION;
+    HttpReqContentTypeStr=DContents[DEFAULT_CONTENT_TYPE].Verb;
+    HttpReqEncodeType=DEFAULT_ENCODE;
+    HttpReqKeepAlive=true;
+    CallbackLog=nullptr;
+    CallbackResponse=nullptr;
+    CallbackError=nullptr;
+}
+
+/**
+ * @brief DRESTClient::DRESTClient
+ * @param io_context
+ * Connect() call is made on first Send()
+ */
+/*
 DRESTClient::DRESTClient(boost::asio::io_context& io_context) :
     TcpResolver(asio::make_strand(io_context)),
     TcpStream(asio::make_strand(io_context))
@@ -37,11 +75,14 @@ DRESTClient::DRESTClient(boost::asio::io_context& io_context) :
     TimeoutSec=DEFAULT_TIMEOUT_SEC;
     UserAgent=DEFAULT_USER_AGENT;
     HttpVersion=DEFAULT_HTTP_VERSION;
-    ContentTypeStr=DContents[DEFAULT_CONTENT_TYPE].Verb;
-    EncodeType=DEFAULT_ENCODE;
-    KeepAlive=true;
+    HttpReqContentTypeStr=DContents[DEFAULT_CONTENT_TYPE].Verb;
+    HttpReqEncodeType=DEFAULT_ENCODE;
+    HttpReqKeepAlive=true;
+    CallbackLog=nullptr;
+    CallbackResponse=nullptr;
+    CallbackError=nullptr;
 }
-
+*/
 /**
  * @brief Set version of http protocol.
  * @param dHttpVersion   ->  Can be HTTP_1_0 or HTTP_1_1.
@@ -65,27 +106,27 @@ void DRESTClient::SetHttpVersion(std::string HttpVersionString)
  * @brief Set content-type header field.
  * @param dContentType  ->  Can be one of DContentType enumarator.
  */
-void DRESTClient::SetContentType(DRESTClient::DContentType dContentType)
+void DRESTClient::SetHttpReqContentType(DRESTClient::DContentType dContentType)
 {
-    ContentTypeStr=DContents[dContentType].Verb;
+    HttpReqContentTypeStr=DContents[dContentType].Verb;
 }
 
 /**
  * @brief Set content-type header field directly as string.
  * @param ContentTypeStr  ->  Sting containing a valid http content type.
  */
-void DRESTClient::SetContentType(std::string ContentTypeString)
+void DRESTClient::SetHttpReqContentType(std::string ContentTypeString)
 {
-    ContentTypeStr=ContentTypeString;
+    HttpReqContentTypeStr=ContentTypeString;
 }
 
 /**
  * @brief Set encode-type header field.
  * @param dEncodeType  ->  Can be one of DContentType enumarator.
  */
-void DRESTClient::SetEncodeType(DRESTClient::DEncodeType dEncodeType)
+void DRESTClient::SetHttpReqEncodeType(DRESTClient::DEncodeType dEncodeType)
 {
-    EncodeType=dEncodeType;
+    HttpReqEncodeType=dEncodeType;
 }
 
 /**
@@ -112,12 +153,12 @@ bool DRESTClient::SetUrl(const std::string Url)
 }
 
 /**
- * @brief Set keep-alive option in request.
+ * @brief Set keep-alive option in HttpRequest.
  * @param Enabled   ->  It true "in http header "Connection: keep-alive" is add to header.
  */
-void DRESTClient::SetKeepAlive(bool Enabled)
+void DRESTClient::SetHttpReqKeepAlive(bool Enabled)
 {
-    KeepAlive=Enabled;
+    HttpReqKeepAlive=Enabled;
 }
 
 /**
@@ -209,12 +250,12 @@ void DRESTClient::Clear(void)
     HdrBody.clear();
     Body.clear();
     Connected=false;
-    DisconnectAfter=false;
+    //DisconnectAfter=false;
     TimeoutSec=DEFAULT_TIMEOUT_SEC;
     UserAgent=DEFAULT_USER_AGENT;
     HttpVersion=DEFAULT_HTTP_VERSION;
-    ContentTypeStr=DContents[DEFAULT_CONTENT_TYPE].Verb;
-    EncodeType=DEFAULT_ENCODE;
+    HttpReqContentTypeStr=DContents[DEFAULT_CONTENT_TYPE].Verb;
+    HttpReqEncodeType=DEFAULT_ENCODE;
 }
 
 /**
@@ -228,17 +269,17 @@ uint8_t DRESTClient::GetTimeout(void)
 /**
  * @return current encode-type as DEncodeType.
  */
-DRESTClient::DEncodeType DRESTClient::GetEncodeType(void)
+DRESTClient::DEncodeType DRESTClient::GetHttpReqEncodeType(void)
 {
-    return(EncodeType);
+    return(HttpReqEncodeType);
 }
 
 /**
  * @return current content-type as DContentType
  */
-std::string DRESTClient::GetContentTypeStr(void)
+std::string DRESTClient::GetHttpReqContentTypeStr(void)
 {
-    return(ContentTypeStr);
+    return(HttpReqContentTypeStr);
 }
 
 /**
@@ -373,9 +414,9 @@ DRESTClient::DHttpRequest DRESTClient::GetHttpRequest(DRequestType dRequestType)
 /**
  * @return true if keep-alive option is active.
  */
-bool DRESTClient::GetKeepAlive(void)
+bool DRESTClient::GetHttpReqKeepAlive(void)
 {
-    return KeepAlive;
+    return HttpReqKeepAlive;
 }
 
 /**
@@ -428,8 +469,66 @@ std::string DRESTClient::Encode(std::string& Content, DEncodeType dEncodeType)
 }
 
 /**
+ * @brief Build the HttpRequest.
+ * @param Verb  ->  Type of request can be one of REQ_POST, REQ_PUT, REQ_GET, REQ_DELETE.
+ */
+void DRESTClient::PrepareHttpRequest(DRESTClient::DRequestType dReqestType)
+{
+    // Set request Header
+    HttpRequest.clear();
+    // Http version
+    HttpRequest.version(HttpVersion);
+    //Verb
+    HttpRequest.method(dReqestType);
+    // Target
+    if (!dUri.Path.empty()) {
+        HttpRequest.target(dUri.Path);
+    }
+    // User agent
+    HttpRequest.set(http::field::user_agent,UserAgent);
+    // Host
+    HttpRequest.set(http::field::host,dUri.Host);
+    // Keep alive
+    // TODO: per ora non va HttpRequest.keep_alive(HttpReqKeepAlive);
+    // aggiungo direttamente
+    if (HttpReqKeepAlive) {
+        HttpRequest.set("Connection","Keep-Alive");
+    }
+    // Content type
+    HttpRequest.set(http::field::content_type,HttpReqContentTypeStr);
+    // Header body
+    if (HttpReqHdrBodyParams.size() > 0) {
+        HttpRequest.set(http::field::body,GetReqHdrBodyAsString(HttpReqEncodeType));
+    }
+    else if (!HdrBody.empty()) {
+        HttpRequest.set(http::field::body,HdrBody);
+    }
+    // Body
+    if (HttpReqBodyParams.size() > 0) {
+        HttpRequest.body()=GetReqBodyAsString(HttpReqEncodeType);
+    }
+    else if (!Body.empty()) {
+        HttpRequest.body()=Body;
+    }
+    // Build request
+    HttpRequest.prepare_payload();
+}
+
+/**
  * @brief Perform a sync (blocking) connection.
- * @param Force ->  If true force connection in case of Connected variable is true.
+ * @param Url   ->  REST service url.
+ * @param Force ->  If true, force ri-connection in case of Connected variable is true.
+ * @return true on success connection, otherwise false. You can retrive error from LastStrStatus string.
+ * This function is blocking until connection hand-shake is ended or time-out is reached.
+ */
+bool DRESTClient::Connect(const std::string& Url, bool Force)
+{
+    SetUrl(Url);
+    return(Connect(Force));
+}
+/**
+ * @brief Perform a sync (blocking) connection to url previously set with SetUrl(...).
+ * @param Force ->  If true, force ri-connection in case of Connected variable is true.
  * @return true on success connection, otherwise false. Can retrive error from LastStrStatus string.
  * This function is blocking until connection hand-shake is ended or time-out is reached.
  */
@@ -469,42 +568,6 @@ bool DRESTClient::Connect(bool Force)
 }
 
 /**
- * @brief DRESTClient::AsyncConnect
- * @param Force
- */
-void DRESTClient::AsyncConnect(bool Force)
-{
-    if (Connected && !Force) {
-        Error("Already connected");
-        return;
-    }
-    else if (dUri.Host.empty()) {
-        Error("Missing host in url");
-        return;
-    }
-    else if (dUri.Port.empty()) {
-        Error("Missing port in url");
-        return;
-    }
-
-    Connected=false;
-    // Async resolve
-    TcpResolver.async_resolve(dUri.Host,dUri.Port, [this] (boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results) {
-        if (ec) {
-            Error("Error resolve: "+ec.message());
-        }
-        // Async connect
-        TcpStream.expires_after(std::chrono::seconds(30));
-        TcpStream.async_connect(results,[this](boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type::endpoint_type) {
-            if (ec) {
-                Error("Error connect: "+ec.message());
-            }
-            Connected=true;
-        });
-    });
-}
-
-/**
  * @brief Perform a sync (blocking) diconnect.
  * @param Force ->  If true force disconnection in case of Connected variable is false.
  * @return true on success connection, otherwise false. Can retrive error from LastStrStatus string.
@@ -523,264 +586,198 @@ bool DRESTClient::Disconnect(bool Force)
         Error("Error shutdown: "+ec.message());
         return false;
     }
-    Error("Disconnected");
+    Log("Disconnected");
     Connected=false;
     return true;
 }
 
 /**
- * @brief Build the HttpRequest.
- * @param Verb  ->  Type of request can be one of REQ_POST, REQ_PUT, REQ_GET, REQ_DELETE.
+ * @brief Send a blocking POST using current data stored.
+ * @param WaitForResponse   ->  If true, blocking funcion Read() is called and the funcion return after data received.
+ * @return true on success otherwise false. You can retrive error from LastStrStatus string.
  */
-void DRESTClient::PrepareHttpRequest(DRESTClient::DRequestType dReqestType)
-{
-    // Set request Header
-    HttpRequest.clear();
-    // Http version
-    HttpRequest.version(HttpVersion);
-    //Verb
-    HttpRequest.method(dReqestType);
-    // Target
-    if (!dUri.Path.empty()) {
-        HttpRequest.target(dUri.Path);
-    }
-    // User agent
-    HttpRequest.set(http::field::user_agent,UserAgent);
-    // Host
-    HttpRequest.set(http::field::host,dUri.Host);
-    // Keep alive
-    HttpRequest.keep_alive(KeepAlive);
-    // Content type
-    HttpRequest.set(http::field::content_type,ContentTypeStr);
-    // Header body
-    if (HttpReqHdrBodyParams.size() > 0) {
-        HttpRequest.set(http::field::body,GetReqHdrBodyAsString(EncodeType));
-    }
-    else if (!HdrBody.empty()) {
-        HttpRequest.set(http::field::body,HdrBody);
-    }
-    // Body
-    if (HttpReqBodyParams.size() > 0) {
-        HttpRequest.body()=GetReqBodyAsString(EncodeType);
-    }
-    else if (!Body.empty()) {
-        HttpRequest.body()=Body;
-    }
-    // Build request
-    HttpRequest.prepare_payload();
-}
-
-/**
- * @brief Send a POST request using current data stored.
- */
-void DRESTClient::SendPOST(void)
+bool DRESTClient::SendPOST(bool WaitForResponse)
 {
     PrepareHttpRequest(REQ_POST);
-    Send();
+    if (Send()) {
+        if (WaitForResponse) {
+            return(Read());
+        }
+    }
+    return false;
 }
 
 /**
- * @brief Send a PUT request using current data stored.
+ * @brief Send a blocking PUT using current data stored.
+ * @param WaitForResponse   ->  If true, blocking funcion Read() is called and the funcion return after data received.
+ * @return true on success otherwise false. You can retrive error from LastStrStatus string.
  */
-void DRESTClient::SendPUT(void)
+bool DRESTClient::SendPUT(bool WaitForResponse)
 {
     PrepareHttpRequest(REQ_PUT);
-    Send();
+    if (Send()) {
+        if (WaitForResponse) {
+            return(Read());
+        }
+    }
+    return false;
 }
 
 /**
- * @brief Send a GET request using current data stored.
+ * @brief Send a blocking GET using current data stored.
+ * @param WaitForResponse   ->  If true, blocking funcion Read() is called and the funcion return after data received.
+ * @return true on success otherwise false. You can retrive error from LastStrStatus string.
  */
-void DRESTClient::SendGET(void)
+bool DRESTClient::SendGET(bool WaitForResponse)
 {
     PrepareHttpRequest(REQ_GET);
-    Send();
+    if (Send()) {
+        if (WaitForResponse) {
+            return(Read());
+        }
+    }
+    return false;
 }
 
-void DRESTClient::Send(void)
+/**
+ * @brief Perform a blocking send of the current HttpRequest.
+ * @return true on success otherwise false. You can retrive error from LastStrStatus string.
+ */
+bool DRESTClient::Send(void)
 {
     if (!Connected) {
         if (!Connect()) {
-            DisconnectAfter=true;
+            //DisconnectAfter=true;
             Error("Connection failed:");
-            return;
+            return false;
         }
     }
     else if (dUri.Host.empty()) {
         Error("Missing host in url");
-        return;
+        return false;
     }
 
     // Send request
-    AsyncWrite();
+    return(Write());
 }
 
 /**
- * @brief Perform an async write of HttpRequest.
- * The function return immediatly and OnWrite funcion is called after data is sent.
+ * @brief Perform the real socket write (blocking) of the current HttpRequest.
+ * The function return only when all data are sent.
  */
-void DRESTClient::AsyncWrite(void)
+bool DRESTClient::Write(void)
 {
     #ifdef DEBUG
         std::stringstream ss;
         ss << std::endl << "HttpRequest:" << std::endl;
         ss << HttpRequest << std::endl;
+        Log("Writing...");
         Log(ss.str());
     #endif
 
     TcpStream.expires_after(std::chrono::seconds(TimeoutSec));
-    http::async_write(TcpStream,HttpRequest,beast::bind_front_handler(&DRESTClient::OnWrite,shared_from_this()));
-}
 
-/**
- * @brief Callback fired on async_write data sent.
- * @param ec                ->  contain error_code on write error.
- * @param bytes_transferred ->  contain numer of byte sent.
- */
-void DRESTClient::OnWrite(boost::beast::error_code ec, std::size_t bytes_transferred)
-{
-    boost::ignore_unused(bytes_transferred);
+    beast::error_code ec;
+    size_t BytesWritten=http::write(TcpStream,HttpRequest,ec);
+
+    #ifdef DEBUG
+        Log("Written "+std::to_string(BytesWritten)+" Bytes");
+    #endif
+
     if (ec) {
-        Error("Error write: "+ec.message());
-        return;
+        Error("Write failed: "+ec.message());
+        return false;
     }
-    AsyncRead();
+    return true;
 }
 
 /**
- * @brief Perform an async read operation.
- * The function return immediatly and OnReade funcion is called after data is receved.
- * Responce wil be put in HttpResponse object.
+ * @brief Make a blocking read.
+ * @return true on success otherwise false. You can retrive error from LastStrStatus string.
+ * Data received are stored in HttpResponse.
  */
-void DRESTClient::AsyncRead(void)
+bool DRESTClient::Read(void)
 {
-    http::async_read(TcpStream,Buffer,HttpResponse,beast::bind_front_handler(&DRESTClient::OnRead,shared_from_this()));
-}
+    boost::beast::error_code ec;
 
-/**
- * @brief Callback fired on async_read data received.
- * @param ec                ->  contain error_code on write error.
- * @param bytes_transferred ->  contain number of bytes received.
- */
-void DRESTClient::OnRead(boost::beast::error_code ec, std::size_t bytes_transferred)
-{
-    boost::ignore_unused(bytes_transferred);
+    size_t BytesRead=http::read(TcpStream,Buffer,HttpResponse,ec);
+    #ifdef DEBUG
+        Log("Read "+std::to_string(BytesRead)+" Bytes");
+    #endif
     if (ec) {
-        Error("Error read: "+ec.message());
+        Error("Read failed: "+ec.message());
+        return false;
     }
-
-    //std::cout << std::endl << "HttpResponse:" << std::endl;
-    //std::cout << HttpResponse << std::endl << std::endl;
 
     DoResponseCallback();
-
-    if (DisconnectAfter) {
-        DisconnectAfter=false;
-        Disconnect();
-    }
+    return true;
 }
 
 // *****************************  Response callback **************************************
 /**
- * @brief Register a global callback.
- * @param callback  ->  DGlobalCallback type function to register.
+ * @brief Register the global callback.
+ * @param callback  ->  DCallbackResponse type function to register.
+ * For thread safety, callback should be set in this way:
+ * @code
+ * auto callback=std::bind(&MainWindow::Callback,this,std::placeholders::_1);
+ * RestClient.SetOnResponse(callback);
+ * @endcode
  */
-void DRESTClient::SetOnResponse(DGlobalCallbackResponse callback)
+void DRESTClient::SetOnResponse(DCallbackResponse callback)
 {
-        GlobalCallbackResponse=callback;
-        MemberCallbackResponse=nullptr;
-        MemberCalbackObj=nullptr;
-}
-
-/**
- * @brief Register a class member callback.
- * @param callback  ->  DMemberCallback type function to register (e.g. ClassName::CallbackFunc).
- * @param ClassObj  ->  Class pointer in which callback is called.
- */
-void DRESTClient::SetOnResponse(DMemberCallbackResponse callback, void *ClassObj)
-{
-		GlobalCallbackResponse=nullptr;
-		MemberCallbackResponse=callback;
-		MemberCalbackObj=ClassObj;
+    CallbackResponse=callback;
 }
 
 void DRESTClient::DoResponseCallback(void)
 {
-	if(GlobalCallbackResponse != NULL) {
-		GlobalCallbackResponse(HttpResponse);
-	}
-	else if((MemberCallbackResponse != NULL) && (MemberCalbackObj != NULL)) {
-		MemberCallbackResponse(MemberCalbackObj,HttpResponse);
+	if (CallbackResponse) {
+		CallbackResponse(HttpResponse);
 	}
 }
 // ***************************************************************************************
 
 // *******************************  Log callbacks ****************************************
 /**
- * @brief Register a global callback.
+ * @brief Register the log callback.
  * @param callback  ->  DGlobalCallback type function to register.
+ * For thread safety, callback should be set in this way:
+ * @code
+ * auto callback=std::bind(&MainWindow::Callback,this,std::placeholders::_1);
+ * RestClient.SetOnLog(callback);
+ * @endcode
  */
-void DRESTClient::SetOnLog(DGlobalCallbackLog callback)
+void DRESTClient::SetOnLog(DCallbackLog callback)
 {
-        GlobalCallbackLog=callback;
-        MemberCallbackLog=nullptr;
-        MemberCalbackObj=nullptr;
-}
-
-/**
- * @brief Register a class member callback.
- * @param callback  ->  DMemberCallback type function to register (e.g. ClassName::CallbackFunc).
- * @param ClassObj  ->  Class pointer in which callback is called.
- */
-void DRESTClient::SetOnLog(DMemberCallbackLog callback, void *ClassObj)
-{
-		GlobalCallbackLog=nullptr;
-		MemberCallbackLog=callback;
-		MemberCalbackObj=ClassObj;
+    CallbackLog=callback;
 }
 
 void DRESTClient::DoLogCallback(void)
 {
-	if(GlobalCallbackLog != NULL) {
-		GlobalCallbackLog(LastStrStatus);
-	}
-	else if((MemberCallbackLog != NULL) && (MemberCalbackObj != NULL)) {
-		MemberCallbackLog(MemberCalbackObj,LastStrStatus);
+	if (CallbackLog) {
+		CallbackLog(LastStrStatus);
 	}
 }
 // ***************************************************************************************
 
 // ******************************* Error callbacks ***************************************
 /**
- * @brief Register an error global callback.
- * @param callback  ->  DGlobalCallback type function to register.
+ * @brief Register the error callback.
+ * @param callback  ->  DCallbackError type function to register.
+ * For thread safety, callback should be set in this way:
+ * @code
+ * auto callback=std::bind(&MainWindow::Callback,this,std::placeholders::_1);
+ * RestClient.SetOnError(callback);
+ * @endcode
  */
-void DRESTClient::SetOnError(DGlobalCallbackError callback)
+void DRESTClient::SetOnError(DCallbackError callback)
 {
-        GlobalCallbackError=callback;
-        MemberCallbackError=nullptr;
-        MemberCalbackObj=nullptr;
-}
-
-/**
- * @brief Register a class member callback.
- * @param callback  ->  DMemberCallback type function to register (e.g. ClassName::CallbackFunc).
- * @param ClassObj  ->  Class pointer in which callback is called.
- */
-void DRESTClient::SetOnError(DMemberCallbackError callback, void *ClassObj)
-{
-		GlobalCallbackError=nullptr;
-		MemberCallbackError=callback;
-		MemberCalbackObj=ClassObj;
+    CallbackError=callback;
 }
 
 void DRESTClient::DoErrorCallback(void)
 {
-	if(GlobalCallbackError != NULL) {
-		GlobalCallbackError(LastStrStatus);
-	}
-	else if((MemberCallbackError != NULL) && (MemberCalbackObj != NULL)) {
-		MemberCallbackError(MemberCalbackObj,LastStrStatus);
+	if (CallbackError) {
+		CallbackError(LastStrStatus);
 	}
 }
 // ***************************************************************************************

@@ -34,11 +34,9 @@ void DProgressDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opt
     progressBarOption.textVisible=true;
 
     // Set the progress and text values of the style option.
-    /* TODO
-    int progress = qobject_cast<MainWindow *>(parent())->clientForRow(index.row())->progress();
-    progressBarOption.progress = progress < 0 ? 0 : progress;
-    progressBarOption.text = QString::asprintf("%d%%", progressBarOption.progress);
-    */
+    int newValue=index.model()->data(index,Qt::DisplayRole).toInt();
+    progressBarOption.progress = newValue < 0 ? progressBarOption.progress : newValue;
+    progressBarOption.text = QString::asprintf("%d%%", newValue);
 
     // Draw the progress bar onto the view.
     QApplication::style()->drawControl(QStyle::CE_ProgressBar,&progressBarOption,painter);
