@@ -168,11 +168,11 @@ namespace DTools
      */
     void DSyncWatcher::Stop(void) {
         if (!Watching) {
-            Log("Sync thread is not alive, no stop needed");
+            //Log("Sync thread is not alive, no stop needed");
             return;
         }
         NeedToQuit=true;
-        Log("Stop flag set");
+        //Log("Stop flag set");
     }
 
     /**
@@ -182,7 +182,7 @@ namespace DTools
      */
     bool DSyncWatcher::StopAndWait(size_t TimeOutMSec) {
         if (!Watching) {
-            Log("Sync thread is not alive, no stop needed");
+            //Log("Sync thread is not alive, no stop needed");
             return false;
         }
         NeedToQuit=true;
