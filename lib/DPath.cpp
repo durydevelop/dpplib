@@ -997,7 +997,7 @@ namespace DPath
 	* @param ExtWholeWord	->	Se true confronta la ricerca con l'intera estensione.
 	*
 	* @return il numero di files trovati, -1 in caso di errore.
-	* N.B. @ref Result non viene pulita qindi se non è vuota i risultati vengono aggiunti.
+	* N.B. @ref Result non viene pulita quindi se non è vuota i risultati vengono aggiunti.
 	**/
 	int ListFiles(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive) {
 		std::vector<std::string> NameContentList;

@@ -3,8 +3,11 @@
 
 #include <string>
 #include <vector>
+#include <libdpp/DError.h>
 
-class DValue {
+namespace DTools
+{
+	class DValue {
 	    public:
 		    std::string Get(size_t Index = 0);
 		    std::string GetAll(std::string Separator = "\r\n");
@@ -14,6 +17,8 @@ class DValue {
 		    void RemoveDuplicates(void);
 		    std::vector<std::string> Values;
 		    bool Exists(std::string Value, bool CaseSensistive = true);
+			DError::DErrorCode ErrorCode;
 	};
+}
 	
 #endif
