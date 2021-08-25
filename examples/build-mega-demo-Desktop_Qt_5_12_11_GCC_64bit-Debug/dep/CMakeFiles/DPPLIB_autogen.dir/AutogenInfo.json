@@ -44,9 +44,21 @@
 	"HEADERS" : 
 	[
 		[
+			"/home/fabio/Dev/cpp/lib/libdpp/include/libdpp/DChrono.h",
+			"MU",
+			"XG7U3EY2FS/moc_DChrono.cpp",
+			null
+		],
+		[
 			"/home/fabio/Dev/cpp/lib/libdpp/include/libdpp/DCsv.h",
 			"MU",
 			"XG7U3EY2FS/moc_DCsv.cpp",
+			null
+		],
+		[
+			"/home/fabio/Dev/cpp/lib/libdpp/include/libdpp/DError.h",
+			"MU",
+			"XG7U3EY2FS/moc_DError.cpp",
 			null
 		],
 		[
@@ -241,6 +253,7 @@
 	"SETTINGS_FILE" : "/home/fabio/Dev/cpp/lib/libdpp/examples/build-mega-demo-Desktop_Qt_5_12_11_GCC_64bit-Debug/dep/CMakeFiles/DPPLIB_autogen.dir/AutogenUsed.txt",
 	"SOURCES" : 
 	[
+		[ "/home/fabio/Dev/cpp/lib/libdpp/lib/DChrono.cpp", "MU", null ],
 		[ "/home/fabio/Dev/cpp/lib/libdpp/lib/DCsv.cpp", "MU", null ],
 		[ "/home/fabio/Dev/cpp/lib/libdpp/lib/DPath.cpp", "MU", null ],
 		[ "/home/fabio/Dev/cpp/lib/libdpp/lib/DPathWatcher.cpp", "MU", null ],
