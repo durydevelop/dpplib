@@ -116,24 +116,8 @@ namespace DTools
      */
     DUpdate::DUpdate(const std::string ApplicationName, const std::string CurrentVersion) {
         // Callbacks
-        GlobalCallback=nullptr;
         MemberCallback=nullptr;
-        MemberCalbackObj=nullptr;
 
-        Init(ApplicationName,CurrentVersion);
-    }
-
-    DUpdate::DUpdate(const std::string ApplicationName, const std::string CurrentVersion, DMemberCallback Callback, void *ClassObj) {
-        if (Callback != nullptr && ClassObj != nullptr) {
-            SetMemberCallback(Callback,ClassObj);
-        }
-        Init(ApplicationName,CurrentVersion);
-    }
-
-    DUpdate::DUpdate(const std::string ApplicationName, const std::string CurrentVersion, DGlobalCallback Callback) {
-        if (Callback != nullptr) {
-            SetGlobalCallback(Callback);
-        }
         Init(ApplicationName,CurrentVersion);
     }
 
@@ -600,25 +584,13 @@ namespace DTools
     }
 
     // ******************************  Callback stuffs ***************************************
-    /**
-     * @brief Register a global callback.
-     * @param callback  ->  DGlobalCallback type function to register.
-     */
-    void DUpdate::SetGlobalCallback(DGlobalCallback callback)	{
-            GlobalCallback=callback;
-            MemberCallback=nullptr;
-            MemberCalbackObj=nullptr;
-    }
-
 	/**
 	 * @brief Register a class member callback.
-	 * @param callback  ->  DMemberCallback type function to register (e.g. ClassName::CallbackFunc).
-	 * @param ClassObj  ->  Class pointer in which callback is called.
+	 * @param callback  ->  DMemberCallback type function to bind like:
+	 * @code auto callback=std::bind(&MainWindow::UpdaterCallback,this,std::placeholders::_1); @endcode
 	 */
-	void DUpdate::SetMemberCallback(DMemberCallback callback, void *ClassObj) {
-			GlobalCallback=nullptr;
+	void DUpdate::SetMemberCallback(DMemberCallback callback) {
 			MemberCallback=callback;
-			MemberCalbackObj=ClassObj;
 	}
 
 	/**
@@ -626,11 +598,8 @@ namespace DTools
 	 * @param Msg	->	Log message to send.
 	 */
 	void DUpdate::DoCallback(std::string Msg) {
-		if(GlobalCallback != NULL) {
-			GlobalCallback(Msg);
-		}
-		else if((MemberCallback != NULL) && (MemberCalbackObj != NULL)) {
-			MemberCallback(MemberCalbackObj,Msg);
+		if(MemberCallback) {
+			MemberCallback(Msg);
 		}
 	}
 	// ***************************************************************************************

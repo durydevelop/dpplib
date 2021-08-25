@@ -24,9 +24,11 @@ namespace DTools
      * @param PathToWatch   ->  Filename or Dir to add to WatchList. If no Path is specified, watch list is empty and it is possible to add path with AddPath() method.
      */
     DPathWatcher::DPathWatcher(fs::path PathToWatch) {
+/*
         GlobalCallback=nullptr;
         MemberCallback=nullptr;
         MemberCalbackObj=nullptr;
+*/
         if (!PathToWatch.empty()) {
             AddPath(PathToWatch);
         }
@@ -36,6 +38,12 @@ namespace DTools
         Watching=false;
         NeedToQuit=false;
         IntervalMSec=1000;
+    }
+
+    DPathWatcher::~DPathWatcher() {
+        if (Watching) {
+            SetStopAndWait();
+        }
     }
 
     /**
@@ -72,6 +80,15 @@ namespace DTools
         return Watching;
     }
 
+    bool DPathWatcher::IsMyPath(const fs::path& Path) {
+        for (auto Watch : WatchList) {
+            if (Watch.Path == Path) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * @brief Execute a one shot check of all watches.
      * One callback is fired for each file change detected.
@@ -83,13 +100,15 @@ namespace DTools
             if (ChangeStatus == CHANGE_STATUS_NONE && FireOnlyChages) {
                 continue;
             }
-            DoCallback(Watch.LastChangeStatus,Watch.Path);
+            //DoCallback(Watch.LastChangeStatus,Watch.Path);
+            DoNewCallback(Watch.LastChangeStatus,Watch.Path);
         }
     }
 
     /**
      * @brief Start a thread that performs the "one shot check" of all whatches each IntervalMSec milliseconds.
      * @return false if there are no watches in the list, otherwise true. You can call IsWatching() method to test if thread is running.
+     * N.B. Interval time starts only after Check() function returns.
      */
     bool DPathWatcher::Start(void) {
         if (WatchList.size() == 0) {
@@ -111,7 +130,7 @@ namespace DTools
                 std::this_thread::sleep_until(delta);
             }
             Watching=false;
-            Log("Watch thread ended");
+            //Log("Watch thread ended");
             PromiseEnded.set_value_at_thread_exit(true);
         });
         WatchThread.detach();
@@ -121,7 +140,7 @@ namespace DTools
     /**
      * @brief Set stop flag to inform thread to stop watching loop. You can call IsWatching() method to test when thread is closed.
      */
-    void DPathWatcher::Stop(void) {
+    void DPathWatcher::SetStop(void) {
         NeedToQuit=true;
         Log("Stop flag set");
     }
@@ -131,7 +150,7 @@ namespace DTools
      * @param TimeOutMSec   ->  Nr of milliseconds to wait before return.
      * @return true if thread is really stopped, false if thread is not alive or timeout is reached.
      */
-    bool DPathWatcher::StopAndWait(size_t TimeOutMSec) {
+    bool DPathWatcher::SetStopAndWait(size_t TimeOutMSec) {
         if (!Watching) {
             Log("Watch thread is not alive, no stop needed");
             return false;
@@ -152,11 +171,27 @@ namespace DTools
     }
 
     // ******************************  Callback stuffs ***************************************
-
     /**
-     * @brief Register a global callback.
-     * @param callback  ->  DGlobalCallback type function to register.
+     * @brief Register a class member callback.
+     * @param callback  ->  DCallback type function to bind like:
+     * @code auto callback=std::bind(&MainWindow::Callback,this,std::placeholders::_1,std::placeholders::_2,std::placeholders::_3); @endcode
      */
+    void DPathWatcher::SetCallback(DPathWatcherCallback callback) {
+            Callback=callback;
+    }
+
+	/**
+	 * @brief Perform the callback
+	 */
+	void DPathWatcher::DoNewCallback(DChangeStatus ChangeStatus, fs::path Path, std::string Msg) {
+		if(Callback) {
+			Callback(ChangeStatus,Path,Msg);
+		}
+	}
+	// ***************************************************************************************
+/*
+	// ************************  Deprecated Callback stuffs **********************************
+
     void DPathWatcher::SetGlobalCallback(DGlobalCallback callback)	{
             GlobalCallback=callback;
             MemberCallback=nullptr;
@@ -164,22 +199,12 @@ namespace DTools
 
     }
 
-	/**
-	 * @brief Register a class member callback.
-	 * @param callback  ->  DMemberCallback type function to register (e.g. ClassName::CallbackFunc).
-	 * @param ClassObj  ->  Class pointer in which callback is called.
-	 */
 	void DPathWatcher::SetMemberCallback(DMemberCallback callback, void *ClassObj) {
 			GlobalCallback=nullptr;
 			MemberCallback=callback;
 			MemberCalbackObj=ClassObj;
 	}
 
-	/**
-	 * @brief Perform the callback
-	 * @param Path			->	Filename that has been changed.
-	 * @param ChangeStatus	->	Detected Change type. Can be CHANGE_STATUS_CREATED, CHANGE_STATUS_ERASED, CHANGE_STATUS_MODIFIED.
-	 */
 	void DPathWatcher::DoCallback(DChangeStatus ChangeStatus, fs::path Path, std::string Msg) {
 		if(GlobalCallback != NULL) {
 			GlobalCallback(ChangeStatus,Path,Msg);
@@ -189,7 +214,7 @@ namespace DTools
 		}
 	}
 	// ***************************************************************************************
-
+*/
 	// *******************************  Log Functions ****************************************
 	/**
 	* @brief Set LastStrStatus and make log callback.
@@ -201,7 +226,7 @@ namespace DTools
 		if (!LogMsg.empty()) {
 			LastStrStatus=LogMsg;
 		}
-		DoCallback(CALLBACK_STR_MSG,fs::path(),LastStrStatus);
+		DoNewCallback(CALLBACK_STR_MSG,fs::path(),LastStrStatus);
 	}
 
 	//! @return LastStrStatus string.

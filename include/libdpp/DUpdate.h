@@ -10,17 +10,18 @@ namespace DTools
 {
     class DUpdate {
         public:
-            // Public callback stuffs
-            typedef std::function<void (std::string)> DGlobalCallback;
-            typedef std::function<void (void*, std::string)> DMemberCallback;
+            typedef std::function<void(std::string)> DMemberCallback;
+            void SetMemberCallback(DMemberCallback callback);
+        private:
+            DMemberCallback MemberCallback;
+            void DoCallback(std::string Msg);
 
+        public:
             const std::string REPO_TYPE_FOLDER= "FOLDER";
             const std::string REPO_TYPE_HTTP=   "HTTP";
             const std::string REPO_TYPE_FTP=    "FTP";
 
             DUpdate(const std::string ApplicationName, const std::string CurrentVersion);
-            DUpdate(const std::string ApplicationName, const std::string CurrentVersion, DMemberCallback MemberCallback = nullptr, void *ClassObj = nullptr);
-            DUpdate(const std::string ApplicationName, const std::string CurrentVersion, DGlobalCallback Callback = nullptr);
             ~DUpdate();
 
             bool SetRepositoryFromFile(DTools::fs::path Filename);
@@ -30,9 +31,6 @@ namespace DTools
             void CheckPendings(void);
             void DoUpgrade(void);
             void SendFiles(std::vector<std::string> FilesList, std::string DestRepoSubPath);
-
-            void SetGlobalCallback(DGlobalCallback callback);
-            void SetMemberCallback(DMemberCallback callback, void *ClassObj);
 
         private:
             typedef struct _DRepository{
@@ -61,12 +59,6 @@ namespace DTools
             bool ParseLocalRepoInfoFile(void);
             bool DownloadFiles(void);
             bool ApplyUpdate(void);
-
-            // Private callback stuffs
-            DGlobalCallback GlobalCallback;
-            DMemberCallback MemberCallback;
-            void* MemberCalbackObj;
-            void DoCallback(std::string Msg = std::string());
 
             // Logging stuffs
             std::string LastStrStatus;

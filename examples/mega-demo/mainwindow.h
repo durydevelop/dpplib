@@ -1,10 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
+#include "libdpp/network/DRESTClient.h"
 #include "libdpp/DFilesystem.h"
 #include "libdpp/DPathWatcher.h"
 #include "libdpp/DLog.h"
+#include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -45,13 +46,31 @@ class MainWindow : public QMainWindow
 
         void on_ButtonDShellExecute_clicked();
 
-private:
+        void on_ButtonRestClientCreate_clicked();
+
+        void on_ButtonRestClientConnect_clicked();
+
+        void on_ButtonRestClientPost_clicked();
+
+
+        void on_ButtonRestClientDIsconnect_clicked();
+
+        void on_ButtonRestClientOneShot_clicked();
+
+        void on_ButtonRestClientDelete_clicked();
+
+    private:
         Ui::MainWindow *ui;
         DTools::DPathWatcher *Watcher;
         DTools::DLog *Log;
         QTimer *timer;
+        std::shared_ptr<DTools::DNetwork::DRESTClient> RESTClient;
 
         static void ChangeCallback(void *ClassObj, DTools::DPathWatcher::DChangeStatus Status, DTools::fs::path File, std::string Msg);
         void ChangeCallbackReceiver(DTools::DPathWatcher::DChangeStatus Status, DTools::fs::path File, std::string Msg);
+
+        // DRESTClient Callbacks
+        void OnLog(std::string LogMsg);
+        void OnResponse(DTools::DNetwork::DRESTClient::DHttpResponse HttpResponse);
 };
 #endif // MAINWINDOW_H

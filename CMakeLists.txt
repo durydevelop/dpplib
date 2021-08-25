@@ -125,7 +125,7 @@ message_c(${BOLD_CYAN} "Build Qt extension: ${BUILD_QT} ${QT_VERSION_MAJOR}")
 
 #############################################################################
 # Create Target
-# CMakeFiles.txt in lib and include dirs set SRC_FILES with source files list
+# CMakeFiles.txt in ./lib and ./include dirs set SRC_FILES with source files list
 add_subdirectory(lib)
 add_subdirectory(include)
 if (${BUILD_EXAMPLES})

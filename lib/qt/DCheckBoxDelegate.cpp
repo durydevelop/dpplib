@@ -2,10 +2,23 @@
 
 #ifdef QT_GUI_LIB
 
+/**
+ @code
+    CheckBoxDelegate=new DCheckBoxDelegate(this);
+    CheckBoxDelegate->setColumnIndex(QUEUE_COLUMN_ENABLE);
+    connect(CheckBoxDelegate,&DCheckBoxDelegate::statusChanged,this,&MainWindow::OnCheckBoxDelegateChange);
+    ui->TreeWidgetQueues->setItemDelegateForColumn(QUEUE_COLUMN_ENABLE,CheckBoxDelegate);
+ @code
+*/
 #include <QApplication>
 #include <QCheckBox>
 #include <QMouseEvent>
 
+/**
+ * @brief CheckBoxRect
+ * @param viewItemStyleOptions
+ * @return
+ */
 static QRect CheckBoxRect(const QStyleOptionViewItem &viewItemStyleOptions)
 {
     QStyleOptionButton checkBoxStyleOption;
@@ -28,13 +41,37 @@ void DCheckBoxDelegate::setColumnIndex(int index)
 void DCheckBoxDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,const QModelIndex& index)const
 {
     if(index.column() == columnIndex){
-        bool checked=index.model()->data(index,Qt::DisplayRole).toBool();
         QStyleOptionButton checkBoxStyleOption;
-        checkBoxStyleOption.state|=QStyle::State_Enabled;
-        checkBoxStyleOption.state|=checked? QStyle::State_On : QStyle::State_Off;
         checkBoxStyleOption.rect=CheckBoxRect(option);
+
+        // Checked status
+        bool checked=index.model()->data(index,Qt::EditRole).toBool();
+        checkBoxStyleOption.state|=checked? QStyle::State_On : QStyle::State_Off;
+
+        // Enabled status
+        bool enabled=true; //default
+        if (index.model()->data(index,ROLE_ENABLE).isValid()) {
+            // Custom role for enable/disable. If is set use it
+            enabled=index.model()->data(index,ROLE_ENABLE).toBool();
+        }
+        if (enabled) {
+            checkBoxStyleOption.state|=QStyle::State_Enabled;
+        }
+
+        // BackgroundBrush color
+        if (index.model()->data(index, Qt::BackgroundRole).isValid()) {
+            // Role set
+            QColor color = index.model()->data(index, Qt::BackgroundRole).value<QColor>();
+            QStyleOptionViewItem opt(option);
+            opt.backgroundBrush = QBrush(QColor(color));
+            // Draw item background
+            option.widget->style()->drawPrimitive(QStyle::PE_PanelItemViewItem,&opt,painter);
+        }
+
+        // Draw control
         QApplication::style()->drawControl(QStyle::CE_CheckBox,&checkBoxStyleOption,painter);
-    }else{
+    }
+    else {
         QStyledItemDelegate::paint(painter,option,index);
     }
 }

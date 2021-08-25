@@ -1,5 +1,7 @@
 set(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DChrono.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DCsv.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DError.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DFilesystem.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DLog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DPath.h

@@ -122,7 +122,7 @@ namespace DString
 	* @param in_time_t	->	time_point time to format
 	* @param format		->	Format string (default "%Y%m%d %H%M%S")
 	**/
-	std::string Format_TimeP(std::chrono::system_clock::time_point in_time_point, std::string format) {
+	std::string FormatTimeP(std::chrono::system_clock::time_point in_time_point, std::string format) {
 		auto in_time_t=std::chrono::system_clock::to_time_t(in_time_point);
 		std::stringstream ss;
 		ss << std::put_time(localtime(&in_time_t),format.c_str());

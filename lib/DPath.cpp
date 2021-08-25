@@ -18,6 +18,9 @@
 	#define DEBUG_PRINT(Msg)
 #endif
 
+// Macro ridefined from basestd.h
+// #define DIntToPtr(i) (void *)(uintptr_t)(i)
+
 namespace DTools
 {
 namespace DPath
@@ -113,9 +116,10 @@ namespace DPath
 	 * @return a time_point format time.
 	 */
 	std::chrono::system_clock::time_point LastWriteTime(const fs::path Path) {
+		// get file_time of file
 		fs::file_time_type fttime=fs::last_write_time(Path);
-		std::time_t ftimet=to_time_t(fttime);
-
+		// convert to time_t
+		std::time_t ftimet=std::chrono::system_clock::to_time_t(fttime);
 		// then in time_point
 		std::chrono::system_clock::time_point tptime=std::chrono::system_clock::from_time_t(ftimet);
 
@@ -216,6 +220,7 @@ namespace DPath
         fs::perms FilePerms=fs::status(From).permissions();
 
 		if (SafeMode) {
+			std::cout << "Safemode copy " << From.string() << " -> " << To.string() << std::endl;
 			if (OverwriteExisting) {
 				if (fs::exists(To)) {
 					// Safe mode work-around:
@@ -234,7 +239,7 @@ namespace DPath
 
         // Set permission
         if (!ec) {
-            std::cout << "Restore permissions " << GetPermissionsString(FilePerms) << std::endl;
+            //std::cout << "Restore permissions " << GetPermissionsString(FilePerms) << std::endl;
             fs::permissions(To,FilePerms,ec);
         }
 		return(ec);
@@ -251,7 +256,7 @@ namespace DPath
 	 * @return true on succes, otherwise false.
      * TODO: Copy permissions
 	 */
-    bool Copy_File_Posix(const char* SourceFile, const char* DestFile, bool OverwriteExisting, DMemberCallback MemberCallback, void *MemberCallbackClass, size_t BufferSize) {
+	bool Copy_File_Posix(const char* SourceFile, const char* DestFile, bool OverwriteExisting, DCallback Callback, size_t BufferSize) {
 		int in=open(SourceFile, O_RDONLY | O_BINARY);
 		if (in < 0) {
 			//std::cout << "Can't open input file: " << inFile << std::endl;
@@ -285,7 +290,7 @@ namespace DPath
 
 			read(in,&inBuffer[0],chunk);
 			write(out,&inBuffer[0],chunk);
-			if (MemberCallback) MemberCallback(MemberCallbackClass,DEC_BYTES,reinterpret_cast<void *>(static_cast<intptr_t>(bytesLeft)));
+			if (Callback) Callback(CALLBACK_DEC_BYTES,bytesLeft);
 		}
 
 		close(out);
@@ -303,7 +308,7 @@ namespace DPath
 	*
 	* @return 0 on success or an error_code if any arrors occours.
 	**/
-	err::error_code CopyDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DGlobalCallback Callback) {
+	err::error_code CopyDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DCallback Callback) {
 
 		err::error_code ec;
 
@@ -335,14 +340,14 @@ namespace DPath
 			int nFiles=CountFiles(SourceDir,false);
 			int nDirs=CountDirs(SourceDir,false);
 
-			Callback(SET_FILES,DIntToPtr(nFiles));
-			Callback(SET_DIRS,DIntToPtr(nDirs));
-			Callback(SET_OBJ,DIntToPtr(nFiles+nDirs));
+			Callback(CALLBACK_SET_FILES,nFiles);
+			Callback(CALLBACK_SET_DIRS,nDirs);
+			Callback(CALLBACK_SET_OBJS,nFiles+nDirs);
 		}
 		// Itera attraverso SourceDir
 		for (fs::directory_iterator iterator(SourceDir); iterator != fs::directory_iterator(); ++iterator) {
 			if (is_directory(iterator->status())) {
-				if (Callback) Callback(INC_DIR,nullptr);
+				if (Callback) Callback(CALLBACK_INC_DIR,1);
 				// In ricorsione
 				ec=CopyDir(iterator->path(),DestDir / iterator->path().filename(),FailIfExists,nullptr); // nessuna callback perché viene eseguita solo per gli oggetti presenti nella root
 				if (ec.value() != 0) {
@@ -350,7 +355,7 @@ namespace DPath
 				}
 			}
 			else if (is_regular_file(iterator->status())) {
-				if (Callback) Callback(INC_FILE,nullptr);
+				if (Callback) Callback(CALLBACK_INC_FILE,1);
 				#if __cplusplus > 201402L // C++17
 					fs::copy_options options=fs::copy_options::overwrite_existing;
 				#else
@@ -376,7 +381,7 @@ namespace DPath
 	*
 	* @return 0 on success or an error_code if any arrors occours.
 	**/
-	err::error_code MoveDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DGlobalCallback Callback) {
+	err::error_code MoveDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DCallback Callback) {
 		if (Callback) {
 			// If You want callback, need to copy and delete...
 			err::error_code ec=CopyDir(SourceDir,DestDir,FailIfExists,Callback);
@@ -406,7 +411,7 @@ namespace DPath
 					}
 					else {
 						// use c++ copy and delete
-						ec=CopyDir(SourceDir,DestDir,FailIfExists,Callback);
+						ec=CopyDir(SourceDir,DestDir,FailIfExists,Callback,MemberCallbackClassObj);
 						if (ec.value() != 0) {
 							return(ec);
 						}
