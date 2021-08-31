@@ -8,13 +8,17 @@ namespace DTools
 namespace DError
 {
 
-    enum DErrorCodeID { SUCCESS, ERROR_WARNING, ERROR_GENERIC, ERROR_CUSTOM, ERROR_NOT_SET };
+    enum DErrorCodeID { ERROR_NOT_SET = -1, SUCCESS, ERROR_WARNING, ERROR_GENERIC, ERROR_CUSTOM };
 
     class DErrorCode {
 
         public:
+            DErrorCodeID ErrorCodeID;
+            int ErrorCodeCUSTOM;
+
             DErrorCode() {
                 ErrorCodeID=ERROR_NOT_SET;
+                ErrorCodeCUSTOM=ERROR_NOT_SET;
             }
 
             void Set(DErrorCodeID ErrorCode, const std::string& ErrorMsg = std::string()) {
@@ -40,8 +44,9 @@ namespace DError
                 }
             }
 
-            void SetCustom(std::string ErrorMsg) {
-                Set(ERROR_CUSTOM,ErrorMsg);
+            void SetCustom(std::string CustomErrorMsg, int CustomErrorCode) {
+                Set(ERROR_CUSTOM,CustomErrorMsg);
+                ErrorCodeCUSTOM=CustomErrorCode;
             }
 
             void SetWarning(std::string WarningMsg) {
@@ -56,8 +61,11 @@ namespace DError
                 return(ErrorCodeID != ERROR_NOT_SET);
             }
 
+            bool IsWarning(void) {
+                return(ErrorCodeID == ERROR_WARNING);
+            }
+
         private:
-            DErrorCodeID ErrorCodeID;
             std::string ErrorDesc;
     };
 
