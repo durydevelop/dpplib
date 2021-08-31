@@ -37,6 +37,7 @@ namespace DTools
         }
         Watching=false;
         NeedToQuit=false;
+        Paused=false;
         IntervalMSec=1000;
     }
 
@@ -74,10 +75,17 @@ namespace DTools
     }
 
     /**
-     * @return true if WatchThread is running
+     * @return true if WatchThread is running.
      */
     bool DPathWatcher::IsWatching(void) {
-        return Watching;
+        return(Watching);
+    }
+
+    /**
+     * @return true if watcher is paused.
+     */
+    bool DPathWatcher::IsPaused(void) {
+        return(Paused);
     }
 
     bool DPathWatcher::IsMyPath(const fs::path& Path) {
@@ -92,7 +100,7 @@ namespace DTools
     /**
      * @brief Execute a one shot check of all watches.
      * One callback is fired for each file change detected.
-     * @param FireOnlyChages    ->  if true CHANGE_STATUS_NONE wil not be callbacked
+     * @param FireOnlyChages    ->  if true CHANGE_STATUS_NONE wil not be callbacked.
      */
     void DPathWatcher::Check(bool FireOnlyChages) {
         for (DPathWatch& Watch : WatchList) {
@@ -111,6 +119,9 @@ namespace DTools
      * N.B. Interval time starts only after Check() function returns.
      */
     bool DPathWatcher::Start(void) {
+        if (Watching) {
+            return true;
+        }
         if (WatchList.size() == 0) {
             Log("No watch set, thread not strated");
             return false;
@@ -124,9 +135,12 @@ namespace DTools
             Log("Watch thread started");
             Watching=true;
             NeedToQuit=false;
+            Paused=false;
             while (!NeedToQuit) {
                 auto delta=std::chrono::steady_clock::now() + std::chrono::milliseconds(IntervalMSec);
-                Check(true);
+                if (!Paused) {
+                    Check(true);
+                }
                 std::this_thread::sleep_until(delta);
             }
             Watching=false;
@@ -135,6 +149,15 @@ namespace DTools
         });
         WatchThread.detach();
         return true;
+    }
+
+    /**
+     * @brief Pause or un-pause the Watcher.
+     * If thread is running, still active but Check() is not called.
+     * @param Enabled   ->  true pause the watcher, false un-pouse.
+     */
+    void DPathWatcher::Pause(bool Enabled) {
+        Paused=Enabled;
     }
 
     /**

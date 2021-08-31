@@ -147,6 +147,9 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
 
         DUri& GetUri(void);
 
+        DHttpRequest HttpRequest;
+        DHttpResponse HttpResponse;
+
     private:
         size_t GetReqHdrBodyAsString(std::string &ResultStr);
         size_t GetReqHdrBodyAsString(std::string &ResultStr, DEncodeType dEncodeType);
@@ -183,8 +186,6 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
         bool HttpReqKeepAlive;
         DUri dUri;
         boost::beast::flat_buffer Buffer;
-        DHttpRequest HttpRequest;
-        DHttpResponse HttpResponse;
         std::map<std::string,std::string> HttpReqHdrBodyParams;
         std::map<std::string,std::string> HttpReqBodyParams;
         std::string HdrBody;

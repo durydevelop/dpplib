@@ -10,18 +10,20 @@ namespace DTools
 {
     class DPathWatcher {
         public:
-            enum DChangeStatus                          { CHANGE_STATUS_NONE=0  , CHANGE_STATUS_CREATED=1   , CHANGE_STATUS_ERASED=2, CHANGE_STATUS_MODIFIED=3  , CALLBACK_STR_MSG=16   };
-            inline static std::vector<std::string> DChancgeStatusDesc={ "No changes"          , "Created"                 , "Erased"              , "Modified"                , ""                    };
+            enum DChangeStatus                                          { CHANGE_STATUS_NONE=0  , CHANGE_STATUS_CREATED=1   , CHANGE_STATUS_ERASED=2, CHANGE_STATUS_MODIFIED=3  , CALLBACK_STR_MSG=16   };
+            inline static std::vector<std::string> DChancgeStatusDesc=  { "No changes"          , "Created"                 , "Erased"              , "Modified"                , ""                    };
             DPathWatcher(fs::path PathToWatch = fs::path());
             ~DPathWatcher();
             void SetInterval(size_t MSec);
             size_t GetWatchesCount(void);
             void Check(bool FireOnlyChages = false);
             bool Start(void);
+            void Pause(bool Enabled = true);
             void SetStop(void);
             bool SetStopAndWait(size_t TimeOutMSec = 0);
             // TODO: ForceStop()
             bool IsWatching(void);
+            bool IsPaused(void);
             bool IsMyPath(const fs::path& Path);
             size_t AddPath(fs::path PathToWatch);
 
@@ -144,6 +146,7 @@ namespace DTools
 
             bool Watching;
             bool NeedToQuit;
+            bool Paused;
             size_t IntervalMSec;
             std::string LastStrStatus;
             // Thread stuffs

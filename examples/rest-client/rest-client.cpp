@@ -32,11 +32,11 @@ int main(int argc, char** argv) {
     // Check command line arguments.
     if(argc < 2) {
         cerr <<
-            "Usage: rest-client <url> "
-            "                   [-t<content-type (default=\"text/plain\")>]"
-            "                   [-bs<body as string (default=\"\")>]"
-            "                   [-bf<body as file> filename]"
-            "                   [-v<HTTP version: 1.0 or 1.1 (default 1.1)>]" << endl << endl <<
+            "Usage: "+std::string(argv[0])+" <url> "
+            "    [-t<content-type (default=\"text/plain\")>]"
+            "    [-bs<body as string (default=\"\")>]"
+            "    [-bf<body as file> filename]"
+            "    [-v<HTTP version: 1.0 or 1.1 (default 1.1)>]" << endl << endl <<
             "Example:" << endl <<
             "rest-client \"www.example.com:8080/portal/req\" -t\"application/x-www-form-urlencoded\" -bs\"key1=value1;key2=value2\"\n";
         return EXIT_FAILURE;

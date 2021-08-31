@@ -339,7 +339,7 @@ std::string DRESTClient::GetReqHdrBodyAsString(DEncodeType dEncodeType)
 
 /**
  * @brief Retrive request body content.
- * @param ResultStr ->  String into put body.
+ * @param ResultStr ->  String where to put body.
  * @return size of body in bytes.
  */
 size_t DRESTClient::GetReqBodyAsString(std::string &ResultStr)
