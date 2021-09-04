@@ -1,6 +1,7 @@
 #include <libdpp/DUpdate.h>
 #include <libdpp/DString.h>
 #include <libdpp/DPath.h>
+#include <libdpp/DShell.h>
 #include <libdpp/qt/DQt.h>
 #include <fstream>
 
