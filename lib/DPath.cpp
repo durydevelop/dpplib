@@ -107,7 +107,7 @@ namespace DPath
 		// and make the difference as hours
 		std::chrono::hours diff=std::chrono::duration_cast<std::chrono::hours>(now - tptime);
 
-		return(diff.count() > Hrs);
+		return(diff.count() >= Hrs);
 	}
 
 	/**

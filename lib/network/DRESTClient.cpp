@@ -657,6 +657,8 @@ bool DRESTClient::Send(void)
         return false;
     }
 
+    HttpResponse.clear();
+
     // Send request
     return(Write());
 }
