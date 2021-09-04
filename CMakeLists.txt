@@ -6,12 +6,12 @@ project(DPPLIB
         LANGUAGES CXX
 )
 
-#set(CMAKE_AUTOUIC ON)
-#set(CMAKE_AUTOMOC ON)
-#set(CMAKE_AUTORCC ON)
-#set(CMAKE_INCLUDE_CURRENT_DIR YES)
 
-# Check for Qt extansion (this will set QT_VERSION_MAJOR if it exists)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+#set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Find qt but not required
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets)
 
 ######
@@ -66,7 +66,8 @@ include(DMainHelper)
 # Handle STATIC/SHARED/INTERFACE build option
 if (${PROJECT_NAME}_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
     # BUILD_SHARED_LIBS has prececence
-    message_c(${BOLD_CYAN} "Build as: SHARED LIB")
+    set(LIB_TYPE "SHARED")
+    #message_c(${BOLD_CYAN} "Build as: SHARED LIB")
     # Set SHARED ON
     set(${PROJECT_NAME}_BUILD_SHARED_LIBS ON)
     set(BUILD_SHARED_LIBS ON)
@@ -74,7 +75,8 @@ if (${PROJECT_NAME}_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
     set(${PROJECT_NAME}_BUILD_INTERFACE_LIBS OFF)
     set(BUILD_INTERFACE_LIBS OFF)
 elseif(${PROJECT_NAME}_BUILD_INTERFACE_LIBS OR BUILD_INTERFACE_LIBS)
-    message_c(${BOLD_CYAN} "Build as: INTERFACE LIB")
+    set(LIB_TYPE "INTERFACE")
+    #message_c(${BOLD_CYAN} "Build as: INTERFACE LIB")
     # Set INTERFACE ON
     set(${PROJECT_NAME}_BUILD_INTERFACE_LIBS ON)
     set(BUILD_INTERFACE_LIBS ON)
@@ -83,7 +85,8 @@ elseif(${PROJECT_NAME}_BUILD_INTERFACE_LIBS OR BUILD_INTERFACE_LIBS)
     set(BUILD_SHARED_LIBS OFF)
 else()
     # STATIC (default)
-    message_c(${BOLD_CYAN} "Build as: STATIC LIB")
+    set(LIB_TYPE "STATIC")
+    #message_c(${BOLD_CYAN} "Build as: STATIC LIB")
     # Set SHARED OFF
     set(${PROJECT_NAME}_BUILD_SHARED_LIBS OFF)
     set(BUILD_SHARED_LIBS OFF)
@@ -118,10 +121,6 @@ else()
     set(${PROJECT_NAME}_BUILD_QT OFF)
     set(BUILD_QT OFF)
 endif()
-
-message_c(${BOLD_CYAN} "Build examples: ${BUILD_EXAMPLES}")
-message_c(${BOLD_CYAN} "Build tests: ${BUILD_TESTS}")
-message_c(${BOLD_CYAN} "Build Qt extension: ${BUILD_QT} ${QT_VERSION_MAJOR}")
 
 #############################################################################
 # Create Target
@@ -167,10 +166,13 @@ include(DGoogleTestHelper)
 
 # Config Qt stuffs
 if(${BUILD_QT})
-    message_c("Project <${PROJECT_NAME}> is finding Qt libraries...")
-    #find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
+    message_c("Project <${PROJECT_NAME}> is configuring Qt libraries...")
+    find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
     find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
     message_c("\tFound Qt${QT_VERSION_MAJOR}")
+    #set(CMAKE_AUTOUIC ON)
+    #set(CMAKE_AUTOMOC ON)
+    #set(CMAKE_AUTORCC ON)
     if (NOT ${BUILD_INTERFACE_LIBS})
         target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Widgets)
     endif()
@@ -195,4 +197,11 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # generate install directive only if stand-alone project
     message_c("Generate Install directive")
     include(DInstall)
+    message_c("Done")
 endif()
+
+message_c(${BOLD_CYAN} "Summary:")
+message_c(${BOLD_CYAN} "Build as: ${LIB_TYPE} LIB")
+message_c(${BOLD_CYAN} "Build examples: ${BUILD_EXAMPLES}")
+message_c(${BOLD_CYAN} "Build tests: ${BUILD_TESTS}")
+message_c(${BOLD_CYAN} "Build Qt extension: ${BUILD_QT}")

@@ -24,7 +24,7 @@ set(${PROJECT_NAME}_COMPANY_COPYRIGHT "2020 Fabio Durigon")
 
 ######
 # Initial stuffs
-set(DSTATUS "@@ ")
+set(DSTATUS ">> ")
 message(${DSTATUS} "CMake version: ${CMAKE_VERSION}")
 message(${DSTATUS} "gcc c++ version: ${CMAKE_CXX_COMPILER_VERSION}")
 

@@ -37,12 +37,7 @@ void MainWindow::PrintLog(std::string LogStr) {
 // *********************************** DPathWatcher ****************************************************************
 // *****************************************************************************************************************
 
-void MainWindow::ChangeCallback(void *ClassObj, DTools::DPathWatcher::DChangeStatus Status, DTools::fs::path File, std::string Msg) {
-    MainWindow *This=(MainWindow *) ClassObj;
-    This->ChangeCallbackReceiver(Status,File,Msg);
-}
-
-void MainWindow::ChangeCallbackReceiver(DTools::DPathWatcher::DChangeStatus Status, DTools::fs::path File, std::string Msg) {
+void MainWindow::WatcherChangeCallback(DTools::DPathWatcher::DChangeStatus Status, DTools::fs::path File, std::string Msg) {
     std::string sStatus;
     switch (Status) {
         case DTools::DPathWatcher::CHANGE_STATUS_MODIFIED:
@@ -76,7 +71,8 @@ void MainWindow::on_ButtonPathWatcher_clicked()
 {
     //Watcher=new DTools::DPathWatcher("E:\\Fabio_Share\\appunti.txt");
     Watcher=new DTools::DPathWatcher(ui->EditWatcher->text().toStdString());
-    Watcher->SetMemberCallback(MainWindow::ChangeCallback,this);
+    auto callback=std::bind(&MainWindow::WatcherChangeCallback,this,std::placeholders::_1,std::placeholders::_2,std::placeholders::_3);
+    Watcher->SetCallback(callback);
     PrintLog("Creato");
 }
 
@@ -92,7 +88,7 @@ void MainWindow::on_ButtonStart_clicked()
 
 void MainWindow::on_ButtonStop_clicked()
 {
-    Watcher->Stop();
+    Watcher->SetStopAndWait(5);
 }
 
 void MainWindow::on_ButtonWatcherAlive_clicked()

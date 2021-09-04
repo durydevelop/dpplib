@@ -66,8 +66,7 @@ class MainWindow : public QMainWindow
         QTimer *timer;
         std::shared_ptr<DTools::DNetwork::DRESTClient> RESTClient;
 
-        static void ChangeCallback(void *ClassObj, DTools::DPathWatcher::DChangeStatus Status, DTools::fs::path File, std::string Msg);
-        void ChangeCallbackReceiver(DTools::DPathWatcher::DChangeStatus Status, DTools::fs::path File, std::string Msg);
+        void WatcherChangeCallback(DTools::DPathWatcher::DChangeStatus Status, DTools::fs::path File, std::string Msg);
 
         // DRESTClient Callbacks
         void OnLog(std::string LogMsg);

@@ -14,7 +14,8 @@ namespace DShell
     #ifdef _WIN32
         bool Execute(std::string Filename, std::string Args, bool Visible);
     #endif
-	bool Execute(std::string Filename, std::string Args);
+	bool Execute(std::string Filename, std::string Args = std::string());
+	bool ExecuteDetached(std::string Filename, std::string Args = std::string());
 	bool ShutDown(void);
 /*
 		HANDLE ShellEsegui(std::string NomeFile, bool Visibile, AnsiString Parametri);
