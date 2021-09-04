@@ -64,7 +64,11 @@ namespace DShell
         }
     #endif
 
-
+    //! For now only for compatibily with DQt.h
+    bool ExecuteDetached(std::string Filename, std::string Args) {
+        // TODO: strat in new process
+        return(Execute(Filename,Args));
+    }
 
     //! Start a shutdown procedure
     bool ShutDown(void)
