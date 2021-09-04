@@ -6,12 +6,12 @@ project(DPPLIB
         LANGUAGES CXX
 )
 
-#set(CMAKE_AUTOUIC ON)
-#set(CMAKE_AUTOMOC ON)
-#set(CMAKE_AUTORCC ON)
-#set(CMAKE_INCLUDE_CURRENT_DIR YES)
 
-# Check for Qt extansion (this will set QT_VERSION_MAJOR if it exists)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+#set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Find qt but not required
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets)
 
 ######
@@ -119,10 +119,6 @@ else()
     set(BUILD_QT OFF)
 endif()
 
-message_c(${BOLD_CYAN} "Build examples: ${BUILD_EXAMPLES}")
-message_c(${BOLD_CYAN} "Build tests: ${BUILD_TESTS}")
-message_c(${BOLD_CYAN} "Build Qt extension: ${BUILD_QT} ${QT_VERSION_MAJOR}")
-
 #############################################################################
 # Create Target
 # CMakeFiles.txt in ./lib and ./include dirs set SRC_FILES with source files list
@@ -167,10 +163,13 @@ include(DGoogleTestHelper)
 
 # Config Qt stuffs
 if(${BUILD_QT})
-    message_c("Project <${PROJECT_NAME}> is finding Qt libraries...")
-    #find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
+    message_c("Project <${PROJECT_NAME}> is configuring Qt libraries...")
+    find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
     find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
     message_c("\tFound Qt${QT_VERSION_MAJOR}")
+    #set(CMAKE_AUTOUIC ON)
+    #set(CMAKE_AUTOMOC ON)
+    #set(CMAKE_AUTORCC ON)
     if (NOT ${BUILD_INTERFACE_LIBS})
         target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Widgets)
     endif()
@@ -196,3 +195,7 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     message_c("Generate Install directive")
     include(DInstall)
 endif()
+
+message_c(${BOLD_CYAN} "Build examples: ${BUILD_EXAMPLES}")
+message_c(${BOLD_CYAN} "Build tests: ${BUILD_TESTS}")
+message_c(${BOLD_CYAN} "Build Qt extension: ${BUILD_QT}")

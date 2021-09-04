@@ -10,18 +10,20 @@ namespace DTools
 {
     class DPathWatcher {
         public:
-            enum DChangeStatus                          { CHANGE_STATUS_NONE=0  , CHANGE_STATUS_CREATED=1   , CHANGE_STATUS_ERASED=2, CHANGE_STATUS_MODIFIED=3  , CALLBACK_STR_MSG=16   };
-            inline static std::vector<std::string> DChancgeStatusDesc={ "No changes"          , "Created"                 , "Erased"              , "Modified"                , ""                    };
+            enum DChangeStatus                                          { CHANGE_STATUS_NONE=0  , CHANGE_STATUS_CREATED=1   , CHANGE_STATUS_ERASED=2, CHANGE_STATUS_MODIFIED=3  , CALLBACK_STR_MSG=16   };
+            inline static std::vector<std::string> DChancgeStatusDesc=  { "No changes"          , "Created"                 , "Erased"              , "Modified"                , ""                    };
             DPathWatcher(fs::path PathToWatch = fs::path());
             ~DPathWatcher();
             void SetInterval(size_t MSec);
             size_t GetWatchesCount(void);
             void Check(bool FireOnlyChages = false);
             bool Start(void);
+            void Pause(bool Enabled = true);
             void SetStop(void);
             bool SetStopAndWait(size_t TimeOutMSec = 0);
             // TODO: ForceStop()
             bool IsWatching(void);
+            bool IsPaused(void);
             bool IsMyPath(const fs::path& Path);
             size_t AddPath(fs::path PathToWatch);
 
@@ -30,14 +32,7 @@ namespace DTools
                     DPathWatch(fs::path PathToWatch) {
                         Path=fs::absolute(PathToWatch);
                         IsDirectory=fs::is_directory(Path);
-
-                        if (IsDirectory) {
-                            // FirstScan
-                            for (auto &File : fs::recursive_directory_iterator(Path)) {
-                                DirScanResult[File.path().string()] = fs::last_write_time(File);
-                            }
-                        }
-
+                        FirstScan=true;
                         LastExists=fs::exists(Path);
                         if (LastExists) {
                             LastWriteTime=DPath::LastWriteTime(Path);
@@ -66,7 +61,14 @@ namespace DTools
                                 // Dir
                                 LastChangeStatus=ScanDir();
                                 LastChangeTime=std::chrono::system_clock::now();
-
+                                if (FirstScan) {
+                                    // First scan
+                                    for (auto &File : fs::recursive_directory_iterator(Path)) {
+                                        DirScanResult[File.path().string()] = fs::last_write_time(File);
+                                    }
+                                    FirstScan=false;
+                                    return(CHANGE_STATUS_NONE);
+                                }
                             }
                             else {
                                 // File
@@ -124,7 +126,8 @@ namespace DTools
                     }
 
                     fs::path Path;                                          //! File/dir absolute path
-                    bool IsDirectory;
+                    bool IsDirectory;                                       //! True if Path is a directory
+                    bool FirstScan;                                         //! Used to avoid the first scan in constructor
                     bool LastExists;                                        //! Last exist status
                     std::chrono::system_clock::time_point LastWriteTime;    //! File/dir last write time
                     std::chrono::system_clock::time_point LastChangeTime;   //! Last change time detected
@@ -143,6 +146,7 @@ namespace DTools
 
             bool Watching;
             bool NeedToQuit;
+            bool Paused;
             size_t IntervalMSec;
             std::string LastStrStatus;
             // Thread stuffs

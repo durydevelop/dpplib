@@ -2,7 +2,9 @@
 #include "libdpp/DString.h"
 #include <algorithm>
 
-std::string DValue::Get(size_t Index) {
+namespace DTools
+{
+	std::string DValue::Get(size_t Index) {
 		if (Values.empty() || Index > Values.size()-1) {
 			return(std::string());
 		}
@@ -51,3 +53,4 @@ std::string DValue::Get(size_t Index) {
 		}
 		return false;
 	}
+}
