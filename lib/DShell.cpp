@@ -66,7 +66,7 @@ namespace DShell
 
     //! For now only for compatibily with DQt.h
     bool ExecuteDetached(std::string Filename, std::string Args) {
-        // TODO: strat in new process
+        // TODO: start in new process
         return(Execute(Filename,Args));
     }
 

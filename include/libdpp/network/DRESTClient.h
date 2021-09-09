@@ -208,7 +208,7 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
         // Log
         typedef std::function<void (std::string)> DCallbackLog;
         void SetOnLog(DCallbackLog callback);
-        std::string GetLastStatus(void);
+        std::string GetLastError(void);
         // Response
         typedef std::function<void (DHttpResponse&)> DCallbackResponse;
         void SetOnResponse(DCallbackResponse callback);
@@ -220,7 +220,7 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
         DCallbackLog CallbackLog;
         void DoLogCallback(void);
         void Log(std::string);
-        std::string LastStrStatus;
+        std::string LastError;
         // Response
         DCallbackResponse CallbackResponse;
         void DoResponseCallback(void);
