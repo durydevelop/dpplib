@@ -8,67 +8,79 @@ namespace DTools
 namespace DError
 {
 
-    enum DErrorCodeID { ERROR_NOT_SET = -1, SUCCESS, ERROR_WARNING, ERROR_GENERIC, ERROR_CUSTOM };
-
     class DErrorCode {
 
         public:
+            enum DErrorCodeID { ERR_NOT_SET = -1, ERR_SUCCESS, ERR_WARNING, ERR_ERROR };
             DErrorCodeID ErrorCodeID;
             int ErrorCodeCUSTOM;
 
             DErrorCode() {
-                ErrorCodeID=ERROR_NOT_SET;
-                ErrorCodeCUSTOM=ERROR_NOT_SET;
+                ErrorCodeID=ERR_NOT_SET;
+                ErrorCodeCUSTOM=ERR_NOT_SET;
             }
 
-            void Set(DErrorCodeID ErrorCode, const std::string& ErrorMsg = std::string()) {
+            void SetError(std::string ErrorMsg, int CustomErrorCode = ERR_NOT_SET) {
+                Set(ERR_ERROR,ErrorMsg,CustomErrorCode);
+            }
+
+            void SetWarning(std::string WarningMsg, int CustomErrorCode = ERR_NOT_SET) {
+                Set(ERR_WARNING,WarningMsg,CustomErrorCode);
+            }
+
+            void Clear(void) {
+                ErrorCodeID=ERR_NOT_SET;
+                ErrorCodeCUSTOM=ERR_NOT_SET;
+                ErrorStatus.clear();
+                ErrorMessage.clear();
+            }
+
+            std::string GetMessage(void) {
+                return(ErrorMessage);
+            }
+
+            std::string GetStatusMessage(void) {
+                return(ErrorStatus+" "+ErrorMessage);
+            }
+
+            bool IsSet(void) {
+                return(ErrorCodeID != ERR_NOT_SET);
+            }
+
+            bool IsWarning(void) {
+                return(ErrorCodeID == ERR_WARNING);
+            }
+
+            bool IsError(void) {
+                return(ErrorCodeID == ERR_ERROR);
+            }
+
+        private:
+            void Set(DErrorCodeID ErrorCode, const std::string& ErrorMsg, int CustomErrorCode) {
                 ErrorCodeID=ErrorCode;
                 switch (ErrorCodeID) {
-                    case SUCCESS:
-                        ErrorDesc="Success";
+                    case ERR_SUCCESS:
+                        ErrorStatus="SUCCESS";
                         break;
-                    case ERROR_WARNING:
-                        ErrorDesc=ErrorMsg;
+                    case ERR_WARNING:
+                        ErrorStatus="WARNING";
                         break;
-                    case ERROR_GENERIC:
-                        ErrorDesc="Error";
+                    case ERR_ERROR:
+                        ErrorStatus="ERROR";
                         break;
-                    case ERROR_NOT_SET:
-                        ErrorDesc=std::string();
-                        break;
-                    case ERROR_CUSTOM:
-                        ErrorDesc=ErrorMsg;
+                    case ERR_NOT_SET:
+                        ErrorStatus=std::string();
                         break;
                     default:
                         break;
                 }
-            }
-
-            void SetCustom(std::string CustomErrorMsg, int CustomErrorCode) {
-                Set(ERROR_CUSTOM,CustomErrorMsg);
+                ErrorMessage=ErrorMsg;
                 ErrorCodeCUSTOM=CustomErrorCode;
             }
 
-            void SetWarning(std::string WarningMsg) {
-                Set(ERROR_WARNING,WarningMsg);
-            }
-
-            std::string Message(void) {
-                return(ErrorDesc);
-            }
-
-            bool IsSet(void) {
-                return(ErrorCodeID != ERROR_NOT_SET);
-            }
-
-            bool IsWarning(void) {
-                return(ErrorCodeID == ERROR_WARNING);
-            }
-
-        private:
-            std::string ErrorDesc;
+            std::string ErrorStatus;
+            std::string ErrorMessage;
     };
-
 }
 }
 

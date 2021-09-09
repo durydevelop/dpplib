@@ -18,7 +18,7 @@ class MainWindow : public QMainWindow
     public:
         MainWindow(QWidget *parent = nullptr);
         ~MainWindow();
-        void PrintLog(std::string LogStr);
+        void Log(std::string LogStr);
 
     signals:
         //void AddLog(std::string LogStr);
@@ -62,12 +62,11 @@ class MainWindow : public QMainWindow
     private:
         Ui::MainWindow *ui;
         DTools::DPathWatcher *Watcher;
-        DTools::DLog *Log;
+        DTools::DLog *dLog;
         QTimer *timer;
         std::shared_ptr<DTools::DNetwork::DRESTClient> RESTClient;
 
-        static void ChangeCallback(void *ClassObj, DTools::DPathWatcher::DChangeStatus Status, DTools::fs::path File, std::string Msg);
-        void ChangeCallbackReceiver(DTools::DPathWatcher::DChangeStatus Status, DTools::fs::path File, std::string Msg);
+        void WatcherChangeCallback(DTools::DPathWatcher::DChangeStatus Status, DTools::fs::path File, std::string Msg);
 
         // DRESTClient Callbacks
         void OnLog(std::string LogMsg);
