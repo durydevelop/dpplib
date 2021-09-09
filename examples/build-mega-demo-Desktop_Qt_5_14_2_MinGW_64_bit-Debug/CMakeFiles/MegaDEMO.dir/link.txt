@@ -1,3 +1,0 @@
-C:\Qt\Tools\CMake_32\bin\cmake.exe -E rm -f CMakeFiles\MegaDEMO.dir/objects.a
-C:\Qt\Tools\mingw730_64\bin\ar.exe cr CMakeFiles\MegaDEMO.dir/objects.a @CMakeFiles\MegaDEMO.dir\objects1.rsp
-C:\Qt\Tools\mingw730_64\bin\g++.exe -g -Wl,--whole-archive CMakeFiles\MegaDEMO.dir/objects.a -Wl,--no-whole-archive -o MegaDEMO.exe -Wl,--out-implib,libMegaDEMO.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\MegaDEMO.dir\linklibs.rsp
