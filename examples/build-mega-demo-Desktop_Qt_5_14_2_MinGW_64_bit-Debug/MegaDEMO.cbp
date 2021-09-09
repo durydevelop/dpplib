@@ -149,11 +149,12 @@
 					<Add option="-DQT_WIDGETS_LIB"/>
 					<Add option="-DQT_GUI_LIB"/>
 					<Add option="-DQT_CORE_LIB"/>
+					<Add directory="E:/Dev/cpp/lib/libdpp/examples/build-mega-demo-Desktop_Qt_5_14_2_MinGW_64_bit-Debug/dep"/>
+					<Add directory="E:/Dev/cpp/lib/libdpp"/>
 					<Add directory="E:/Dev/cpp/lib/libdpp/examples/build-mega-demo-Desktop_Qt_5_14_2_MinGW_64_bit-Debug/dep/DPPLIB_autogen/include"/>
 					<Add directory="E:/Dev/cpp/lib/boost"/>
 					<Add directory="E:/Dev/cpp/lib/libdpp/lib"/>
 					<Add directory="E:/Dev/cpp/lib/libdpp/include"/>
-					<Add directory="E:/Dev/cpp/lib/libdpp/examples/build-mega-demo-Desktop_Qt_5_14_2_MinGW_64_bit-Debug/dep"/>
 					<Add directory="C:/Qt/5.14.2/mingw73_64/include"/>
 					<Add directory="C:/Qt/5.14.2/mingw73_64/include/QtWidgets"/>
 					<Add directory="C:/Qt/5.14.2/mingw73_64/include/QtGui"/>
@@ -184,11 +185,12 @@
 					<Add option="-DQT_WIDGETS_LIB"/>
 					<Add option="-DQT_GUI_LIB"/>
 					<Add option="-DQT_CORE_LIB"/>
+					<Add directory="E:/Dev/cpp/lib/libdpp/examples/build-mega-demo-Desktop_Qt_5_14_2_MinGW_64_bit-Debug/dep"/>
+					<Add directory="E:/Dev/cpp/lib/libdpp"/>
 					<Add directory="E:/Dev/cpp/lib/libdpp/examples/build-mega-demo-Desktop_Qt_5_14_2_MinGW_64_bit-Debug/dep/DPPLIB_autogen/include"/>
 					<Add directory="E:/Dev/cpp/lib/boost"/>
 					<Add directory="E:/Dev/cpp/lib/libdpp/lib"/>
 					<Add directory="E:/Dev/cpp/lib/libdpp/include"/>
-					<Add directory="E:/Dev/cpp/lib/libdpp/examples/build-mega-demo-Desktop_Qt_5_14_2_MinGW_64_bit-Debug/dep"/>
 					<Add directory="C:/Qt/5.14.2/mingw73_64/include"/>
 					<Add directory="C:/Qt/5.14.2/mingw73_64/include/QtWidgets"/>
 					<Add directory="C:/Qt/5.14.2/mingw73_64/include/QtGui"/>

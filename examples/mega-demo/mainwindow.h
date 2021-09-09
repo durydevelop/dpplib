@@ -18,7 +18,7 @@ class MainWindow : public QMainWindow
     public:
         MainWindow(QWidget *parent = nullptr);
         ~MainWindow();
-        void PrintLog(std::string LogStr);
+        void Log(std::string LogStr);
 
     signals:
         //void AddLog(std::string LogStr);
@@ -62,7 +62,7 @@ class MainWindow : public QMainWindow
     private:
         Ui::MainWindow *ui;
         DTools::DPathWatcher *Watcher;
-        DTools::DLog *Log;
+        DTools::DLog *dLog;
         QTimer *timer;
         std::shared_ptr<DTools::DNetwork::DRESTClient> RESTClient;
 

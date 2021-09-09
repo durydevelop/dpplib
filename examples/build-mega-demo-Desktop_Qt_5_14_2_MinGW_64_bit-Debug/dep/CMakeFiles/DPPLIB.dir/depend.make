@@ -4705,6 +4705,7 @@ dep/CMakeFiles/DPPLIB.dir/lib/DSyncWatcher.cpp.obj: ../../lib/DSyncWatcher.cpp
 dep/CMakeFiles/DPPLIB.dir/lib/DUpdate.cpp.obj: ../../include/libdpp/DFilesystem.h
 dep/CMakeFiles/DPPLIB.dir/lib/DUpdate.cpp.obj: ../../include/libdpp/DPath.h
 dep/CMakeFiles/DPPLIB.dir/lib/DUpdate.cpp.obj: ../../include/libdpp/DPreferences.h
+dep/CMakeFiles/DPPLIB.dir/lib/DUpdate.cpp.obj: ../../include/libdpp/DShell.h
 dep/CMakeFiles/DPPLIB.dir/lib/DUpdate.cpp.obj: ../../include/libdpp/DString.h
 dep/CMakeFiles/DPPLIB.dir/lib/DUpdate.cpp.obj: ../../include/libdpp/DUpdate.h
 dep/CMakeFiles/DPPLIB.dir/lib/DUpdate.cpp.obj: ../../include/libdpp/qt/DQt.h

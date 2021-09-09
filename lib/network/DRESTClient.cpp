@@ -146,7 +146,7 @@ void DRESTClient::SetTimeout(uint8_t Sec)
 bool DRESTClient::SetUrl(const std::string Url)
 {
     if (!dUri.Set(Url)) {
-        LastStrStatus=dUri.GetLastStatus();
+        LastError=dUri.GetLastStatus();
         return false;
     }
     return true;
@@ -518,7 +518,7 @@ void DRESTClient::PrepareHttpRequest(DRESTClient::DRequestType dReqestType)
  * @brief Perform a sync (blocking) connection.
  * @param Url   ->  REST service url.
  * @param Force ->  If true, force ri-connection in case of Connected variable is true.
- * @return true on success connection, otherwise false. You can retrive error from LastStrStatus string.
+ * @return true on success connection, otherwise false. You can retrive error from LastError string.
  * This function is blocking until connection hand-shake is ended or time-out is reached.
  */
 bool DRESTClient::Connect(const std::string& Url, bool Force)
@@ -529,7 +529,7 @@ bool DRESTClient::Connect(const std::string& Url, bool Force)
 /**
  * @brief Perform a sync (blocking) connection to url previously set with SetUrl(...).
  * @param Force ->  If true, force ri-connection in case of Connected variable is true.
- * @return true on success connection, otherwise false. Can retrive error from LastStrStatus string.
+ * @return true on success connection, otherwise false. Can retrive error from LastError string.
  * This function is blocking until connection hand-shake is ended or time-out is reached.
  */
 bool DRESTClient::Connect(bool Force)
@@ -570,7 +570,7 @@ bool DRESTClient::Connect(bool Force)
 /**
  * @brief Perform a sync (blocking) diconnect.
  * @param Force ->  If true force disconnection in case of Connected variable is false.
- * @return true on success connection, otherwise false. Can retrive error from LastStrStatus string.
+ * @return true on success connection, otherwise false. Can retrive error from LastError string.
  * This function is blocking until disconnection is made.
  */
 bool DRESTClient::Disconnect(bool Force)
@@ -594,23 +594,45 @@ bool DRESTClient::Disconnect(bool Force)
 /**
  * @brief Send a blocking POST using current data stored.
  * @param WaitForResponse   ->  If true, blocking funcion Read() is called and the funcion return after data received.
- * @return true on success otherwise false. You can retrive error from LastStrStatus string.
+ * @return true on success otherwise false. You can retrive error from LastError string.
  */
 bool DRESTClient::SendPOST(bool WaitForResponse)
 {
+    bool DisconnectAfterSent=false;
+
+    if (!Connected) {
+        if (!Connect()) {
+            //DisconnectAfter=true;
+            Error("Connection failed:");
+            return false;
+        }
+        // If were not connected, disconnect after sent.
+        DisconnectAfterSent=true;
+    }
+    else if (dUri.Host.empty()) {
+        Error("Missing host in url");
+        return false;
+    }
+
     PrepareHttpRequest(REQ_POST);
-    if (Send()) {
+    bool Ret=Send();
+    if (Ret) {
         if (WaitForResponse) {
-            return(Read());
+            Ret=Read();
         }
     }
-    return false;
+
+    if (DisconnectAfterSent) {
+        Disconnect();
+    }
+
+    return(Ret);
 }
 
 /**
  * @brief Send a blocking PUT using current data stored.
  * @param WaitForResponse   ->  If true, blocking funcion Read() is called and the funcion return after data received.
- * @return true on success otherwise false. You can retrive error from LastStrStatus string.
+ * @return true on success otherwise false. You can retrive error from LastError string.
  */
 bool DRESTClient::SendPUT(bool WaitForResponse)
 {
@@ -626,7 +648,7 @@ bool DRESTClient::SendPUT(bool WaitForResponse)
 /**
  * @brief Send a blocking GET using current data stored.
  * @param WaitForResponse   ->  If true, blocking funcion Read() is called and the funcion return after data received.
- * @return true on success otherwise false. You can retrive error from LastStrStatus string.
+ * @return true on success otherwise false. You can retrive error from LastError string.
  */
 bool DRESTClient::SendGET(bool WaitForResponse)
 {
@@ -641,26 +663,35 @@ bool DRESTClient::SendGET(bool WaitForResponse)
 
 /**
  * @brief Perform a blocking send of the current HttpRequest.
- * @return true on success otherwise false. You can retrive error from LastStrStatus string.
+ * @return true on success otherwise false. You can retrive error from LastError string.
  */
 bool DRESTClient::Send(void)
 {
+    if (dUri.Host.empty()) {
+        Error("Missing host in url");
+        return false;
+    }
+/*
     if (!Connected) {
         if (!Connect()) {
             //DisconnectAfter=true;
             Error("Connection failed:");
             return false;
         }
+        // If were not connected, disconnect after sent.
+        DisconnectAfterSent=true;
     }
     else if (dUri.Host.empty()) {
         Error("Missing host in url");
         return false;
     }
-
+*/
     HttpResponse.clear();
 
     // Send request
-    return(Write());
+    bool Ret=Write();
+
+    return(Ret);
 }
 
 /**
@@ -695,7 +726,7 @@ bool DRESTClient::Write(void)
 
 /**
  * @brief Make a blocking read.
- * @return true on success otherwise false. You can retrive error from LastStrStatus string.
+ * @return true on success read otherwise false. You can retrive error from LastError string.
  * Data received are stored in HttpResponse.
  */
 bool DRESTClient::Read(void)
@@ -756,7 +787,7 @@ void DRESTClient::SetOnLog(DCallbackLog callback)
 void DRESTClient::DoLogCallback(void)
 {
 	if (CallbackLog) {
-		CallbackLog(LastStrStatus);
+		CallbackLog(LastError);
 	}
 }
 // ***************************************************************************************
@@ -779,7 +810,7 @@ void DRESTClient::SetOnError(DCallbackError callback)
 void DRESTClient::DoErrorCallback(void)
 {
 	if (CallbackError) {
-		CallbackError(LastStrStatus);
+		CallbackError(LastError);
 	}
 }
 // ***************************************************************************************
@@ -787,37 +818,37 @@ void DRESTClient::DoErrorCallback(void)
 
 // ****************************  Log/error functions *************************************
 /**
-* @brief Set LastStrStatus and make log callback.
+* @brief Set LastError and make log callback.
 * @param LogMsg	->  Message to log.
 *
-* N.B. If LogMsg is empty, callback with LastStrStatus is performed.
+* N.B. If LogMsg is empty, callback with LastError is performed.
 **/
 void DRESTClient::Log(std::string LogMsg)
 {
 	if (!LogMsg.empty()) {
-		LastStrStatus=LogMsg;
+		LastError=LogMsg;
 	}
 	DoLogCallback();
 }
 
 /**
-* @brief Set LastStrStatus and make error callback.
+* @brief Set LastError and make error callback.
 * @param ErrorMsg	->  Error message.
 *
-* N.B. If LogMsg is empty, callback with LastStrStatus is performed.
+* N.B. If LogMsg is empty, callback with LastError is performed.
 **/
 void DRESTClient::Error(std::string ErrorMsg)
 {
 	if (!ErrorMsg.empty()) {
-		LastStrStatus=ErrorMsg;
+		LastError=ErrorMsg;
 	}
 	DoErrorCallback();
 }
 
-//! @return LastStrStatus string.
-std::string DRESTClient::GetLastStatus(void)
+//! @return LastError string.
+std::string DRESTClient::GetLastError(void)
 {
-	return(LastStrStatus);
+	return(LastError);
 }
 // ***************************************************************************************
 

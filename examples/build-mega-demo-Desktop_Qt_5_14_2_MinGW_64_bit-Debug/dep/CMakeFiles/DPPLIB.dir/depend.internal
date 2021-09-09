@@ -4706,6 +4706,7 @@ dep/CMakeFiles/DPPLIB.dir/lib/DUpdate.cpp.obj
  ../../include/libdpp/DFilesystem.h
  ../../include/libdpp/DPath.h
  ../../include/libdpp/DPreferences.h
+ ../../include/libdpp/DShell.h
  ../../include/libdpp/DString.h
  ../../include/libdpp/DUpdate.h
  ../../include/libdpp/qt/DQt.h

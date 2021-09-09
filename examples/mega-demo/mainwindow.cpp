@@ -13,10 +13,10 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    Log=new DTools::DLog();
-    PrintLog("Start");
-    Log->d("__cplusplus = "+std::to_string(__cplusplus));
-    Log->d("__GNUCC__ = "+std::to_string(__GNUC__));
+    dLog=new DTools::DLog();
+    Log("Start");
+    Log("__cplusplus = "+std::to_string(__cplusplus));
+    Log("__GNUCC__ = "+std::to_string(__GNUC__));
 
     //connect(this,&MainWindow::AddLog,this,&MainWindow::PrintLog); //,Qt::QueuedConnection);
 
@@ -28,9 +28,9 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::PrintLog(std::string LogStr) {
+void MainWindow::Log(std::string LogStr) {
     ui->TextEditLog->append(LogStr.c_str());
-    Log->d(LogStr);
+    dLog->d(LogStr);
 }
 
 // *****************************************************************************************************************
@@ -63,7 +63,7 @@ void MainWindow::WatcherChangeCallback(DTools::DPathWatcher::DChangeStatus Statu
 }
 
 void MainWindow::Check(void) {
-    PrintLog("Check()");
+    Log("Check()");
     Watcher->Check();
 }
 
@@ -73,7 +73,7 @@ void MainWindow::on_ButtonPathWatcher_clicked()
     Watcher=new DTools::DPathWatcher(ui->EditWatcher->text().toStdString());
     auto callback=std::bind(&MainWindow::WatcherChangeCallback,this,std::placeholders::_1,std::placeholders::_2,std::placeholders::_3);
     Watcher->SetCallback(callback);
-    PrintLog("Creato");
+    Log("Creato");
 }
 
 void MainWindow::on_ButtonCheck_clicked()
@@ -94,10 +94,10 @@ void MainWindow::on_ButtonStop_clicked()
 void MainWindow::on_ButtonWatcherAlive_clicked()
 {
     if (Watcher->IsWatching()) {
-        PrintLog("Watching");
+        Log("Watching");
     }
     else {
-        PrintLog("Not Watching");
+        Log("Not Watching");
     }
 }
 
@@ -194,12 +194,12 @@ void MainWindow::OnResponse(DTools::DNetwork::DRESTClient::DHttpResponse HttpRes
     std::stringstream ss;
     ss << "HttpResponse:" << std::endl;
     ss << HttpResponse << std::endl;
-    Log->d(ss.str());
+    Log(ss.str());
 }
 
 void MainWindow::OnLog(std::string LogMsg)
 {
-    Log->d("DEBUG : "+LogMsg);
+    Log("DEBUG : "+LogMsg);
 }
 
 void MainWindow::on_ButtonRestClientCreate_clicked()
@@ -250,7 +250,6 @@ void MainWindow::on_ButtonRestClientPost_clicked()
         ui->TextEditLog->append(("Error send : "+RESTClient->GetLastStatus()).c_str());
     }
 
-    ui->TextEditLog->append("returned");
 }
 
 void MainWindow::on_ButtonRestClientDIsconnect_clicked()

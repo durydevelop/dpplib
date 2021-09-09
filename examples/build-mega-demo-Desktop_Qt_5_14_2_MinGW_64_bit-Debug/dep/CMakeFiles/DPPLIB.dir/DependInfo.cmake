@@ -41,11 +41,12 @@ set(CMAKE_TARGET_DEFINITIONS_CXX
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
+  "dep"
+  "../../"
   "dep/DPPLIB_autogen/include"
   "E:/Dev/cpp/lib/boost"
   "../../lib"
   "../../include"
-  "dep"
   "C:/Qt/5.14.2/mingw73_64/include"
   "C:/Qt/5.14.2/mingw73_64/include/QtWidgets"
   "C:/Qt/5.14.2/mingw73_64/include/QtGui"

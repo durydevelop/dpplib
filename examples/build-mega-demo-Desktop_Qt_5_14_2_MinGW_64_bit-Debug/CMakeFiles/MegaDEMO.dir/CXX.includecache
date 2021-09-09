@@ -25572,26 +25572,6 @@ boost/winapi/detail/header.hpp
 boost/winapi/detail/footer.hpp
 -
 
-E:/Dev/cpp/lib/libdpp/examples/build-mega-demo-Desktop_Qt_5_14_2_MinGW_64_bit-Debug/MegaDEMO_autogen/EWIEGA46WW/moc_mainwindow.cpp
-memory
--
-../../../mega-demo/mainwindow.h
-E:/Dev/cpp/lib/libdpp/examples/mega-demo/mainwindow.h
-QtCore/qbytearray.h
--
-QtCore/qmetatype.h
--
-
-E:/Dev/cpp/lib/libdpp/examples/build-mega-demo-Desktop_Qt_5_14_2_MinGW_64_bit-Debug/MegaDEMO_autogen/mocs_compilation.cpp
-EWIEGA46WW/moc_mainwindow.cpp
-E:/Dev/cpp/lib/libdpp/examples/build-mega-demo-Desktop_Qt_5_14_2_MinGW_64_bit-Debug/MegaDEMO_autogen/EWIEGA46WW/moc_mainwindow.cpp
-
-E:/Dev/cpp/lib/libdpp/examples/mega-demo/main.cpp
-mainwindow.h
-E:/Dev/cpp/lib/libdpp/examples/mega-demo/mainwindow.h
-QApplication
--
-
 E:/Dev/cpp/lib/libdpp/examples/mega-demo/mainwindow.cpp
 mainwindow.h
 E:/Dev/cpp/lib/libdpp/examples/mega-demo/mainwindow.h
