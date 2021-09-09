@@ -23,6 +23,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Own includes
 #include "libdpp/qt/DSpinnerWidget.h"
 
+#ifdef QT_GUI_LIB
+
 // Standard includes
 #include <cmath>
 #include <algorithm>
@@ -312,3 +314,5 @@ QColor DSpinnerWidget::currentLineColor(int countDistance, int totalNrOfLines, q
     }
     return color;
 }
+
+#endif
