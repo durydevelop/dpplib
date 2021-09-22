@@ -24,11 +24,6 @@ namespace DTools
      * @param PathToWatch   ->  Filename or Dir to add to WatchList. If no Path is specified, watch list is empty and it is possible to add path with AddPath() method.
      */
     DPathWatcher::DPathWatcher(fs::path PathToWatch) {
-/*
-        GlobalCallback=nullptr;
-        MemberCallback=nullptr;
-        MemberCalbackObj=nullptr;
-*/
         if (!PathToWatch.empty()) {
             AddPath(PathToWatch);
         }
@@ -89,8 +84,8 @@ namespace DTools
     }
 
     bool DPathWatcher::IsMyPath(const fs::path& Path) {
-        for (auto Watch : WatchList) {
-            if (Watch.Path == Path) {
+        for (size_t ixW=0; ixW<WatchList.size(); ixW++) {
+            if (WatchList[ixW].Path == Path) {
                 return true;
             }
         }
@@ -108,8 +103,7 @@ namespace DTools
             if (ChangeStatus == CHANGE_STATUS_NONE && FireOnlyChages) {
                 continue;
             }
-            //DoCallback(Watch.LastChangeStatus,Watch.Path);
-            DoNewCallback(Watch.LastChangeStatus,Watch.Path);
+            DoCallback(Watch.LastChangeStatus,Watch.Path);
         }
     }
 
@@ -140,6 +134,9 @@ namespace DTools
                 auto delta=std::chrono::steady_clock::now() + std::chrono::milliseconds(IntervalMSec);
                 if (!Paused) {
                     Check(true);
+                }
+                else {
+                    Log("paused...");
                 }
                 std::this_thread::sleep_until(delta);
             }
@@ -206,38 +203,13 @@ namespace DTools
 	/**
 	 * @brief Perform the callback
 	 */
-	void DPathWatcher::DoNewCallback(DChangeStatus ChangeStatus, fs::path Path, std::string Msg) {
+	void DPathWatcher::DoCallback(DChangeStatus ChangeStatus, fs::path Path, std::string Msg) {
 		if(Callback) {
 			Callback(ChangeStatus,Path,Msg);
 		}
 	}
 	// ***************************************************************************************
-/*
-	// ************************  Deprecated Callback stuffs **********************************
 
-    void DPathWatcher::SetGlobalCallback(DGlobalCallback callback)	{
-            GlobalCallback=callback;
-            MemberCallback=nullptr;
-            MemberCalbackObj=nullptr;
-
-    }
-
-	void DPathWatcher::SetMemberCallback(DMemberCallback callback, void *ClassObj) {
-			GlobalCallback=nullptr;
-			MemberCallback=callback;
-			MemberCalbackObj=ClassObj;
-	}
-
-	void DPathWatcher::DoCallback(DChangeStatus ChangeStatus, fs::path Path, std::string Msg) {
-		if(GlobalCallback != NULL) {
-			GlobalCallback(ChangeStatus,Path,Msg);
-		}
-		else if((MemberCallback != NULL) && (MemberCalbackObj != NULL)) {
-			MemberCallback(MemberCalbackObj,ChangeStatus,Path,Msg);
-		}
-	}
-	// ***************************************************************************************
-*/
 	// *******************************  Log Functions ****************************************
 	/**
 	* @brief Set LastStrStatus and make log callback.
@@ -249,7 +221,7 @@ namespace DTools
 		if (!LogMsg.empty()) {
 			LastStrStatus=LogMsg;
 		}
-		DoNewCallback(CALLBACK_STR_MSG,fs::path(),LastStrStatus);
+		DoCallback(CHANGE_STATUS_LOG_STR,fs::path(),LastStrStatus);
 	}
 
 	//! @return LastStrStatus string.

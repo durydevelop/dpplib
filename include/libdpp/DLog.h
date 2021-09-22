@@ -77,8 +77,8 @@ namespace DTools
             ~DLog() {
                 if (hFile != nullptr) fclose(hFile);
             }
-
-            // TODO: testare
+/*
+            // TODO: testare: non funziona perché mentre leggo possono arrivare chiamate di log
             //! Get all log content
             std::string Read(void) {
                 fseek(hFile,0,SEEK_END);
@@ -94,7 +94,7 @@ namespace DTools
 
                 return(std::string(buff.get()));
             }
-
+*/
             template<typename ... Args>
             void d(const std::string& formatStr, Args ... args) {
                 size_t size = snprintf(nullptr,0,formatStr.c_str(),args ...)+1;
@@ -265,7 +265,7 @@ namespace DTools
                 }
 
                 if (OutStream) {
-                    *OutStream << HdrMsg << LevelMsg << LogMsg << std::endl;
+                    *OutStream << HdrMsg << LevelMsg << LogMsg << "\n"; //std::endl;
                 }
 
                 fflush(hFile); // Scrivi subito

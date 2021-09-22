@@ -10,8 +10,8 @@ namespace DTools
 {
     class DPathWatcher {
         public:
-            enum DChangeStatus                                          { CHANGE_STATUS_NONE=0  , CHANGE_STATUS_CREATED=1   , CHANGE_STATUS_ERASED=2, CHANGE_STATUS_MODIFIED=3  , CALLBACK_STR_MSG=16   };
-            inline static std::vector<std::string> DChancgeStatusDesc=  { "No changes"          , "Created"                 , "Erased"              , "Modified"                , ""                    };
+            enum DChangeStatus                                          { CHANGE_STATUS_ERROR=-1    , CHANGE_STATUS_NONE=0  , CHANGE_STATUS_CREATED=1   , CHANGE_STATUS_ERASED=2, CHANGE_STATUS_MODIFIED=3  , CHANGE_STATUS_LOG_STR };
+            inline static std::vector<std::string> DChancgeStatusDesc=  { "Error"                   , "No changes"          , "Created"                 , "Erased"              , "Modified"                , "Log"};
             DPathWatcher(fs::path PathToWatch = fs::path());
             ~DPathWatcher();
             void SetInterval(size_t MSec);
@@ -26,59 +26,76 @@ namespace DTools
             bool IsPaused(void);
             bool IsMyPath(const fs::path& Path);
             size_t AddPath(fs::path PathToWatch);
+            inline static std::string LastErrorString;
 
             class DPathWatch {
                 public:
                     DPathWatch(fs::path PathToWatch) {
-                        Path=fs::absolute(PathToWatch);
-                        IsDirectory=fs::is_directory(Path);
+                        Path=PathToWatch;
                         FirstScan=true;
-                        LastExists=fs::exists(Path);
-                        if (LastExists) {
-                            LastWriteTime=DPath::LastWriteTime(Path);
+                        LastChangeStatus=CHANGE_STATUS_NONE;
+                        try {
+                            IsDirectory=fs::is_directory(Path);
+                            LastExists=fs::exists(Path);
+                            if (LastExists) {
+                                LastWriteTime=DPath::LastWriteTime(Path);
+                            }
+                        }catch (std::exception& e) {
+                            LastChangeStatus=CHANGE_STATUS_ERROR;
+                            LastErrorString=e.what();
                         }
                     }
 
                     DChangeStatus Check(void) {
-                        // Check for exist
-                        LastChangeStatus=CHANGE_STATUS_NONE;
-                        bool Exists=fs::exists(Path);
-                        if (Exists != LastExists) {
-                            if (Exists) {
-                                LastChangeStatus=CHANGE_STATUS_CREATED;
+                        try {
+                            // Check for exist
+                            LastChangeStatus=CHANGE_STATUS_NONE;
+                            bool Exists=fs::exists(Path);
+                            if (Exists != LastExists) {
+                                if (Exists) {
+                                    LastChangeStatus=CHANGE_STATUS_CREATED;
+                                }
+                                else {
+                                    LastChangeStatus=CHANGE_STATUS_ERASED;
+                                }
+                                LastExists=Exists;
+                                LastChangeTime=std::chrono::system_clock::now();
                             }
-                            else {
-                                LastChangeStatus=CHANGE_STATUS_ERASED;
-                            }
-                            LastExists=Exists;
-                            LastChangeTime=std::chrono::system_clock::now();
+                        } catch (std::exception e) {
+                            LastErrorString=std::string("Check for exists ")+e.what();
+                            LastChangeStatus=CHANGE_STATUS_ERROR;
                         }
 
-                        // Check for update
-                        if (LastExists) {
-                            std::chrono::system_clock::time_point NewLastWriteTime=DPath::LastWriteTime(Path);
-                            if (IsDirectory) {
-                                // Dir
-                                LastChangeStatus=ScanDir();
-                                LastChangeTime=std::chrono::system_clock::now();
-                                if (FirstScan) {
-                                    // First scan
-                                    for (auto &File : fs::recursive_directory_iterator(Path)) {
-                                        DirScanResult[File.path().string()] = fs::last_write_time(File);
-                                    }
-                                    FirstScan=false;
-                                    return(CHANGE_STATUS_NONE);
-                                }
-                            }
-                            else {
-                                // File
-                                if (NewLastWriteTime != LastWriteTime) {
-                                    LastChangeStatus=CHANGE_STATUS_MODIFIED;
-                                    LastWriteTime=NewLastWriteTime;
+                            // Check for update
+                            if (LastExists) {
+                            try {
+                                std::chrono::system_clock::time_point NewLastWriteTime=DPath::LastWriteTime(Path);
+                                if (IsDirectory) {
+                                    // Dir
+                                    LastChangeStatus=ScanDir();
                                     LastChangeTime=std::chrono::system_clock::now();
+                                    if (FirstScan) {
+                                        // First scan
+                                        for (auto &File : fs::recursive_directory_iterator(Path)) {
+                                            DirScanResult[File.path().string()] = fs::last_write_time(File);
+                                        }
+                                        FirstScan=false;
+                                        return(CHANGE_STATUS_NONE);
+                                    }
                                 }
+                                else {
+                                    // File
+                                    if (NewLastWriteTime != LastWriteTime) {
+                                        LastChangeStatus=CHANGE_STATUS_MODIFIED;
+                                        LastWriteTime=NewLastWriteTime;
+                                        LastChangeTime=std::chrono::system_clock::now();
+                                    }
+                                }
+                            } catch (std::exception e) {
+                                LastErrorString=std::string(" Check for update")+e.what();
+                                LastChangeStatus=CHANGE_STATUS_ERROR;
                             }
-                        }
+                            }
 
                         return(LastChangeStatus);
                     }
@@ -154,27 +171,13 @@ namespace DTools
             std::promise<bool> PromiseEnded;
             std::future<bool> ThreadFuture;
 
-/*
-        public:
-            // Public callback stuffs
-            typedef std::function<void (DChangeStatus, fs::path, std::string)> DGlobalCallback;
-            typedef std::function<void (void*, DChangeStatus, fs::path, std::string)> DMemberCallback;
-            void SetGlobalCallback(DGlobalCallback callback);
-            void SetMemberCallback(DMemberCallback callback, void *ClassObj);
-        private:
-            // Private callback stuffs
-            DGlobalCallback GlobalCallback;
-            DMemberCallback MemberCallback;
-            void* MemberCalbackObj;
-            void DoCallback(DChangeStatus ChangeStatus, fs::path Path, std::string Msg = std::string());
-*/
         // Callback
         public:
             typedef std::function<void (DChangeStatus, fs::path, std::string)> DPathWatcherCallback;
             void SetCallback(DPathWatcherCallback callback);
         private:
             DPathWatcherCallback Callback;
-            void DoNewCallback(DChangeStatus ChangeStatus, fs::path Path, std::string Msg = std::string());
+            void DoCallback(DChangeStatus ChangeStatus, fs::path Path, std::string Msg = std::string());
     };
 }
 

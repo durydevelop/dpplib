@@ -4,6 +4,7 @@
 
 #include "libdpp/qt/ui_dformlog.h"
 #include "libdpp/qt/DQt.h"
+#include <QtConcurrent/QtConcurrentRun>
 
 /**
  * Create autodelete form:
@@ -39,8 +40,12 @@ DFormLog::DFormLog(DTools::DLog *dLog, DTools::DPreferences *dPreferences, QWidg
         DuryLog->e(tr("Failed to restore log window position").toStdString());
     }
 
-    ui->PlainTextEditLog->setPlainText(QString::fromStdString(DuryLog->Read()));
-    ui->PlainTextEditLog->moveCursor(QTextCursor::End);
+    QFile LogFile(dLog->GetFilename().c_str());
+    LogFile.open(QIODevice::Text | QIODevice::ReadOnly);
+    while(!LogFile.atEnd()) {
+        ui->PlainTextEditLog->appendPlainText(LogFile.readLine());
+    }
+    LogFile.close();
 }
 
 DFormLog::~DFormLog()
@@ -62,8 +67,11 @@ void DFormLog::Debug(QString LogMsg)
 
 void DFormLog::on_pushButton_clicked()
 {
-    Debug("Prova 1");
-    Debug("Prova 2");
+    //Debug("Prova 1");
+    //Debug("Prova 2");
+
+    //ui->PlainTextEditLog->setPlainText(QString::fromStdString(DuryLog->Read()));
+    //ui->PlainTextEditLog->moveCursor(QTextCursor::End);
 }
 
 void DFormLog::on_ButtonOpenFolder_clicked()

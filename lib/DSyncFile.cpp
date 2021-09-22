@@ -26,8 +26,8 @@ namespace DTools
 	 * @param SyncNow
 	 */
 	DSyncFile::DSyncFile(fs::path SourceFilename, fs::path DestFilename, bool SyncNow) {
-		Source=fs::absolute(SourceFilename);
-		Dest=fs::absolute(DestFilename);
+		Source=SourceFilename;
+		Dest=DestFilename;
 		Ready=false;
 		SafeMode=false;
 		if (SyncNow) {
@@ -40,6 +40,7 @@ namespace DTools
 	}
 
 	DSyncFile::DSyncStatus DSyncFile::DoSync(void) {
+try {
 		if (!fs::exists(Source)) {
 			LastStrStatus="Sync file "+Source.string()+" does not exist";
 			Ready=false;
@@ -84,6 +85,10 @@ namespace DTools
             LastStrStatus.append("sync error: "+std::string(e.what()));
 			LastSyncStatus=SYNC_ERROR;
 		}
+}
+catch (std::exception& e) {
+	LastStrStatus.append(std::string("Watcher Exception: ")+e.what());
+}
 		return(LastSyncStatus);
 	}
 

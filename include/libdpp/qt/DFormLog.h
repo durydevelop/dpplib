@@ -7,9 +7,6 @@
 #include <QPlainTextEdit>
 #include "libdpp/DLog.h"
 #include "libdpp/DPreferences.h"
-//#include <iostream>
-//#include <streambuf>
-//#include <string>
 
 class DStreamBuff : public std::basic_streambuf<char> {
     public:
@@ -26,8 +23,8 @@ class DStreamBuff : public std::basic_streambuf<char> {
     protected:
         //This is called when a std::endl has been inserted into the stream
         virtual int_type overflow(int_type v) {
-            if (v == '\n') {
-                LogBox->appendPlainText("");
+            if (v == '\n' || v == '\r') {
+                LogBox->appendPlainText(QString());
             }
             return v;
         }
@@ -36,6 +33,7 @@ class DStreamBuff : public std::basic_streambuf<char> {
         virtual std::streamsize xsputn(const char *p, std::streamsize n) {
             QString str(p);
             if(str.contains("\n")){
+                str.remove("\r");
                 QStringList strSplitted = str.split("\n");
 
                 LogBox->moveCursor (QTextCursor::End);
@@ -45,7 +43,7 @@ class DStreamBuff : public std::basic_streambuf<char> {
                     LogBox->appendPlainText(strSplitted.at(i));
                 }
             }else{
-                LogBox->moveCursor (QTextCursor::End);
+                LogBox->moveCursor(QTextCursor::End);
                 LogBox->insertPlainText(str);
             }
             return n;
@@ -63,25 +61,25 @@ class DFormLog : public QDialog
 {
     Q_OBJECT
 
-public:
-    static void Create(void);
-    explicit DFormLog(DTools::DLog *dLog = nullptr, DTools::DPreferences *dPreferences = nullptr,QWidget *parent = nullptr);
-    ~DFormLog();
+    public:
+        static void Create(void);
+        explicit DFormLog(DTools::DLog *dLog = nullptr, DTools::DPreferences *dPreferences = nullptr,QWidget *parent = nullptr);
+        ~DFormLog();
 
-    void Debug(QString LogMsg);
+        void Debug(QString LogMsg);
 
-    std::ostream *LogStream;
+        std::ostream *LogStream;
 
-private slots:
-    void on_pushButton_clicked();
-    void on_ButtonOpenFolder_clicked();
-    void on_ButtonSendLogs_clicked();
+    private slots:
+        void on_pushButton_clicked();
+        void on_ButtonOpenFolder_clicked();
+        void on_ButtonSendLogs_clicked();
 
-private:
-    Ui::DFormLog *ui;
-    DStreamBuff *dStreamBuff;
-    DTools::DLog *DuryLog;
-    DTools::DPreferences *Prefs;
+    private:
+        Ui::DFormLog *ui;
+        DStreamBuff *dStreamBuff;
+        DTools::DLog *DuryLog;
+        DTools::DPreferences *Prefs;
 };
 
 #endif

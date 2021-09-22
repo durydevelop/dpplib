@@ -118,8 +118,15 @@ namespace DPath
 	std::chrono::system_clock::time_point LastWriteTime(const fs::path Path) {
 		// get file_time of file
 		fs::file_time_type fttime=fs::last_write_time(Path);
-		// convert to time_t
-		std::time_t ftimet=std::chrono::system_clock::to_time_t(fttime);
+
+		// convert to time_t C++20
+		//auto cftime = std::chrono::system_clock::to_time_t(std::chrono::file_clock::to_sys(ftime));
+
+		// convert to time_t gcc 7 e 8
+		//std::time_t ftimet=std::chrono::system_clock::to_time_t(fttime);
+
+		std::time_t ftimet=to_time_t(fttime);
+
 		// then in time_point
 		std::chrono::system_clock::time_point tptime=std::chrono::system_clock::from_time_t(ftimet);
 
@@ -150,7 +157,7 @@ namespace DPath
     /**
     * @param genericAccessRights	->	GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE | GENERIC_ALL
     **/
-    bool CanAccess(fs::path Path, DAccessRights AccessRights) {
+    bool CanAccess(fs::path Path, DWORD AccessRights) {
         DWORD genericAccessRights=AccessRights;
         bool bRet = false;
         DWORD length = 0;
@@ -222,7 +229,7 @@ namespace DPath
 		if (SafeMode) {
 			std::cout << "Safemode copy " << From.string() << " -> " << To.string() << std::endl;
 			if (OverwriteExisting) {
-				if (fs::exists(To)) {
+				if (Exists(To)) {
 					// Safe mode work-around:
 					// delete dest before copy (some version of filesystem lib does not copy if dest existing)
 					fs::remove(To,ec);
@@ -313,7 +320,7 @@ namespace DPath
 		err::error_code ec;
 
 		// Verifica esistenza
-		if (!fs::exists(SourceDir,ec)) {
+		if (!Exists(SourceDir)) {
 			return(ec);
 		}
 		if (!is_directory(SourceDir,ec)) {
@@ -321,7 +328,7 @@ namespace DPath
 		}
 
 		if (FailIfExists) {
-			if (fs::exists(DestDir,ec)) {
+			if (Exists(DestDir)) {
 				return(ec);
 			}
 		}
@@ -440,8 +447,8 @@ namespace DPath
 	**/
 	err::error_code DeleteDir(fs::path Dir) {
 		err::error_code ec;
-		bool Ret=fs::exists(Dir,ec);
-		if (!Ret ||	ec.value() != 0) {
+		bool Ret=Exists(Dir);
+		if (!Ret) {
 			return(ec);
 		}
 		fs::remove_all(Dir,ec);
@@ -474,8 +481,8 @@ namespace DPath
 		DEBUG_PRINT("ListDirs in "+PathToScan.string()+" Recoursive="+std::to_string(Recoursive)+" CaseSensitive="+std::to_string(CaseSensitive)+" NameContentList="+std::to_string(NameContentList->size())+" ExtContentList="+std::to_string(ExtContentList->size()));
 
 		// Verifica esistenza
-		bool Ret=fs::exists(PathToScan,ec);
-		if (!Ret || ec.value() != 0) {
+		bool Ret=Exists(PathToScan);
+		if (!Ret) {
 			return -1;
 		}
 
@@ -487,7 +494,7 @@ namespace DPath
 					Tot+=ListDirs(Result,iterator->path(),Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll);
 				}
 
-				fs::path CurrPath=fs::absolute(iterator->path());
+				fs::path CurrPath=iterator->path();
 				bool Found=false;
 
 				if (NameContentList != nullptr) {
@@ -777,8 +784,8 @@ namespace DPath
 		//DEBUG_PRINT("ListFiles in "+PathToScan.string()+" Recoursive="+std::to_string(Recoursive)+" CaseSensitive="+std::to_string(CaseSensitive));
 
 		// Verifica esistenza
-		bool Ret=fs::exists(PathToScan,ec);
-		if (!Ret || ec.value() != 0) {
+
+		if (!Exists(PathToScan)) {
 			return -1;
 		}
 
@@ -791,7 +798,7 @@ namespace DPath
 				}
 			}
 			else {
-				fs::path CurrPath=fs::absolute(iterator->path());
+				fs::path CurrPath=iterator->path();
 				bool Found=false;
 
 				if (NameContentList != nullptr) {
@@ -1160,6 +1167,23 @@ namespace DPath
 		}
 
 		return(nDeleted);
+	}
+
+	/**
+	 * @brief Wrapper for filesystem::exists.
+	 * This is a workaround, from gcc 8 and above exists() return false on some linux samba share that exists instead.
+	 * @param Path	->	Path to check.
+	 * @return true if the path exists, otherwise false.
+	 * N.B. Exceptions will not trown.
+	 */
+	bool Exists(fs::path Path) {
+		#if __GNUC__ <= 7
+			err::error_code ec;
+			bool Ret=fs::exists(Path,ec);
+		#else
+			bool Ret=DTools::DPath::CanAccess(Path,DTools::DPath::ACCESS_READ | DTools::DPath::ACCESS_WRITE);
+		#endif
+		return(Ret);
 	}
 
 	/*

@@ -27,21 +27,33 @@ namespace DPath
 						CALLBACK_DEC_BYTES=6	// Trigger during Copy_File to send bytes left
 						};
 	#if defined _WIN32 || defined _WIN64
-		// Only for Windows
+		static const DWORD ACCESS_READ		=	GENERIC_READ;
+		static const DWORD ACCESS_WRITE		=	GENERIC_WRITE;
+		static const DWORD ACCESS_EXECUTE	=	GENERIC_EXECUTE;
+		static const DWORD ACCESS_ALL		=	GENERIC_ALL;
+/*
         enum DAccessRights {ACCESS_READ    =    GENERIC_READ,
                             ACCESS_WRITE   =    GENERIC_WRITE,
                             ACCESS_EXECUTE =    GENERIC_EXECUTE,
                             ACCESS_ALL     =    GENERIC_ALL
         };
+*/
 		std::string GetFileVersion(std::string Filename=std::string(), bool TrimDots = true);
-		bool CanAccess(fs::path Path, DAccessRights AccessRights);
+
     #elif __linux__
+        static const DWORD ACCESS_READ      =   fs::perms::others_read;
+        static const DWORD ACCESS_WRITE     =   fs::perms::others_write;
+        static const DWORD ACCESS_EXECUTE   =   fs::perms::others_exec;
+        static const DWORD ACCESS_ALL       =   fs::perms::others_all;
+/*
         enum DAccessRights {ACCESS_READ    =   (unsigned) fs::perms::others_read,
                             ACCESS_WRITE   =   (unsigned) fs::perms::others_write,
                             ACCESS_EXECUTE =   (unsigned) fs::perms::others_exec,
                             ACCESS_ALL     =   (unsigned) fs::perms::others_all
+*/
     };
 	#endif
+	bool CanAccess(fs::path Path, DWORD AccessRights);
 
 	// Callback
 	typedef std::function<void (DProgressCode Cmd, long int Data)> DCallback;
@@ -53,7 +65,6 @@ namespace DPath
 	std::vector<std::string> ReadAllExts(fs::path Path);
     std::string GetPermissionsString(fs::path Path);
     std::string GetPermissionsString(fs::perms p);
-    bool CanAccess(fs::path Path);
 	std::uintmax_t space_to_be_freed(const fs::path& dir, unsigned int percent_free_required);
 	err::error_code Copy_File(const fs::path &From, const fs::path &To, bool OverwriteExisting, bool SafeMode = false);
 	bool Copy_File_Posix(const char* SourceFile, const char* DestFile, bool OverwriteExisting, DCallback Callback = nullptr,size_t BufferSize = 0);
@@ -75,6 +86,7 @@ namespace DPath
 	int DeleteFiles(fs::path PathToSan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll);
 	int DeleteFiles(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive);
 	int DeleteFiles(fs::path PathToScan, bool Recoursive);
+	bool Exists(fs::path Path);
 } // DPath
 } // DTools
 #endif
