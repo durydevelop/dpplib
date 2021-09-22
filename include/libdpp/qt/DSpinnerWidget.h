@@ -23,7 +23,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef DSpinnerWidgetH
 #define DSpinnerWidgetH
 
-#pragma once
+#ifdef QT_GUI_LIB
+
+//#pragma once
 
 // Qt includes
 #include <QWidget>
@@ -126,4 +128,5 @@ class DSpinnerWidget : public QWidget {
         bool    _isSpinning;
 };
 
+#endif
 #endif
