@@ -41,22 +41,22 @@ namespace DPath
 		std::string GetFileVersion(std::string Filename=std::string(), bool TrimDots = true);
 
     #elif __linux__
-        static const DWORD ACCESS_READ      =   fs::perms::others_read;
-        static const DWORD ACCESS_WRITE     =   fs::perms::others_write;
-        static const DWORD ACCESS_EXECUTE   =   fs::perms::others_exec;
-        static const DWORD ACCESS_ALL       =   fs::perms::others_all;
+        static const uint16_t ACCESS_READ      =   (uint16_t) fs::perms::others_read;
+        static const uint16_t ACCESS_WRITE     =   (uint16_t) fs::perms::others_write;
+        static const uint16_t ACCESS_EXECUTE   =   (uint16_t) fs::perms::others_exec;
+        static const uint16_t ACCESS_ALL       =   (uint16_t) fs::perms::others_all;
 /*
         enum DAccessRights {ACCESS_READ    =   (unsigned) fs::perms::others_read,
                             ACCESS_WRITE   =   (unsigned) fs::perms::others_write,
                             ACCESS_EXECUTE =   (unsigned) fs::perms::others_exec,
                             ACCESS_ALL     =   (unsigned) fs::perms::others_all
-*/
     };
+*/
 	#endif
-	bool CanAccess(fs::path Path, DWORD AccessRights);
+    bool CanAccess(fs::path Path, uint16_t AccessRights);
 
 	// Callback
-	typedef std::function<void (DProgressCode Cmd, long int Data)> DCallback;
+    typedef std::function<void (DProgressCode Cmd, long int Data)> DCallback;
 
 	fs::path GetExeFilename();
 	fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute, err::error_code *ec = NULL);

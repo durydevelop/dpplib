@@ -11,7 +11,10 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 #set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find qt but not required
+# Find for qt exists
+set(CMAKE_AUTOUIC ON)
+#set(CMAKE_AUTOMOC ON)
+#set(CMAKE_AUTORCC ON)
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets)
 
 ######
@@ -170,9 +173,6 @@ if(${BUILD_QT})
     find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
     find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
     message_c("\tFound Qt${QT_VERSION_MAJOR}")
-    #set(CMAKE_AUTOUIC ON)
-    #set(CMAKE_AUTOMOC ON)
-    #set(CMAKE_AUTORCC ON)
     if (NOT ${BUILD_INTERFACE_LIBS})
         target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Widgets)
     endif()
@@ -195,7 +195,7 @@ target_include_directories(
 # Install directives
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # generate install directive only if stand-alone project
-    message_c("Generate Install directive")
+    message_c("Generate ${PROJECT_NAME} install directive")
     include(DInstall)
     message_c("Done")
 endif()

@@ -193,10 +193,10 @@ namespace DPath
         return bRet;
     }
 #elif __linux__
-    bool CanAccess(fs::path Path, DAccessRights AccessRights) {
+    bool CanAccess(fs::path Path, uint16_t AccessRights) {
         fs::perms p=fs::status(Path).permissions();
 
-        bool Ret=(((DAccessRights) p) & AccessRights) == AccessRights ? true : false;
+        bool Ret=(((uint16_t) p) & AccessRights) == AccessRights ? true : false;
         return Ret;
     }
 #endif
