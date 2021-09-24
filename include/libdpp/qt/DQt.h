@@ -25,6 +25,10 @@ namespace DWindow
     bool RestoreQWindowPosition(QDialog& qDialog, DTools::DPreferences *DestPrefs = nullptr);
     QSettings::Status RestoreQWindowGeometry(QMainWindow& qMainWindow, QString CompanyName = QString(), QString AppName = QString());
     QSettings::Status RestoreQWindowGeometry(QDialog& qDialog, QString CompanyName = QString(), QString AppName = QString());
+}
+
+namespace DApp
+{
     bool SetStyleSheetFromFile(fs::path QssFilename);
 }
 

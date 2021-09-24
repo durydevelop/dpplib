@@ -157,7 +157,7 @@ namespace DPath
     /**
     * @param genericAccessRights	->	GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE | GENERIC_ALL
     **/
-    bool CanAccess(fs::path Path, DWORD AccessRights) {
+    bool CanAccess(fs::path Path, uint16_t AccessRights) {
         DWORD genericAccessRights=AccessRights;
         bool bRet = false;
         DWORD length = 0;
