@@ -4,9 +4,9 @@
 // Filesystem library include
 #if __cplusplus > 201402L // C++17
 //    #if __GNUC__ >= 8
-        #include <filesystem>
+//        #include <filesystem>
 //    #else
-//        #include <experimental/filesystem>
+        #include <experimental/filesystem>
 //    #endif
 #else
     #include <boost/filesystem.hpp>
@@ -17,9 +17,9 @@ namespace DTools
     // Filesystem library namespace
     #if __cplusplus > 201402L // C++17
 //        #if __GNUC__ >= 8
-            namespace fs = std::filesystem;
+//            namespace fs = std::filesystem;
 //        #else
-//            namespace fs = std::experimental::filesystem;
+            namespace fs = std::experimental::filesystem;
 //        #endif
         namespace err = std;
     #else
