@@ -26,32 +26,19 @@ namespace DPath
 						CALLBACK_SET_OBJS=5,    // Trigger to send nr of dirs+file to copy or move
 						CALLBACK_DEC_BYTES=6	// Trigger during Copy_File to send bytes left
 						};
-	#if defined _WIN32 || defined _WIN64
-		static const DWORD ACCESS_READ		=	GENERIC_READ;
-		static const DWORD ACCESS_WRITE		=	GENERIC_WRITE;
-		static const DWORD ACCESS_EXECUTE	=	GENERIC_EXECUTE;
-		static const DWORD ACCESS_ALL		=	GENERIC_ALL;
-/*
-        enum DAccessRights {ACCESS_READ    =    GENERIC_READ,
-                            ACCESS_WRITE   =    GENERIC_WRITE,
-                            ACCESS_EXECUTE =    GENERIC_EXECUTE,
-                            ACCESS_ALL     =    GENERIC_ALL
-        };
-*/
-		std::string GetFileVersion(std::string Filename=std::string(), bool TrimDots = true);
 
+	// CanAccess() AccessRights
+	#if defined _WIN32 || defined _WIN64
+		static const uint16_t ACCESS_READ		=	(uint16_t) GENERIC_READ;
+		static const uint16_t ACCESS_WRITE		=	(uint16_t) GENERIC_WRITE;
+		static const uint16_t ACCESS_EXECUTE	=	(uint16_t) GENERIC_EXECUTE;
+		static const uint16_t ACCESS_ALL		=	(uint16_t) GENERIC_ALL;
+		std::string GetFileVersion(std::string Filename=std::string(), bool TrimDots = true);
     #elif __linux__
         static const uint16_t ACCESS_READ      =   (uint16_t) fs::perms::others_read;
         static const uint16_t ACCESS_WRITE     =   (uint16_t) fs::perms::others_write;
         static const uint16_t ACCESS_EXECUTE   =   (uint16_t) fs::perms::others_exec;
         static const uint16_t ACCESS_ALL       =   (uint16_t) fs::perms::others_all;
-/*
-        enum DAccessRights {ACCESS_READ    =   (unsigned) fs::perms::others_read,
-                            ACCESS_WRITE   =   (unsigned) fs::perms::others_write,
-                            ACCESS_EXECUTE =   (unsigned) fs::perms::others_exec,
-                            ACCESS_ALL     =   (unsigned) fs::perms::others_all
-    };
-*/
 	#endif
     bool CanAccess(fs::path Path, uint16_t AccessRights);
 

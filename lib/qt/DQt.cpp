@@ -187,7 +187,9 @@ namespace DWindow {
         }
         return(Status);
     }
+}
 
+namespace DApp {
     bool SetStyleSheetFromFile(fs::path QssFilename)
     {
         if (DTools::fs::exists(QssFilename)) {
