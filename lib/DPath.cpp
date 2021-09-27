@@ -157,7 +157,7 @@ namespace DPath
     /**
     * @param genericAccessRights	->	GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE | GENERIC_ALL
     **/
-    bool CanAccess(fs::path Path, uint16_t AccessRights) {
+    bool CanAccess(fs::path Path, DWORD AccessRights) {
         DWORD genericAccessRights=AccessRights;
         bool bRet = false;
         DWORD length = 0;
@@ -1177,12 +1177,15 @@ namespace DPath
 	 * N.B. Exceptions will not trown.
 	 */
 	bool Exists(fs::path Path) {
-		#if __GNUC__ <= 7
-			err::error_code ec;
-			bool Ret=fs::exists(Path,ec);
-		#else
-			bool Ret=DTools::DPath::CanAccess(Path,DTools::DPath::ACCESS_READ | DTools::DPath::ACCESS_WRITE);
-		#endif
+		err::error_code ec;
+		// Try first normal way
+		bool Ret=fs::exists(Path,ec);
+		if (Ret) {
+			return true;
+		}
+
+		// If Ret is false try also the alternative way
+		Ret=DTools::DPath::CanAccess(Path,DTools::DPath::ACCESS_READ);
 		return(Ret);
 	}
 

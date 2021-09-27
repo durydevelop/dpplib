@@ -29,10 +29,10 @@ namespace DPath
 
 	// CanAccess() AccessRights
 	#if defined _WIN32 || defined _WIN64
-		static const uint16_t ACCESS_READ		=	(uint16_t) GENERIC_READ;
-		static const uint16_t ACCESS_WRITE		=	(uint16_t) GENERIC_WRITE;
-		static const uint16_t ACCESS_EXECUTE	=	(uint16_t) GENERIC_EXECUTE;
-		static const uint16_t ACCESS_ALL		=	(uint16_t) GENERIC_ALL;
+		static const unsigned long ACCESS_READ		=	GENERIC_READ;
+		static const unsigned long ACCESS_WRITE		=	GENERIC_WRITE;
+		static const unsigned long ACCESS_EXECUTE	=	GENERIC_EXECUTE;
+		static const unsigned long ACCESS_ALL		=	GENERIC_ALL;
 		std::string GetFileVersion(std::string Filename=std::string(), bool TrimDots = true);
     #elif __linux__
         static const uint16_t ACCESS_READ      =   (uint16_t) fs::perms::others_read;
@@ -40,7 +40,7 @@ namespace DPath
         static const uint16_t ACCESS_EXECUTE   =   (uint16_t) fs::perms::others_exec;
         static const uint16_t ACCESS_ALL       =   (uint16_t) fs::perms::others_all;
 	#endif
-    bool CanAccess(fs::path Path, uint16_t AccessRights);
+	bool CanAccess(fs::path Path, DWORD AccessRights);
 
 	// Callback
     typedef std::function<void (DProgressCode Cmd, long int Data)> DCallback;
