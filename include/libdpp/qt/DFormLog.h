@@ -23,7 +23,7 @@ class DStreamBuff : public std::basic_streambuf<char> {
     protected:
         //This is called when a std::endl has been inserted into the stream
         virtual int_type overflow(int_type v) {
-            if (v == '\n' || v == '\r') {
+            if (v == '\n') { // || v == '\r') {
                 LogBox->appendPlainText(QString());
             }
             return v;
@@ -54,7 +54,7 @@ class DStreamBuff : public std::basic_streambuf<char> {
 };
 
 namespace Ui {
-class DFormLog;
+    class DFormLog;
 }
 
 class DFormLog : public QDialog
@@ -63,11 +63,12 @@ class DFormLog : public QDialog
 
     public:
         static void Create(void);
-        explicit DFormLog(DTools::DLog *dLog = nullptr, DTools::DPreferences *dPreferences = nullptr,QWidget *parent = nullptr);
+        explicit DFormLog(QSharedPointer<DTools::DLog> dLog = nullptr, QSharedPointer<DTools::DPreferences> dPreferences = nullptr,QWidget *parent = nullptr);
         ~DFormLog();
 
         void Debug(QString LogMsg);
 
+        // Pointer to be feed
         std::ostream *LogStream;
 
     private slots:
@@ -77,9 +78,11 @@ class DFormLog : public QDialog
 
     private:
         Ui::DFormLog *ui;
+        QSharedPointer<DTools::DLog> DuryLog;
+        QSharedPointer<DTools::DPreferences> Prefs;
+
+        // Pointer to be feed
         DStreamBuff *dStreamBuff;
-        DTools::DLog *DuryLog;
-        DTools::DPreferences *Prefs;
 };
 
 #endif

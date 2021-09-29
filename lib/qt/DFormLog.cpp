@@ -2,7 +2,7 @@
 
 #ifdef QT_GUI_LIB
 
-#include "libdpp/qt/ui_DFormLog.h"
+#include "libdpp/qt/ui_dformlog.h"
 #include "libdpp/qt/DQt.h"
 #include <QtConcurrent/QtConcurrentRun>
 
@@ -24,7 +24,7 @@
  *
  */
 
-DFormLog::DFormLog(DTools::DLog *dLog, DTools::DPreferences *dPreferences, QWidget *parent) :
+DFormLog::DFormLog(QSharedPointer<DTools::DLog> dLog, QSharedPointer<DTools::DPreferences> dPreferences, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DFormLog)
 {
@@ -34,29 +34,33 @@ DFormLog::DFormLog(DTools::DLog *dLog, DTools::DPreferences *dPreferences, QWidg
     DuryLog=dLog;
     if (DuryLog) {
         DuryLog->SetOutputStream(LogStream);
-    }
-    Prefs=dPreferences;
-    if (!DTools::DWindow::RestoreQWindowPosition(*this,Prefs)) {
-        DuryLog->e(tr("Failed to restore log window position").toStdString());
+        QFile LogFile(DuryLog->GetFilename().c_str());
+        LogFile.open(QIODevice::Text | QIODevice::ReadOnly);
+        while(!LogFile.atEnd()) {
+            ui->PlainTextEditLog->appendPlainText(LogFile.readLine());
+        }
+        LogFile.close();
     }
 
-    QFile LogFile(dLog->GetFilename().c_str());
-    LogFile.open(QIODevice::Text | QIODevice::ReadOnly);
-    while(!LogFile.atEnd()) {
-        ui->PlainTextEditLog->appendPlainText(LogFile.readLine());
+    Prefs=dPreferences;
+    if (Prefs) {
+        if (!DTools::DWindow::RestoreQWindowPosition(*this,Prefs.get())) {
+            DuryLog->e(tr("Failed to restore log window position").toStdString());
+        }
     }
-    LogFile.close();
 }
 
 DFormLog::~DFormLog()
 {
-    if (!DTools::DWindow::SaveQWindowPosition(*this,Prefs)) {
-        DuryLog->e(tr("Failed to save log window position").toStdString());
+    if (Prefs) {
+        if (!DTools::DWindow::SaveQWindowPosition(*this,Prefs.get())) {
+            DuryLog->e(tr("Failed to save log window position").toStdString());
+        }
     }
 
     if (DuryLog) DuryLog->SetOutputStream();
-    delete LogStream;
-    delete dStreamBuff;
+    if (LogStream) delete LogStream;
+    if (dStreamBuff) delete dStreamBuff;
     delete ui;
 }
 
