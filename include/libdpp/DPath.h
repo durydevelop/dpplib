@@ -75,6 +75,8 @@ namespace DPath
 	int DeleteFiles(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive);
 	int DeleteFiles(fs::path PathToScan, bool Recoursive);
 	bool Exists(fs::path Path);
+	bool IsDirectory(fs::path Path, err::error_code& ec);
+	bool IsDirectory(fs::path Path);
 } // DPath
 } // DTools
 #endif

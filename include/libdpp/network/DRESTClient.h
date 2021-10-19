@@ -124,6 +124,8 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
         DEncodeType GetHttpReqEncodeType(void);
         std::string GetHttpReqContentTypeStr(void);
         bool GetHttpReqKeepAlive(void);
+        std::string GetReqHdrBodyAsString(DEncodeType dEncodeType = ENCODE_NONE);
+        std::string GetReqBodyAsString(DEncodeType dEncodeType = ENCODE_NONE);
 
         void ClearHrdBody(void);
         void ClearBody(void);
@@ -153,10 +155,8 @@ class DRESTClient : public std::enable_shared_from_this<DRESTClient> {
     private:
         size_t GetReqHdrBodyAsString(std::string &ResultStr);
         size_t GetReqHdrBodyAsString(std::string &ResultStr, DEncodeType dEncodeType);
-        std::string GetReqHdrBodyAsString(DEncodeType dEncodeType = ENCODE_NONE);
         size_t GetReqBodyAsString(std::string &ResultStr);
         size_t GetReqBodyAsString(std::string &ResultStr, DEncodeType EncodeType);
-        std::string GetReqBodyAsString(DEncodeType dEncodeType = ENCODE_NONE);
         size_t Encode(std::string& Content, std::string& ResultStr, DEncodeType dEncodeType);
         std::string Encode(std::string& Content, DEncodeType dEncodeType);
         void PrepareHttpRequest(DRequestType dRequestType);

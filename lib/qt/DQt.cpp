@@ -11,7 +11,8 @@
 #include <QUrl>
 #include <QProcess>
 #include <QDir>
-#include "libdpp/DWindow.h"
+#include <libdpp/DWindow.h>
+#include <libdpp/DPath.h>
 
 namespace DTools {
 namespace DWindow {
@@ -192,7 +193,7 @@ namespace DWindow {
 namespace DApp {
     bool SetStyleSheetFromFile(fs::path QssFilename)
     {
-        if (DTools::fs::exists(QssFilename)) {
+        if (DPath::Exists(QssFilename)) {
             QFile QssFile(QssFilename.string().c_str());
             if (QssFile.open(QFile::ReadOnly)) {
                 qApp->setStyleSheet(QString(QssFile.readAll()));

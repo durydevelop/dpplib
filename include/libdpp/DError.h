@@ -35,11 +35,11 @@ namespace DError
                 ErrorMessage.clear();
             }
 
-            std::string GetMessage(void) {
+            std::string Message(void) {
                 return(ErrorMessage);
             }
 
-            std::string GetStatusMessage(void) {
+            std::string StatusMessage(void) {
                 return(ErrorStatus+" "+ErrorMessage);
             }
 

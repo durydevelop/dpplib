@@ -25,11 +25,11 @@ namespace DTools
 	 * @param DestFilename
 	 * @param SyncNow
 	 */
-	DSyncFile::DSyncFile(fs::path SourceFilename, fs::path DestFilename, bool SyncNow) {
+	DSyncFile::DSyncFile(fs::path SourceFilename, fs::path DestFilename, bool SyncNow, bool SafeCopyMode) {
 		Source=SourceFilename;
 		Dest=DestFilename;
 		Ready=false;
-		SafeMode=false;
+		SafeMode=SafeCopyMode;
 		if (SyncNow) {
 			DoSync();
 		}
@@ -41,7 +41,7 @@ namespace DTools
 
 	DSyncFile::DSyncStatus DSyncFile::DoSync(void) {
 try {
-		if (!fs::exists(Source)) {
+		if (!DTools::DPath::Exists(Source)) {
 			LastStrStatus="Sync file "+Source.string()+" does not exist";
 			Ready=false;
 			LastSyncStatus=SYNC_ERROR;
@@ -58,7 +58,7 @@ try {
 		Ready=true;
         LastStrStatus=Source.string()+" -> ";
 
-		if (!fs::exists(Dest)) {
+		if (!DTools::DPath::Exists(Dest)) {
 			LastStrStatus.append("not present, sync ");
 		}
 		else if (DTools::DPath::LastWriteTime(Source) > DTools::DPath::LastWriteTime(Dest)) {
@@ -78,8 +78,13 @@ try {
 				return(LastSyncStatus);
 			}
 			LastStrStatus.append("done");
+			DSyncStatus ReturnSync=SYNC_DONE;
+			if (LastSyncStatus == SYNC_ERROR) {
+				ReturnSync=SYNC_RESTORED;
+			}
 			LastSyncStatus=SYNC_DONE;
 			LastSyncTime=DTools::DString::FormatNow();
+			return(ReturnSync);
 
 		} catch (fs::filesystem_error& e) {
             LastStrStatus.append("sync error: "+std::string(e.what()));

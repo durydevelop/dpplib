@@ -23,7 +23,7 @@ class DStreamBuff : public std::basic_streambuf<char> {
     protected:
         //This is called when a std::endl has been inserted into the stream
         virtual int_type overflow(int_type v) {
-            if (v == '\n') { // || v == '\r') {
+            if (v == '\n' || v == '\r') {
                 LogBox->appendPlainText(QString());
             }
             return v;

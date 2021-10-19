@@ -10,9 +10,9 @@ namespace DTools
 {
     class DPathWatcher {
         public:
-            enum DChangeStatus                                          { CHANGE_STATUS_ERROR=-1    , CHANGE_STATUS_NONE=0  , CHANGE_STATUS_CREATED=1   , CHANGE_STATUS_ERASED=2, CHANGE_STATUS_MODIFIED=3  , CHANGE_STATUS_LOG_STR };
-            inline static std::vector<std::string> DChancgeStatusDesc=  { "Error"                   , "No changes"          , "Created"                 , "Erased"              , "Modified"                , "Log"};
-            DPathWatcher(fs::path PathToWatch = fs::path());
+            enum DChangeStatus                                          { CHANGE_STATUS_ERROR=-1    , CHANGE_STATUS_NONE=0  , CHANGE_STATUS_CREATED=1   , CHANGE_STATUS_ERASED=2, CHANGE_STATUS_MODIFIED=3  , CHANGE_STATUS_LOG_STR , CHANGE_STATUS_STARTED , CHANGE_STATUS_ENDED   };
+            inline static std::vector<std::string> DChangeStatusDesc=   { "Error"                   , "No changes"          , "Created"                 , "Erased"              , "Modified"                , "Log"                 , "Started"             , "Ended"               };
+            DPathWatcher(fs::path PathToWatch = fs::path(), std::string WatcherName = std::string(), size_t IntervalMillis = 1000);
             ~DPathWatcher();
             void SetInterval(size_t MSec);
             size_t GetWatchesCount(void);
@@ -26,7 +26,7 @@ namespace DTools
             bool IsPaused(void);
             bool IsMyPath(const fs::path& Path);
             size_t AddPath(fs::path PathToWatch);
-            inline static std::string LastErrorString;
+            void ClearWatches(void);
 
             class DPathWatch {
                 public:
@@ -35,9 +35,9 @@ namespace DTools
                         FirstScan=true;
                         LastChangeStatus=CHANGE_STATUS_NONE;
                         try {
-                            IsDirectory=fs::is_directory(Path);
-                            LastExists=fs::exists(Path);
-                            if (LastExists) {
+                            IsDirectory=DPath::IsDirectory(Path);
+                            LastExists=DTools::DPath::Exists(Path);
+                            if (LastExists && !IsDirectory) {
                                 LastWriteTime=DPath::LastWriteTime(Path);
                             }
                         }catch (std::exception& e) {
@@ -50,7 +50,7 @@ namespace DTools
                         try {
                             // Check for exist
                             LastChangeStatus=CHANGE_STATUS_NONE;
-                            bool Exists=fs::exists(Path);
+                            bool Exists=DTools::DPath::Exists(Path);
                             if (Exists != LastExists) {
                                 if (Exists) {
                                     LastChangeStatus=CHANGE_STATUS_CREATED;
@@ -69,7 +69,6 @@ namespace DTools
                             // Check for update
                             if (LastExists) {
                             try {
-                                std::chrono::system_clock::time_point NewLastWriteTime=DPath::LastWriteTime(Path);
                                 if (IsDirectory) {
                                     // Dir
                                     LastChangeStatus=ScanDir();
@@ -85,6 +84,7 @@ namespace DTools
                                 }
                                 else {
                                     // File
+                                    std::chrono::system_clock::time_point NewLastWriteTime=DPath::LastWriteTime(Path);
                                     if (NewLastWriteTime != LastWriteTime) {
                                         LastChangeStatus=CHANGE_STATUS_MODIFIED;
                                         LastWriteTime=NewLastWriteTime;
@@ -104,7 +104,7 @@ namespace DTools
                         // Check for files delete
                         auto it = DirScanResult.begin();
                         while (it != DirScanResult.end()) {
-                            if (!fs::exists(it->first)) {
+                            if (!DTools::DPath::Exists(it->first)) {
                                 it = DirScanResult.erase(it);
                                 return(CHANGE_STATUS_ERASED);
                             }
@@ -139,7 +139,7 @@ namespace DTools
                     }
 
                     bool Exists(void) {
-                        return(fs::exists(Path));
+                        return(DTools::DPath::Exists(Path));
                     }
 
                     fs::path Path;                                          //! File/dir absolute path
@@ -149,10 +149,12 @@ namespace DTools
                     std::chrono::system_clock::time_point LastWriteTime;    //! File/dir last write time
                     std::chrono::system_clock::time_point LastChangeTime;   //! Last change time detected
                     DChangeStatus LastChangeStatus;                         //! Status of last change
+                    std::string   LastErrorString;
                     std::unordered_map<std::string,fs::file_time_type> DirScanResult;
             };
 
             std::vector<DPathWatch> WatchList;
+            std::string Name;
 
         private:
             bool IsChanged(DPathWatch& dPathStatus);
@@ -160,6 +162,7 @@ namespace DTools
             std::string GetLastStatus(void);
 
             std::chrono::duration<int, std::milli> PollMilli;
+
 
             bool Watching;
             bool NeedToQuit;

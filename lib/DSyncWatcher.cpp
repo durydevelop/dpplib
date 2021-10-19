@@ -28,6 +28,8 @@ namespace DTools
      */
     DSyncWatcher::DSyncWatcher(void) {
         Callback=nullptr;
+        Starting=false;
+        Stopping=false;
         Watching=false;
         NeedToQuit=false;
         SafeMode=false;
@@ -57,9 +59,11 @@ namespace DTools
      * @return
      */
     size_t DSyncWatcher::AddSync(fs::path SourceFilename, fs::path DestFilename, bool SyncNow) {
-        DSyncFile dSyncFile(SourceFilename,DestFilename,SyncNow);
-        dSyncFile.SetSafeMode(SafeMode);
-        Log(dSyncFile.LastStrStatus);
+        DSyncFile dSyncFile(SourceFilename,DestFilename,SyncNow,SafeMode);
+        if (SyncNow) {
+            NotifySyncStatus(dSyncFile);
+        }
+        LastStrStatus=dSyncFile.LastStrStatus;
         SyncList.push_back(dSyncFile);
         return(SyncList.size());
     }
@@ -131,15 +135,20 @@ namespace DTools
             Log("No sync set, thread not started");
             return false;
         }
-        Log("Sync thread starting...");
 
-        //std::promise<bool> PromiseEnded;
+        Log("Sync thread starting...");
+        Starting=true;
+
+        // Reset promise (for reuse)
+        PromiseEnded=std::promise<bool>();
         ThreadFuture=PromiseEnded.get_future();
 
         WatchThread=std::thread([&]() {
             //Log("Sync thread started");
+            Starting=false;
             Watching=true;
             NeedToQuit=false;
+            DoCallback(SYNC_WATCHER_STARTED,std::string());
             while (!NeedToQuit) {
                 auto delta=std::chrono::steady_clock::now() + std::chrono::milliseconds(IntervalMSec);
                 DSyncFile::DSyncStatus SyncStatus=DSyncFile::SYNC_NO_NEEDED;
@@ -149,7 +158,7 @@ namespace DTools
                         DoCallback(SyncStatus,Sync.Source);
                     }
                     else if (SyncStatus == DSyncFile::SYNC_ERROR) {
-                        //DoCallback(SyncStatus,Sync.Source,Sync.LastStrStatus);
+                        DoCallback(SyncStatus,Sync.Source,Sync.LastStrStatus);
                     }
                 }
                 std::this_thread::sleep_until(delta);
@@ -157,6 +166,7 @@ namespace DTools
             Watching=false;
             //Log("Sync thread ended");
             PromiseEnded.set_value_at_thread_exit(true);
+            DoCallback(SYNC_WATCHER_ENDED,std::string());
         });
 
         WatchThread.detach();
@@ -181,11 +191,17 @@ namespace DTools
      * @return true if thread is really stopped, false if thread is not alive or timeout is reached.
      */
     bool DSyncWatcher::StopAndWait(size_t TimeOutMSec) {
-        if (!Watching) {
+        if (!Watching || Stopping) {
             //Log("Sync thread is not alive, no stop needed");
             return false;
         }
+        if (Stopping) {
+            //Log("Sync thread is already stopping");
+            return false;
+        }
+
         NeedToQuit=true;
+        Stopping=true;
         if (TimeOutMSec == 0) {
             // Default value
             TimeOutMSec=IntervalMSec*SyncList.size();
@@ -198,6 +214,26 @@ namespace DTools
 
         Log("Watch thread stop waiting: end reached");
         return(ThreadFuture.get());
+    }
+
+    //! Execute callback using last sync status of dSyncFile
+    void DSyncWatcher::NotifySyncStatus(DSyncFile &dSyncFile) {
+        switch (dSyncFile.LastSyncStatus) {
+            case SYNC_NOT_YET:
+        }
+
+        if (dSyncFile.LastSyncStatus == DSyncFile::SYNC_NOT_YET) {
+            DoCallback(CALLBACK_WATCHER_SYNC_NOT_YET,dSyncFile.Source);
+        }
+        else if (dSyncFile.LastSyncStatus == DSyncFile::SYNC_NO_NEEDED) {
+            DoCallback(CALLBACK_WATCHER_SYNC_NO_NEEDED,dSyncFile.Source);
+        }
+        else if (dSyncFile.LastSyncStatus == DSyncFile::SYNC_ERROR) {
+            DoCallback(CALLBACK_WATCHER_SYNC_ERROR,dSyncFile.Source,dSyncFile.LastStrStatus);
+        }
+        else if (dSyncFile.LastSyncStatus == DSyncFile::SYNC_DONE) {
+            DoCallback(CALLBACK_WATCHER_SYNC_DONE,dSyncFile.Source);
+        }
     }
 
     // ******************************  Callback stuffs ***************************************
@@ -219,7 +255,7 @@ namespace DTools
 	 * @param Path			->	Filename that has been changed.
 	 * @param SyncStatus	->	Detected Change type. Can be CHANGE_STATUS_CREATED, CHANGE_STATUS_ERASED, CHANGE_STATUS_MODIFIED.
 	 */
-	void DSyncWatcher::DoCallback(DSyncFile::DSyncStatus SyncStatus, fs::path Path, std::string Msg) {
+	void DSyncWatcher::DoCallback(DSyncWatcherStatus SyncStatus, fs::path Path, std::string Msg) {
 		if(Callback) {
 			Callback(SyncStatus,Path,Msg);
 		}
@@ -237,7 +273,7 @@ namespace DTools
 		if (!LogMsg.empty()) {
 			LastStrStatus=LogMsg;
 		}
-		DoCallback(DSyncFile::CALLBACK_STR_MSG,fs::path(),LastStrStatus);
+		DoCallback(CALLBACK_WATCHER_STR_MSG,fs::path(),LastStrStatus);
 	}
 
 	//! @return LastStrStatus string.

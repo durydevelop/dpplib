@@ -134,7 +134,7 @@ namespace DTools
     void DUpdate::Init(const std::string ApplicationName, const std::string CurrentVersion) {
         // UpdateTempDir
         UpdateTempDir=fs::current_path() / "Update";
-        if (!fs::exists(UpdateTempDir)) {
+        if (!DTools::DPath::Exists(UpdateTempDir)) {
             err::error_code ec;
             if (fs::create_directory(UpdateTempDir,ec)) {
                 Ready=true;
@@ -151,7 +151,7 @@ namespace DTools
 
         // Backupdir
         BackupDir=fs::current_path() / "Backup";
-        if (!fs::exists(BackupDir)) {
+        if (!DTools::DPath::Exists(BackupDir)) {
             err::error_code ec;
             if (fs::create_directory(BackupDir,ec)) {
                 Ready=true;
@@ -182,7 +182,7 @@ namespace DTools
         UpdateNeeded=false;
 
         // Populate repo if repo info file is present
-        if (DTools::fs::exists(DTools::fs::current_path() / FILENAME_REPO_DATA)) {
+        if (DTools::DPath::Exists(DTools::fs::current_path() / FILENAME_REPO_DATA)) {
             Ready=SetRepositoryFromFile(DTools::fs::current_path() / FILENAME_REPO_DATA);
         }
     }
@@ -260,7 +260,7 @@ namespace DTools
         }
 
         if (dRepository.RepoType == REPO_TYPE_FOLDER) {
-            if (!fs::exists(dRepository.MainUri)) {
+            if (!DTools::DPath::Exists(dRepository.MainUri)) {
                 Log("Repo "+dRepository.MainUri+" does not exist");
                 return false;
             }
@@ -327,7 +327,7 @@ namespace DTools
                 Log("ERROR applying update");
             }
         }
-        else if (fs::exists(FILENAME_JUST_UPDATE)) {
+        else if (DTools::DPath::Exists(FILENAME_JUST_UPDATE)) {
             Log("Detected " FILENAME_JUST_UPDATE " : first time after upgrade, to avoid unwanted loop, update is disabled.");
             err::error_code ec;
             if (!fs::remove(FILENAME_JUST_UPDATE,ec)) {
@@ -487,7 +487,7 @@ namespace DTools
                 // Make filenames
                 fs::path SourceFilename=fs::path(dRepository.MainUri) / dRepository.SubUri / Source;
                 fs::path DestFilename=UpdateTempDir / Source; // same as repo
-                if (!fs::exists(SourceFilename)) {
+                if (!DTools::DPath::Exists(SourceFilename)) {
                     Log("File missing "+SourceFilename.string());
                     return false;
                 }
@@ -535,7 +535,7 @@ namespace DTools
             std::string RealName=UpdateData->ReadDotString(NodeName,Source,"");
             // Source filename (downloaded one)
             fs::path SourceFilename=UpdateTempDir / Source;
-            if (!fs::exists(SourceFilename)) {
+            if (!DTools::DPath::Exists(SourceFilename)) {
                 Log("Previous downloaded file missing: "+Source);
                 return false;
             }
@@ -544,13 +544,13 @@ namespace DTools
 
             // Backup if already exists
             std::string LogMsg;
-            if (fs::exists(DestFilename)) {
+            if (DTools::DPath::Exists(DestFilename)) {
                 // Backup dest filename
                 fs::path BakFilename=BackupDir / RealName;
                 LogMsg="Backup "+DestFilename.string()+" to "+BakFilename.string();
                 //err::error_code ec=DTools::DPath::Copy_File(DestFilename,BakFilename,true,true);
                 err::error_code ec;
-                if (fs::exists(BakFilename)) {
+                if (DTools::DPath::Exists(BakFilename)) {
                     fs::remove(BakFilename,ec);
                 }
                 if (ec.value() == 0) {

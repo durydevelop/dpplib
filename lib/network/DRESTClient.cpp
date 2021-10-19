@@ -13,11 +13,11 @@ namespace http  =   beast::http;
 namespace pt    =   boost::property_tree;
 using     tcp   =   boost::asio::ip::tcp;
 
-#define DEFAULT_HTTP_VERSION HTTP_1_1
-#define DEFAULT_CONTENT_TYPE CONTENT_TYPE_NONE
-#define DEFAULT_ENCODE ENCODE_NONE
-#define DEFAULT_TIMEOUT_SEC 30
-#define DEFAULT_USER_AGENT "DRESTClient/0.1"
+#define DEFAULT_HTTP_VERSION    HTTP_1_1
+#define DEFAULT_CONTENT_TYPE    CONTENT_TYPE_NONE
+#define DEFAULT_ENCODE          ENCODE_NONE
+#define DEFAULT_TIMEOUT_SEC     30
+#define DEFAULT_USER_AGENT      "DRESTClient/0.1"
 //#define DEFAULT_USER_AGENT BOOST_BEAST_VERSION_STRING
 
 #define DEBUG

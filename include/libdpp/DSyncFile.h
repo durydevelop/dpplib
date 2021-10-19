@@ -9,8 +9,8 @@ namespace DTools
 {
 	class DSyncFile {
 		public:
-			enum DSyncStatus {SYNC_ERROR=-1, SYNC_NOT_YET=0, SYNC_NO_NEEDED=1, SYNC_DONE=2, CALLBACK_STR_MSG=16};
-			DSyncFile(DTools::fs::path SourceFilename, DTools::fs::path DestFilename, bool SyncNow);
+			enum DSyncStatus { SYNC_ERROR=-1, SYNC_NOT_YET=0, SYNC_NO_NEEDED=1, SYNC_DONE=2, SYNC_RESTORED=3, SYNC_CALLBACK_STR_MSG=16 };
+			DSyncFile(DTools::fs::path SourceFilename, DTools::fs::path DestFilename, bool SyncNow, bool SafeCopyMode);
 			DSyncStatus DoSync(void);
 			bool IsReady(void);
 			void InvertSync(void);

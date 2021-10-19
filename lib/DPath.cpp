@@ -2,6 +2,7 @@
 #include "libdpp/DStringGrid.h"
 #include "libdpp/DString.h"
 #include "libdpp/DCsv.h"
+#include "libdpp/DChrono.h"
 #include <iostream>
 
 #include <fcntl.h>
@@ -77,19 +78,6 @@ namespace DPath
 	}
 
 	/**
-	 * @brief Convert a time type to a time_t type (eg. a file_time_type)
-	 * @param tp	->	Any time type that can be casted with chrono::syetem_clock
-	 * @return a converted time_t.
-	 */
-	template <typename TP>
-	std::time_t to_time_t(TP tp)
-	{
-		using namespace std::chrono;
-		auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now() + system_clock::now());
-		return system_clock::to_time_t(sctp);
-	}
-
-	/**
 	 * @brief Check if a file/dir is older than a number of hours.
 	 * @param Path	->	File/dir to check.
 	 * @param Hrs	->	Number of hours.
@@ -101,7 +89,7 @@ namespace DPath
 		// get file_time of file
 		fs::file_time_type fttime=fs::last_write_time(Path);
 		// convert to time_t
-		std::time_t ftimet=to_time_t(fttime);
+		std::time_t ftimet=DChrono::to_time_t(fttime);
 		// then in time_point
 		std::chrono::system_clock::time_point tptime=std::chrono::system_clock::from_time_t(ftimet);
 		// and make the difference as hours
@@ -117,7 +105,12 @@ namespace DPath
 	 */
 	std::chrono::system_clock::time_point LastWriteTime(const fs::path Path) {
 		// get file_time of file
-		fs::file_time_type fttime=fs::last_write_time(Path);
+		err::error_code ec;
+		fs::file_time_type fttime=fs::last_write_time(Path,ec);
+		if (ec.value() > 0) {
+			std::string err=ec.message();
+			return(std::chrono::system_clock::time_point());
+		}
 
 		// convert to time_t C++20
 		//auto cftime = std::chrono::system_clock::to_time_t(std::chrono::file_clock::to_sys(ftime));
@@ -125,7 +118,7 @@ namespace DPath
 		// convert to time_t gcc 7 e 8
 		//std::time_t ftimet=std::chrono::system_clock::to_time_t(fttime);
 
-		std::time_t ftimet=to_time_t(fttime);
+		std::time_t ftimet=DTools::DChrono::to_time_t(fttime);
 
 		// then in time_point
 		std::chrono::system_clock::time_point tptime=std::chrono::system_clock::from_time_t(ftimet);
@@ -322,7 +315,7 @@ namespace DPath
 		if (!Exists(SourceDir)) {
 			return(ec);
 		}
-		if (!is_directory(SourceDir,ec)) {
+		if (!IsDirectory(SourceDir,ec)) {
 			return(ec);
 		}
 
@@ -352,7 +345,7 @@ namespace DPath
 		}
 		// Itera attraverso SourceDir
 		for (fs::directory_iterator iterator(SourceDir); iterator != fs::directory_iterator(); ++iterator) {
-			if (is_directory(iterator->status())) {
+			if (fs::is_directory(iterator->status())) {
 				if (Callback) Callback(CALLBACK_INC_DIR,1);
 				// In ricorsione
 				ec=CopyDir(iterator->path(),DestDir / iterator->path().filename(),FailIfExists,nullptr); // nessuna callback perché viene eseguita solo per gli oggetti presenti nella root
@@ -486,7 +479,7 @@ namespace DPath
 		}
 
 		for (fs::directory_iterator iterator(PathToScan); iterator != fs::directory_iterator(); ++iterator) {
-			if (is_directory(iterator->status())) {
+			if (fs::is_directory(iterator->status())) {
 				if (Recoursive) {
 					// In ricorsione
 					DEBUG_PRINT("Ricorsione su "+iterator->path().string());
@@ -789,7 +782,7 @@ namespace DPath
 		}
 
 		for (fs::directory_iterator iterator(PathToScan); iterator != fs::directory_iterator(); ++iterator) {
-			if (is_directory(iterator->status())) {
+			if (fs::is_directory(iterator->status())) {
 				if (Recoursive) {
 					// In ricorsione
 					//DEBUG_PRINT("Ricorsione su "+iterator->path().string());
@@ -1170,7 +1163,7 @@ namespace DPath
 
 	/**
 	 * @brief Wrapper for filesystem::exists.
-	 * This is a workaround, from gcc 8 and above exists() return false on some linux samba share that exists instead.
+	 * This is a workaround, from gcc 8 and above filesystem::exists() return false on some linux samba share that exists instead.
 	 * @param Path	->	Path to check.
 	 * @return true if the path exists, otherwise false.
 	 * N.B. Exceptions will not trown.
@@ -1186,6 +1179,42 @@ namespace DPath
 		// If Ret is false try also the alternative way
 		Ret=DTools::DPath::CanAccess(Path,DTools::DPath::ACCESS_READ);
 		return(Ret);
+	}
+
+	/**
+	 * @brief Wrapper for filesystem::is_directory.
+	 * This is a workaround, from gcc 8 and above filesystem::is_directory() return false on some linux samba share that are directory.
+	 * @param Path	->	Path to check.
+	 * @return true if the path exists, otherwise false.
+	 * N.B. Exceptions will not be trown.
+	 */
+	bool IsDirectory(fs::path Path, err::error_code& ec) {
+		if (!fs::is_directory(Path,ec)) {
+			if (Exists(Path)) {
+				if (!fs::is_regular_file(Path,ec)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * @brief Wrapper for filesystem::is_directory (exception trowing version).
+	 * This is a workaround, from gcc 8 and above filesystem::is_directory() return false on some linux samba share that are directory.
+	 * @param Path	->	Path to check.
+	 * @return true if the path exists, otherwise false.
+	 * N.B. Exceptions will be trown is error occours.
+	 */
+	bool IsDirectory(fs::path Path) {
+		if (!fs::is_directory(Path)) {
+			if (Exists(Path)) {
+				if (!fs::is_regular_file(Path)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/*

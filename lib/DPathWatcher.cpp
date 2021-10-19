@@ -1,5 +1,8 @@
 #include "libdpp/DPathWatcher.h"
+#include "libdpp/DChrono.h"
 #include <thread>
+#include <chrono>
+using namespace std::chrono_literals;
 
 namespace DTools
 {
@@ -23,7 +26,7 @@ namespace DTools
      * @brief Constructor.
      * @param PathToWatch   ->  Filename or Dir to add to WatchList. If no Path is specified, watch list is empty and it is possible to add path with AddPath() method.
      */
-    DPathWatcher::DPathWatcher(fs::path PathToWatch) {
+    DPathWatcher::DPathWatcher(fs::path PathToWatch, std::string WatcherName, size_t IntervalMillis) {
         if (!PathToWatch.empty()) {
             AddPath(PathToWatch);
         }
@@ -33,7 +36,8 @@ namespace DTools
         Watching=false;
         NeedToQuit=false;
         Paused=false;
-        IntervalMSec=1000;
+        IntervalMSec=IntervalMillis;
+        Name=WatcherName;
     }
 
     DPathWatcher::~DPathWatcher() {
@@ -122,7 +126,8 @@ namespace DTools
         }
         Log("Watch thread starting...");
 
-        //std::promise<bool> PromiseEnded;
+        // Reset promise (for reuse)
+        PromiseEnded=std::promise<bool>();
         ThreadFuture=PromiseEnded.get_future();
 
         WatchThread=std::thread([&]() {
@@ -130,19 +135,24 @@ namespace DTools
             Watching=true;
             NeedToQuit=false;
             Paused=false;
+            DoCallback(CHANGE_STATUS_STARTED,std::string());
+            auto LastMillis=DChrono::NowMillis();
             while (!NeedToQuit) {
-                auto delta=std::chrono::steady_clock::now() + std::chrono::milliseconds(IntervalMSec);
-                if (!Paused) {
-                    Check(true);
+                if ((DChrono::NowMillis() - LastMillis) > IntervalMSec) {
+                    if (!Paused) {
+                        Check(true);
+                    }
+                    else {
+                        Log("paused...");
+                    }
+                    LastMillis=DChrono::NowMillis();
                 }
-                else {
-                    Log("paused...");
-                }
-                std::this_thread::sleep_until(delta);
+                std::this_thread::sleep_for(500ms);
             }
             Watching=false;
             //Log("Watch thread ended");
             PromiseEnded.set_value_at_thread_exit(true);
+            DoCallback(CHANGE_STATUS_ENDED,std::string());
         });
         WatchThread.detach();
         return true;
@@ -171,8 +181,9 @@ namespace DTools
      * @return true if thread is really stopped, false if thread is not alive or timeout is reached.
      */
     bool DPathWatcher::SetStopAndWait(size_t TimeOutMSec) {
+        //Log("Stop request for "+Name);
         if (!Watching) {
-            Log("Watch thread is not alive, no stop needed");
+            //Log("Watch thread is not alive, no stop needed");
             return false;
         }
         NeedToQuit=true;
@@ -186,8 +197,14 @@ namespace DTools
             return false;
         }
 
-        Log("Watch thread stop waiting: end reached");
+        Log("Watch thread stop waiting: normal end reached");
         return(ThreadFuture.get());
+    }
+
+    //! Clear WatchList
+    void DPathWatcher::ClearWatches(void) {
+        SetStopAndWait();
+        WatchList.clear();
     }
 
     // ******************************  Callback stuffs ***************************************
@@ -221,7 +238,7 @@ namespace DTools
 		if (!LogMsg.empty()) {
 			LastStrStatus=LogMsg;
 		}
-		DoCallback(CHANGE_STATUS_LOG_STR,fs::path(),LastStrStatus);
+		DoCallback(CHANGE_STATUS_LOG_STR,Name,LastStrStatus);
 	}
 
 	//! @return LastStrStatus string.
