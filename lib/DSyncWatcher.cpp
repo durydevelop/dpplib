@@ -114,10 +114,10 @@ namespace DTools
         for (DSyncFile& Sync : SyncList) {
             SyncStatus=Sync.DoSync();
             if (SyncStatus == DSyncFile::SYNC_DONE) {
-                DoCallback(SyncStatus,Sync.Source);
+                DoCallback(CALLBACK_WATCHER_SYNC_DONE,Sync.Source);
             }
             else if (SyncStatus == DSyncFile::SYNC_ERROR) {
-                DoCallback(SyncStatus,Sync.Source,Sync.LastStrStatus);
+                DoCallback(CALLBACK_WATCHER_SYNC_ERROR,Sync.Source,Sync.LastStrStatus);
             }
         }
     }
@@ -148,17 +148,17 @@ namespace DTools
             Starting=false;
             Watching=true;
             NeedToQuit=false;
-            DoCallback(SYNC_WATCHER_STARTED,std::string());
+            DoCallback(CALLBACK_WATCHER_SYNC_STARTED,std::string());
             while (!NeedToQuit) {
                 auto delta=std::chrono::steady_clock::now() + std::chrono::milliseconds(IntervalMSec);
                 DSyncFile::DSyncStatus SyncStatus=DSyncFile::SYNC_NO_NEEDED;
                 for (DSyncFile& Sync : SyncList) {
                     SyncStatus=Sync.DoSync();
                     if (SyncStatus == DSyncFile::SYNC_DONE) {
-                        DoCallback(SyncStatus,Sync.Source);
+                        DoCallback(CALLBACK_WATCHER_SYNC_DONE,Sync.Source);
                     }
                     else if (SyncStatus == DSyncFile::SYNC_ERROR) {
-                        DoCallback(SyncStatus,Sync.Source,Sync.LastStrStatus);
+                        DoCallback(CALLBACK_WATCHER_SYNC_ERROR,Sync.Source,Sync.LastStrStatus);
                     }
                 }
                 std::this_thread::sleep_until(delta);
@@ -166,7 +166,7 @@ namespace DTools
             Watching=false;
             //Log("Sync thread ended");
             PromiseEnded.set_value_at_thread_exit(true);
-            DoCallback(SYNC_WATCHER_ENDED,std::string());
+            DoCallback(CALLBACK_WATCHER_SYNC_ENDED,std::string());
         });
 
         WatchThread.detach();
@@ -219,20 +219,23 @@ namespace DTools
     //! Execute callback using last sync status of dSyncFile
     void DSyncWatcher::NotifySyncStatus(DSyncFile &dSyncFile) {
         switch (dSyncFile.LastSyncStatus) {
-            case SYNC_NOT_YET:
-        }
-
-        if (dSyncFile.LastSyncStatus == DSyncFile::SYNC_NOT_YET) {
-            DoCallback(CALLBACK_WATCHER_SYNC_NOT_YET,dSyncFile.Source);
-        }
-        else if (dSyncFile.LastSyncStatus == DSyncFile::SYNC_NO_NEEDED) {
-            DoCallback(CALLBACK_WATCHER_SYNC_NO_NEEDED,dSyncFile.Source);
-        }
-        else if (dSyncFile.LastSyncStatus == DSyncFile::SYNC_ERROR) {
-            DoCallback(CALLBACK_WATCHER_SYNC_ERROR,dSyncFile.Source,dSyncFile.LastStrStatus);
-        }
-        else if (dSyncFile.LastSyncStatus == DSyncFile::SYNC_DONE) {
-            DoCallback(CALLBACK_WATCHER_SYNC_DONE,dSyncFile.Source);
+            case DSyncFile::SYNC_NOT_YET:
+                DoCallback(CALLBACK_WATCHER_SYNC_NOT_YET,dSyncFile.Source);
+                break;
+            case DSyncFile::SYNC_NO_NEEDED:
+                DoCallback(CALLBACK_WATCHER_SYNC_NO_NEEDED,dSyncFile.Source);
+                break;
+            case DSyncFile::SYNC_ERROR:
+                DoCallback(CALLBACK_WATCHER_SYNC_ERROR,dSyncFile.Source,dSyncFile.LastStrStatus);
+                break;
+            case DSyncFile::SYNC_DONE:
+                DoCallback(CALLBACK_WATCHER_SYNC_DONE,dSyncFile.Source);
+                break;
+            case DSyncFile::SYNC_CALLBACK_STR_MSG:
+                DoCallback(CALLBACK_WATCHER_STR_MSG,dSyncFile.Source);
+                break;
+            default:
+                break;
         }
     }
 
