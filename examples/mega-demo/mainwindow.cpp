@@ -52,7 +52,7 @@ void MainWindow::WatcherChangeCallback(DTools::DPathWatcher::DChangeStatus Statu
         case DTools::DPathWatcher::CHANGE_STATUS_NONE:
             sStatus="NO_CHANGE";
             break;
-        case DTools::DPathWatcher::CALLBACK_STR_MSG:
+        case DTools::DPathWatcher::CHANGE_STATUS_LOG_STR:
             sStatus="";
             break;
     }

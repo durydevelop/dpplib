@@ -25,6 +25,7 @@ set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/qt/DProgressDelegate.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/qt/DQt.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/qt/DSpinnerWidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/qt/DSplashScreen.cpp
 )
 
 #add_library(${TARGET_NAME} ${TARGET_SRC_FILES})

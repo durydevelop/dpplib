@@ -15,6 +15,7 @@ namespace DChrono
         */
     }
 
+    //! @return string informations about all system clock
     std::stringstream GetChronoInfo(void) {
         std::stringstream ss;
         ss << "system_clock" << std::endl;
@@ -28,6 +29,25 @@ namespace DChrono
         ss << "steady = " << std::chrono::steady_clock::is_steady << std::endl;
         return ss;
     }
+
+	/**
+	 * @brief Conver a time string specified by a format into time_t.
+	 * @param timeString	->	Date time string to decode.
+	 * @param format		->	Format of timeString.
+	 * @return a time_t containing decoded timeString.
+	 * * example:
+	 * @code
+	 * std::time_t tt=to_time_t("01/12/2021 10:20:05","%d/%m/%Y %H:%M:%S");
+	 * @code
+	 * format rappresent the way that timeString is witten.
+	 * TODO: test "%T"
+	 */
+	std::time_t to_time_t(const std::string& timeString, const std::string& format) {
+		std::istringstream ss(timeString);
+		struct std::tm tm;
+		ss >> std::get_time(&tm,format.c_str());
+		return(std::mktime(&tm));
+	}
 }
 }
 

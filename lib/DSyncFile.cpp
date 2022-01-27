@@ -44,14 +44,14 @@ try {
 		if (!DTools::DPath::Exists(Source)) {
 			LastStrStatus="Sync file "+Source.string()+" does not exist";
 			Ready=false;
-			LastSyncStatus=SYNC_ERROR;
+			LastSyncStatus=SYNC_ERR_FILE_NOT_FOUND;
 			return(LastSyncStatus);
 		}
 
 		if (Source == Dest) {
 			LastStrStatus="Dest sync file is same as source";
 			Ready=false;
-			LastSyncStatus=SYNC_ERROR;
+			LastSyncStatus=SYNC_ERR_SAME_AS_DEST;
 			return(LastSyncStatus);
 		}
 
@@ -71,15 +71,14 @@ try {
 		}
 
 		try {
-			DTools::err::error_code ec=DTools::DPath::Copy_File(Source,Dest,true,SafeMode);
-			if (ec.value() != 0) {
-				LastStrStatus.append("error copying to "+Dest.string()+" : "+ec.message());
-				LastSyncStatus=SYNC_ERROR;
+			if (!DTools::DPath::Copy_File(Source,Dest,true,SafeMode)) {
+				LastStrStatus.append("error copying to "+Dest.string());
+				LastSyncStatus=SYNC_ERR_COPY;
 				return(LastSyncStatus);
 			}
 			LastStrStatus.append("done");
 			DSyncStatus ReturnSync=SYNC_DONE;
-			if (LastSyncStatus == SYNC_ERROR) {
+			if (LastSyncStatus < 0) { //== SYNC_ERROR) {
 				ReturnSync=SYNC_RESTORED;
 			}
 			LastSyncStatus=SYNC_DONE;
@@ -88,7 +87,7 @@ try {
 
 		} catch (fs::filesystem_error& e) {
             LastStrStatus.append("sync error: "+std::string(e.what()));
-			LastSyncStatus=SYNC_ERROR;
+            LastSyncStatus=SYNC_ERR_BHO;
 		}
 }
 catch (std::exception& e) {

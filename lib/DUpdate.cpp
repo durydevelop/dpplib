@@ -185,6 +185,16 @@ namespace DTools
         if (DTools::DPath::Exists(DTools::fs::current_path() / FILENAME_REPO_DATA)) {
             Ready=SetRepositoryFromFile(DTools::fs::current_path() / FILENAME_REPO_DATA);
         }
+
+
+        CurrExeName=DPath::GetExeFilename();
+        //Log("Exe name "+CurrExeName.stem().string());
+        AsUpdater=false;
+        #ifdef _WIN32
+            AsUpdater=DTools::DString::CmpNoCase(CurrExeName.filename().string(),FILENAME_UPDATER_EXE);
+        #else
+            AsUpdater=CurrExeName.stem().string() == FILENAME_UPDATER_EXE;
+        #endif
     }
 
     /**
@@ -282,9 +292,12 @@ namespace DTools
         return false;
     }
 
-    bool DUpdate::IsReady(void)
-    {
+    bool DUpdate::IsReady(void) {
         return(Ready);
+    }
+
+    bool DUpdate::IsUpdater(void) {
+        return(AsUpdater);
     }
 
     /**
@@ -293,19 +306,16 @@ namespace DTools
      * If ".justupdated" file is found this is the first start after upgrade, so, doesn't perform any update check to avoid unwanted loop (in case of error).
      */
     void DUpdate::CheckPendings(void) {
-        // Check for upgrade operations pending
-        ExeName=DPath::GetExeFilename();
-        Log("Exe name "+ExeName.stem().string());
-        if (ExeName.stem().string() == FILENAME_UPDATER_EXE) {
-            Log("Detect run as executable updater");
+        if (AsUpdater) {
             // Run as updater
+            Log("Detect run as executable updater");
             ParseLocalRepoInfoFile();
 
             Log("Apply update");
             if (ApplyUpdate()) {
                 // Apply update and re-run main exe
                 Log("Update apply sucessfully");
-                std::ofstream File(FILENAME_JUST_UPDATE);
+                std::ofstream File(fs::current_path() / FILENAME_JUST_UPDATE);
                 if (File.is_open()) {
                     File.close();
                 }
@@ -327,15 +337,22 @@ namespace DTools
                 Log("ERROR applying update");
             }
         }
-        else if (DTools::DPath::Exists(FILENAME_JUST_UPDATE)) {
-            Log("Detected " FILENAME_JUST_UPDATE " : first time after upgrade, to avoid unwanted loop, update is disabled.");
+        else if (DTools::DPath::Exists(fs::current_path() / FILENAME_JUST_UPDATE)) {
+            // .justupdate file is present
+            // this means that is the first run run after a succesfull update
+            // so, clean all
+            Log("Detected " FILENAME_JUST_UPDATE " : first time after upgrade, to avoid unwanted loop, update check is not performed.");
             err::error_code ec;
-            if (!fs::remove(FILENAME_JUST_UPDATE,ec)) {
+            if (!fs::remove(fs::current_path() / FILENAME_JUST_UPDATE,ec)) {
                 Log("ERROR "+ec.message());
             }
-            if (!fs::remove(FILENAME_UPDATER_EXE,ec)) {
+            if (!fs::remove(fs::current_path() / FILENAME_UPDATER_EXE,ec)) {
                 Log("ERROR "+ec.message());
             }
+            Ready=false;
+        }
+        else if (DTools::DPath::Exists(fs::current_path() / FILENAME_UPDATER_EXE)) {
+            Log("Detected " FILENAME_UPDATER_EXE " wihout " FILENAME_JUST_UPDATE " : something was wrong during last update");
             Ready=false;
         }
     }
@@ -355,7 +372,7 @@ namespace DTools
         }
 
         Log("Current version  "+std::to_string(CurrVersionNr));
-        Log("Available verion "+std::to_string(RepoVersionNr));
+        Log("Available version "+std::to_string(RepoVersionNr));
         if (UpdateNeeded) {
             Log("Update needed.");
         }
@@ -368,14 +385,34 @@ namespace DTools
             return;
         }
 
-        Log("Create updater");
-        // Create updater executable copy from myself
-        fs::path ExeFilename=DPath::GetExeFilename();
-        Log("Current executable "+ExeFilename.string());
-        fs::path UpdaterFilename=ExeFilename.parent_path() / FILENAME_UPDATER_EXE;
-        Log("Update executable "+UpdaterFilename.string());
-        //DTools::DPath::Copy_File(ExeFilename.string().c_str(),UpdaterFilename.string().c_str(),true);
-        DTools::DPath::Copy_File(ExeFilename,UpdaterFilename,true);
+        // Default updater executable is myseflf
+        fs::path FromFilename=DPath::GetExeFilename();
+
+        // Check if MainExe has been downloaded
+        std::string MainExe=UpdateData->ReadDotString(SECTION_UPGRADE_INFO,PARAM_MAIN_EXE,"");
+        std::vector<std::string> Files;
+        std::string FilesNodeName=SECTION_FILES "." SECTION_REPLACE;
+        UpdateData->ReadItemNames(FilesNodeName,Files);
+        for (std::string& Source : Files) {
+            std::string Dest=UpdateData->ReadDotString(FilesNodeName,Source,"");
+            bool IsMainExe=false;
+            #ifdef _WIN32
+                IsMainExe=DString::CmpNoCase(MainExe,Dest);
+            #else
+                IsMainExe=MainExe == Dest;
+            #endif
+            if (IsMainExe) {
+                // MainExe has been downloed, use it for making DuryUpdater
+                FromFilename=UpdateTempDir / Source;
+                break;
+            }
+        }
+
+        // Generate updater
+        Log("Create updater from "+FromFilename.string());
+        fs::path UpdaterFilename=CurrExeName.parent_path() / FILENAME_UPDATER_EXE;
+        Log("Updater executable "+UpdaterFilename.string());
+        DTools::DPath::Copy_File(FromFilename,UpdaterFilename,true,true);
 
         Log("Run updater "+UpdaterFilename.string());
         // Run updater and exit
@@ -406,9 +443,8 @@ namespace DTools
                 // TODO
             }
             std::string LogMsg="Copy repo file"+RemoteInfoFilename.string()+" to "+LocalInfoFilename.string();
-            err::error_code ec=DTools::DPath::Copy_File(RemoteInfoFilename,LocalInfoFilename,true,true);
-            if (ec.value() != 0) {
-                Log("Error "+LogMsg+" : "+ec.message());
+            if (!DTools::DPath::Copy_File(RemoteInfoFilename,LocalInfoFilename,true,true)) {
+                Log("Error "+LogMsg);
                 Ready=false;
                 return false;
             }
@@ -432,8 +468,8 @@ namespace DTools
 
     /**
      * @brief Parse repo info file and populate UpdateData prefs.
-     * Check app name matching and upgrade version.
-     * @return true on succeed otherwise false (use GelLastStatus() to retrive error text).
+     * Check app name and upgrade version match.
+     * @return true on succeed otherwise false (use GetLastStatus() to retrive error text).
      */
     bool DUpdate::ParseLocalRepoInfoFile(void) {
         if (!Ready) return false;
@@ -448,8 +484,8 @@ namespace DTools
 
         // Check app name
         std::string RepoAppName=UpdateData->ReadString(SECTION_UPGRADE_INFO,PARAM_APP_NAME,"");
-        if (RepoAppName.empty() || RepoAppName != CurrAppName) {
-            Log("AppName does't match");
+        if (RepoAppName.empty() || !DTools::DString::CmpNoCase(RepoAppName,CurrAppName)) {
+            Log("AppName does not match");
             return false;
         }
 
@@ -483,7 +519,7 @@ namespace DTools
             std::vector<std::string> Files;
             std::string NodeName=SECTION_FILES "." SECTION_REPLACE;
             UpdateData->ReadItemNames(NodeName,Files);
-            for (std::string Source : Files) {
+            for (std::string& Source : Files) {
                 // Make filenames
                 fs::path SourceFilename=fs::path(dRepository.MainUri) / dRepository.SubUri / Source;
                 fs::path DestFilename=UpdateTempDir / Source; // same as repo
@@ -494,8 +530,7 @@ namespace DTools
 
                 // copy to local temp
                 std::string LogMsg="Copy "+SourceFilename.string()+" to "+DestFilename.string();
-                //bool ret=DTools::DPath::Copy_File(SourceFilename.string().c_str(),DestFilename.string().c_str(),0);
-                if (DTools::DPath::Copy_File(SourceFilename,DestFilename,true)) {
+                if (!DTools::DPath::Copy_File(SourceFilename,DestFilename,false)) {
                     Log("Error "+LogMsg);
                     Ready=false;
                     return false;
@@ -574,13 +609,18 @@ namespace DTools
                 Ready=false;
                 return false;
             }
-
-            if (DPath::DeleteFiles(UpdateTempDir,false) == -1) {
-                Log("Cannot delete temporary udate files");
-            }
-
             Log("Done "+LogMsg);
         }
+
+        Log("Clean update folder "+UpdateTempDir.string());
+        int nDeleted=DPath::DeleteFiles(UpdateTempDir,false,nullptr);
+        if (nDeleted == -1) {
+            Log("Cannot delete temporary udate files");
+        }
+        else {
+            Log("Cleaned "+std::to_string(nDeleted)+" files");
+        }
+
         return true;
     }
 

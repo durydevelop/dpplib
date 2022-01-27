@@ -8,51 +8,6 @@
 #include "libdpp/DLog.h"
 #include "libdpp/DPreferences.h"
 
-class DStreamBuff : public std::basic_streambuf<char> {
-    public:
-        DStreamBuff(QPlainTextEdit* TextEdit) {
-            LogBox=TextEdit;
-        }
-
-        ~DStreamBuff() {
-
-        }
-
-    private:
-
-    protected:
-        //This is called when a std::endl has been inserted into the stream
-        virtual int_type overflow(int_type v) {
-            if (v == '\n' || v == '\r') {
-                LogBox->appendPlainText(QString());
-            }
-            return v;
-        }
-
-
-        virtual std::streamsize xsputn(const char *p, std::streamsize n) {
-            QString str(p);
-            if(str.contains("\n")){
-                str.remove("\r");
-                QStringList strSplitted = str.split("\n");
-
-                LogBox->moveCursor (QTextCursor::End);
-                LogBox->insertPlainText (strSplitted.at(0)); //Index 0 is still on the same old line
-
-                for(int i = 1; i < strSplitted.size(); i++){
-                    LogBox->appendPlainText(strSplitted.at(i));
-                }
-            }else{
-                LogBox->moveCursor(QTextCursor::End);
-                LogBox->insertPlainText(str);
-            }
-            return n;
-        }
-
-    private:
-        QPlainTextEdit* LogBox;
-};
-
 namespace Ui {
     class DFormLog;
 }
@@ -63,26 +18,35 @@ class DFormLog : public QDialog
 
     public:
         static void Create(void);
-        explicit DFormLog(QSharedPointer<DTools::DLog> dLog = nullptr, QSharedPointer<DTools::DPreferences> dPreferences = nullptr,QWidget *parent = nullptr);
+        explicit DFormLog(QWidget *parent = nullptr, std::shared_ptr<DTools::DLog> dLog = nullptr);
         ~DFormLog();
 
-        void Debug(QString LogMsg);
+        void SetDeleteOnClose(bool Enabled);
+        void SaveWindowPosition(DTools::DPreferences &Prefs);
+        void RestoreWindowPosition(DTools::DPreferences &Prefs);
+        void SetDLog(std::shared_ptr<DTools::DLog> dLog);
+        bool LoadFile(void);
 
-        // Pointer to be feed
-        std::ostream *LogStream;
+        std::shared_ptr<DTools::DLog> DuryLog;
+
+        bool ShowDateTime;
+        bool ShowOutputLevel;
+
+    signals:
+        void SignalAdd(QString Msg, QString OutputLevel, QString Header);
 
     private slots:
-        void on_pushButton_clicked();
+        void on_ButtonReload_clicked();
         void on_ButtonOpenFolder_clicked();
         void on_ButtonSendLogs_clicked();
 
-    private:
-        Ui::DFormLog *ui;
-        QSharedPointer<DTools::DLog> DuryLog;
-        QSharedPointer<DTools::DPreferences> Prefs;
+    public slots:
+        void Add(QString Msg, QString OutputLevel, QString Header);
 
-        // Pointer to be feed
-        DStreamBuff *dStreamBuff;
+    private:
+        void DLogCallback(std::string Msg, std::string OutputLevel, std::string Header);
+
+        Ui::DFormLog *ui;
 };
 
 #endif

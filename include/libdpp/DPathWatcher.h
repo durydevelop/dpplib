@@ -10,23 +10,23 @@ namespace DTools
 {
     class DPathWatcher {
         public:
-            enum DChangeStatus                                          { CHANGE_STATUS_ERROR=-1    , CHANGE_STATUS_NONE=0  , CHANGE_STATUS_CREATED=1   , CHANGE_STATUS_ERASED=2, CHANGE_STATUS_MODIFIED=3  , CHANGE_STATUS_LOG_STR , CHANGE_STATUS_STARTED , CHANGE_STATUS_ENDED   };
-            inline static std::vector<std::string> DChangeStatusDesc=   { "Error"                   , "No changes"          , "Created"                 , "Erased"              , "Modified"                , "Log"                 , "Started"             , "Ended"               };
+            enum DChangeStatus                                          { CHANGE_STATUS_ERROR=-1    , CHANGE_STATUS_NONE=0  , CHANGE_STATUS_CREATED=1   , CHANGE_STATUS_ERASED=2, CHANGE_STATUS_MODIFIED=3  , CHANGE_STATUS_STOPPED , CHANGE_STATUS_LOG_STR , CHANGE_STATUS_WATCH_STARTED   , CHANGE_STATUS_WATCH_ENDED };
+            inline static std::vector<std::string> DChangeStatusDesc=   { "Error"                   , "No changes"          , "Created"                 , "Erased"              , "Modified"                , "Stopped"             , "Log"                 , "Watch Started"               , "Watch Ended"             };
             DPathWatcher(fs::path PathToWatch = fs::path(), std::string WatcherName = std::string(), size_t IntervalMillis = 1000);
             ~DPathWatcher();
             void SetInterval(size_t MSec);
             size_t GetWatchesCount(void);
-            void Check(bool FireOnlyChages = false);
+            void Check(bool FireChangesOnly = false);
             bool Start(void);
             void Pause(bool Enabled = true);
             void SetStop(void);
-            bool SetStopAndWait(size_t TimeOutMSec = 0);
-            // TODO: ForceStop()
+            bool SetStopAndWait(size_t TimeOutMSec);
+            // TODO: Kill()
             bool IsWatching(void);
             bool IsPaused(void);
             bool IsMyPath(const fs::path& Path);
             size_t AddPath(fs::path PathToWatch);
-            void ClearWatches(void);
+            void ClearWatches(size_t TimeOutMSec);
 
             class DPathWatch {
                 public:
@@ -46,7 +46,21 @@ namespace DTools
                         }
                     }
 
-                    DChangeStatus Check(void) {
+                    DChangeStatus Check(bool& Stop) {
+                        if (IsDirectory) {
+                            if (FirstScan) {
+                                // First scan
+                                for (auto &File : fs::recursive_directory_iterator(Path)) {
+                                    DirScanResult[File.path().string()] = fs::last_write_time(File);
+                                    if (Stop) {
+                                        return(CHANGE_STATUS_STOPPED);
+                                    }
+                                }
+                                FirstScan=false;
+                                return(CHANGE_STATUS_NONE);
+                            }
+                        }
+
                         try {
                             // Check for exist
                             LastChangeStatus=CHANGE_STATUS_NONE;
@@ -62,25 +76,17 @@ namespace DTools
                                 LastChangeTime=std::chrono::system_clock::now();
                             }
                         } catch (std::exception e) {
-                            LastErrorString=std::string("Check for exists ")+e.what();
+                            LastErrorString=std::string("DPpathWath check for exists exception: ")+e.what();
                             LastChangeStatus=CHANGE_STATUS_ERROR;
                         }
 
-                            // Check for update
-                            if (LastExists) {
+                        // Check for update
+                        if (LastExists) {
                             try {
                                 if (IsDirectory) {
                                     // Dir
-                                    LastChangeStatus=ScanDir();
+                                    LastChangeStatus=ScanDir(Stop);
                                     LastChangeTime=std::chrono::system_clock::now();
-                                    if (FirstScan) {
-                                        // First scan
-                                        for (auto &File : fs::recursive_directory_iterator(Path)) {
-                                            DirScanResult[File.path().string()] = fs::last_write_time(File);
-                                        }
-                                        FirstScan=false;
-                                        return(CHANGE_STATUS_NONE);
-                                    }
                                 }
                                 else {
                                     // File
@@ -92,16 +98,16 @@ namespace DTools
                                     }
                                 }
                             } catch (std::exception e) {
-                                LastErrorString=std::string(" Check for update")+e.what();
+                                LastErrorString=std::string("DPathWath check for update exception: ")+e.what();
                                 LastChangeStatus=CHANGE_STATUS_ERROR;
                             }
-                            }
+                        }
 
                         return(LastChangeStatus);
                     }
 
-                    DChangeStatus ScanDir(void) {
-                        // Check for files delete
+                    DChangeStatus ScanDir(bool& Stop) {
+                        // Check for files delete testing lasc scan result
                         auto it = DirScanResult.begin();
                         while (it != DirScanResult.end()) {
                             if (!DTools::DPath::Exists(it->first)) {
@@ -110,6 +116,9 @@ namespace DTools
                             }
                             else {
                                 it++;
+                            }
+                            if (Stop) {
+                                return(CHANGE_STATUS_STOPPED);
                             }
                         }
 
@@ -125,6 +134,9 @@ namespace DTools
                                     DirScanResult[Filename] = fs::last_write_time(File);
                                     return(CHANGE_STATUS_MODIFIED);
                                 }
+                            }
+                            if (Stop) {
+                                return(CHANGE_STATUS_STOPPED);
                             }
                         }
 
@@ -180,7 +192,7 @@ namespace DTools
             void SetCallback(DPathWatcherCallback callback);
         private:
             DPathWatcherCallback Callback;
-            void DoCallback(DChangeStatus ChangeStatus, fs::path Path, std::string Msg = std::string());
+            void DoCallback(DChangeStatus ChangeStatus, const fs::path Path, const std::string Msg = std::string());
     };
 }
 

@@ -1,24 +1,8 @@
 #include "libdpp/DString.h"
 #include <regex>
 #include <iomanip>
-/** TODO
 #include <codecvt>
-std::wstring s2ws(const std::string& str)
-{
-    using convert_typeX = std::codecvt_utf8<wchar_t>;
-    std::wstring_convert<convert_typeX, wchar_t> converterX;
 
-    return converterX.from_bytes(str);
-}
-
-std::string ws2s(const std::wstring& wstr)
-{
-    using convert_typeX = std::codecvt_utf8<wchar_t>;
-    std::wstring_convert<convert_typeX, wchar_t> converterX;
-
-    return converterX.to_bytes(wstr);
-}
- */
 namespace DTools
 {
 namespace DString
@@ -68,6 +52,24 @@ namespace DString
 
 	std::string RemoveCharsIfNotCopy(std::string str, const std::string& allowed) {
 		return RemoveCharsIfNot(str, allowed);
+	}
+
+	std::string& CutR(std::string& str, size_t count) {
+		str=str.substr(0,str.size()-count);
+		return(str);
+	}
+
+	std::string CutRCopy(std::string str, size_t count) {
+		return(str=str.substr(0,str.size()-count));
+	}
+
+	std::string& CutL(std::string& str, size_t count) {
+		str=str.substr(count,str.size()-count);
+		return(str);
+	}
+
+	std::string CutLCopy(std::string str, size_t count) {
+		return(str=str.substr(count,str.size()-count));
 	}
 
 	//! return true if str is any type on number
@@ -180,6 +182,18 @@ namespace DString
             return true;
         }
         return false;
+    }
+
+    std::wstring StrToWideStr(const std::string& str) {
+        using convert_typeX = std::codecvt_utf8<wchar_t>;
+        std::wstring_convert<convert_typeX, wchar_t> converterX;
+        return converterX.from_bytes(str);
+    }
+
+    std::string WideStrToStr(const std::wstring& wstr) {
+        using convert_typeX = std::codecvt_utf8<wchar_t>;
+        std::wstring_convert<convert_typeX, wchar_t> converterX;
+        return converterX.to_bytes(wstr);
     }
 
 	/*

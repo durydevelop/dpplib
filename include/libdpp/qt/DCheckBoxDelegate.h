@@ -9,7 +9,7 @@ class DCheckBoxDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
     public:
-        enum DRoles {ROLE_ENABLE=Qt::UserRole, ROLE_BKG_COLOR};
+        enum DRoles {ROLE_ENABLE=Qt::UserRole, ROLE_VISIBLE};
         DCheckBoxDelegate(QObject *parent = nullptr);
         void setColumnIndex(int Index);
 

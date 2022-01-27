@@ -42,7 +42,7 @@ namespace DTools
 
     DPathWatcher::~DPathWatcher() {
         if (Watching) {
-            SetStopAndWait();
+            SetStopAndWait(10000);
         }
     }
 
@@ -101,10 +101,10 @@ namespace DTools
      * One callback is fired for each file change detected.
      * @param FireOnlyChages    ->  if true CHANGE_STATUS_NONE wil not be callbacked.
      */
-    void DPathWatcher::Check(bool FireOnlyChages) {
+    void DPathWatcher::Check(bool FireChangesOnly) {
         for (DPathWatch& Watch : WatchList) {
-            DChangeStatus ChangeStatus=Watch.Check();
-            if (ChangeStatus == CHANGE_STATUS_NONE && FireOnlyChages) {
+            DChangeStatus ChangeStatus=Watch.Check(NeedToQuit);
+            if (ChangeStatus == CHANGE_STATUS_NONE && FireChangesOnly) {
                 continue;
             }
             DoCallback(Watch.LastChangeStatus,Watch.Path);
@@ -124,18 +124,35 @@ namespace DTools
             Log("No watch set, thread not strated");
             return false;
         }
-        Log("Watch thread starting...");
+        //og("Watch thread starting...");
 
         // Reset promise (for reuse)
         PromiseEnded=std::promise<bool>();
         ThreadFuture=PromiseEnded.get_future();
 
-        WatchThread=std::thread([&]() {
-            Log("Watch thread started");
+        WatchThread=std::thread([this]() {
+            //Log("Watch thread started");
             Watching=true;
             NeedToQuit=false;
             Paused=false;
-            DoCallback(CHANGE_STATUS_STARTED,std::string());
+            DoCallback(CHANGE_STATUS_WATCH_STARTED,std::string());
+            while (!NeedToQuit) {
+                auto delta=std::chrono::steady_clock::now() + std::chrono::milliseconds(IntervalMSec);
+                if (!Paused) {
+                    Check(true);
+                }
+                //else {
+                //    Log("paused...");
+                //}
+                std::this_thread::sleep_until(delta);
+            }
+
+            if (NeedToQuit) {
+                Log("Stop Request");
+            }
+
+
+/*
             auto LastMillis=DChrono::NowMillis();
             while (!NeedToQuit) {
                 if ((DChrono::NowMillis() - LastMillis) > IntervalMSec) {
@@ -149,10 +166,11 @@ namespace DTools
                 }
                 std::this_thread::sleep_for(500ms);
             }
+*/
             Watching=false;
-            //Log("Watch thread ended");
+            //Log("Watch thread "+Name+" ended");
             PromiseEnded.set_value_at_thread_exit(true);
-            DoCallback(CHANGE_STATUS_ENDED,std::string());
+            DoCallback(CHANGE_STATUS_WATCH_ENDED,std::string());
         });
         WatchThread.detach();
         return true;
@@ -177,20 +195,16 @@ namespace DTools
 
     /**
      * @brief Set stop flag to inform thread to stop watching loop and wait until thread is finished.
-     * @param TimeOutMSec   ->  Nr of milliseconds to wait before return.
-     * @return true if thread is really stopped, false if thread is not alive or timeout is reached.
+     * @param TimeOutMSec   ->  Nr of milliseconds to wait before return (default=30000).
+     * @return false on timeout reached, otherwise true.
      */
     bool DPathWatcher::SetStopAndWait(size_t TimeOutMSec) {
         //Log("Stop request for "+Name);
         if (!Watching) {
             //Log("Watch thread is not alive, no stop needed");
-            return false;
+            return true;
         }
         NeedToQuit=true;
-        if (TimeOutMSec == 0) {
-            // Default value
-            TimeOutMSec=IntervalMSec*WatchList.size();
-        }
 
         if (ThreadFuture.wait_for(std::chrono::milliseconds(TimeOutMSec)) == std::future_status::timeout) {
             Log("Watch thread stop waiting: timeout");
@@ -202,8 +216,8 @@ namespace DTools
     }
 
     //! Clear WatchList
-    void DPathWatcher::ClearWatches(void) {
-        SetStopAndWait();
+    void DPathWatcher::ClearWatches(size_t TimeOutMSec) {
+        SetStopAndWait(TimeOutMSec);
         WatchList.clear();
     }
 
@@ -220,7 +234,7 @@ namespace DTools
 	/**
 	 * @brief Perform the callback
 	 */
-	void DPathWatcher::DoCallback(DChangeStatus ChangeStatus, fs::path Path, std::string Msg) {
+	void DPathWatcher::DoCallback(DChangeStatus ChangeStatus, const fs::path Path, const std::string Msg) {
 		if(Callback) {
 			Callback(ChangeStatus,Path,Msg);
 		}

@@ -28,9 +28,11 @@ namespace DTools
             bool SetRepository(std::string RepoType,std::string RepoUri, std::string RepoSubUri, bool Authenticate, std::string RepoUser, std::string RepoPwd);
             bool IsValidRepository(void);
             bool IsReady(void);
+            bool IsUpdater(void);
             void CheckPendings(void);
             void DoUpgrade(void);
             void SendFiles(std::vector<std::string> FilesList, std::string DestRepoSubPath);
+            std::string GetLastStatus(void);
 
         private:
             typedef struct _DRepository{
@@ -52,7 +54,8 @@ namespace DTools
             DTools::fs::path BackupDir;
             DTools::fs::path LocalInfoFilename;
             DTools::DPreferences *UpdateData;
-            fs::path ExeName;
+            fs::path CurrExeName;
+            bool AsUpdater;
 
             void Init(const std::string ApplicationName, const std::string CurrentVersion);
             bool DownloadRemoteInfoFile(void);
@@ -63,7 +66,6 @@ namespace DTools
             // Logging stuffs
             std::string LastStrStatus;
             void Log(std::string LogMsg);
-            std::string GetLastStatus(void);
     };
 }
 

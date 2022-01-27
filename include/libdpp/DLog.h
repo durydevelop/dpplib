@@ -1,11 +1,3 @@
-/**
-* @file DLog.h
-*
-* @author $Author
-*
-* @version $Version
-**/
-
 #ifndef DLogH
 #define DLogH
 
@@ -14,7 +6,8 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
-
+#include <filesystem>
+#include <functional>
 
 namespace DTools
 {
@@ -32,15 +25,25 @@ namespace DTools
     * reg add HKEY_CURRENT_USER\Console /v VirtualTerminalLevel /t REG_DWORD /d 0x00000000 /f
     *
     * \section intro_sec Intro
-    *
+    * This file can be used as single header lib, simply @code#include "DLog.h"@code
     *
     *
     * \section futures_sec Futures
+    *
+    * \section todo_sec TODO
+    * _SetMaxFileSize()
+    * _SetTotMaxSize()
+    * _SetTotMaxTime()
     **/
     class DLog {
         public:
-            //! enum log deep level
+            //! Log deep level
             enum DLogLevel {PRINT_LEVEL_NORMAL, PRINT_LEVEL_DEEP};
+            //! Output types
+            enum DOutputType {OUTPUT_INFO,OUTPUT_ERROR,OUTPUT_DEBUG,OUTPUT_WARNING};
+
+            bool LogToFile;
+            bool LogToStdout;
 
             /**
             * @brief Contructor
@@ -51,25 +54,36 @@ namespace DTools
             * @param Level          ->  PRINT_LEVEL_NORMAL: Print only i() and e() call.
             *                           PRINT_LEVEL_DEEP:   Print also d() and w() call.
             **/
-            DLog(std::string LogFilename = "", bool StdoutEnabled = true, std::ostream *OutputStream = nullptr, DLogLevel Level = PRINT_LEVEL_DEEP) {
+            DLog(std::string LogFilename = "", bool StdoutEnabled = true, DLogLevel Level = PRINT_LEVEL_DEEP) {
                 LogToStdout=StdoutEnabled;
                 LogLevel=Level;
-                OutStream=OutputStream;
+                Callback=nullptr;
                 Filename=LogFilename;
-                if (Filename == "") {
-                    hFile=nullptr;
+                hFile=nullptr;
+                LogToFile=false;
+
+                // Create parent dir if not exists
+                std::filesystem::path LogDir=std::filesystem::path(Filename).parent_path();
+                std::error_code ec;
+                std::filesystem::file_status Status=std::filesystem::status(LogDir,ec);
+                if (!std::filesystem::exists(Status)) {
+                    std::filesystem::create_directories(LogDir,ec);
+                    if (ec) {
+                        perror(("Log file <"+Filename+"> ERROR: "+ec.message()).c_str());
+                        return;
+                    }
+                }
+
+                // Open or create file
+                hFile=fopen(Filename.c_str(),"aw+");
+                if (hFile == nullptr) {
+                    perror("Log file not opened");
                     LogToFile=false;
+                    LogToStdout=true; // se non posso loggare su file uso comunque lo stdout
                 }
                 else {
-                    hFile=fopen(Filename.c_str(),"aw+");
-                    if (hFile == nullptr) {
-                        perror("Log file not opened");
-                        LogToFile=false;
-                        StdoutEnabled=true; // se non posso loggare su file uso comunque lo stdout
-                    }
-                    else {
-                        LogToFile=true;
-                    }
+                    LogToFile=true;
+                    LogToStdout=StdoutEnabled;
                 }
             }
 
@@ -170,10 +184,6 @@ namespace DTools
                 LogToStdout=Enabled;
             }
 
-            void SetOutputStream(std::ostream *OutputStream = nullptr) {
-                OutStream=OutputStream;
-            }
-
             std::string GetFilename(void) {
                 return(Filename);
             }
@@ -194,21 +204,17 @@ namespace DTools
                     i("Log to File: "+Filename);
                 }
 
-                if (OutStream == nullptr) {
-                    i("Log to OutStream: OFF");
+                if (Callback) {
+                    i("Log Callback: ON");
                 }
                 else {
-                    i("Log to OutStream: ON");
+                    i("Log Callback: OFF");
                 }
             }
 
         private:
-            enum DLogOutput {OUTPUT_INFO,OUTPUT_ERROR,OUTPUT_DEBUG,OUTPUT_WARNING};
             std::string Filename;
             FILE *hFile;
-            bool LogToFile;
-            bool LogToStdout;
-            std::ostream *OutStream;
             DLogLevel LogLevel;
 
             //! Colors defines for printf
@@ -220,36 +226,58 @@ namespace DTools
             const std::string CL_CYAN       =   "\x1b[36m";
             const std::string CL_DEFAULT    =   "\x1b[0m";
 
+        // ******************************  Callback stuffs ***************************************
+        public:
+            typedef std::function<void(std::string,std::string,std::string)> DLogCallback;
+            /**
+             * @brief Register a class member callback.
+             * @param callback  ->  DCallback type function to bind like:
+             * @code auto callback=std::bind(&MainWindow::Callback,this,std::placeholders::_1,std::placeholders::_2,std::placeholders::_3); @endcode
+             */
+            void SetCallback(DLogCallback callback = nullptr) {
+                    Callback=callback;
+            }
+        private:
+            DLogCallback Callback;
+            /**
+             * @brief Perform the callback
+             */
+            void DoCallback(std::string Msg, std::string OutputType, std::string Header) {
+                Callback(Msg,OutputType,Header);
+            }
+        // ***************************************************************************************
+
+        private:
             //! Write the the message on stdout, stderr, file
-            void Write(DLogOutput Output,std::string LogMsg) {
+            void Write(DOutputType OutputType,std::string LogMsg) {
                 if (LogLevel == PRINT_LEVEL_NORMAL) {
-                    if (Output > OUTPUT_ERROR) {
+                    if (OutputType > OUTPUT_ERROR) {
                         return;
                     }
                 }
                 auto now_time_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
                 std::stringstream ss;
-                ss << std::put_time(localtime(&now_time_t),"%Y/%m/%d %H.%M.%S : ");
+                ss << std::put_time(localtime(&now_time_t),"%Y/%m/%d %H.%M.%S");
                 std::string HdrMsg=ss.str();
                 std::string Color;
                 std::string LevelMsg;
 
                 // Debug level
-                switch (Output) {
+                switch (OutputType) {
                     case OUTPUT_DEBUG:
-                        LevelMsg+="DEBUG   : ";
+                        LevelMsg+="DEBUG  ";
                         Color=CL_CYAN;
                         break;
                     case OUTPUT_INFO:
-                        LevelMsg+="INFO    : ";
+                        LevelMsg+="INFO   ";
                         Color=CL_DEFAULT;
                         break;
                     case OUTPUT_ERROR:
-                        LevelMsg+="ERROR   : ";
+                        LevelMsg+="ERROR  ";
                         Color=CL_RED;
                         break;
                     case OUTPUT_WARNING:
-                        LevelMsg+="WARNING : ";
+                        LevelMsg+="WARNING";
                         Color=CL_YELLOW;
                         break;
                     default:
@@ -258,17 +286,17 @@ namespace DTools
 
                 // Print log message
                 if (LogToFile) {
-                    fprintf(hFile,"%s\r",(HdrMsg+LevelMsg+LogMsg).c_str());
+                    fprintf(hFile,"%s\r",(HdrMsg+" : "+LevelMsg+" : "+LogMsg).c_str());
                 }
                 if (LogToStdout) {
-                    printf("%s%s\n\r",(HdrMsg+Color+LevelMsg+LogMsg).c_str(),CL_DEFAULT.c_str());
-                }
-
-                if (OutStream) {
-                    *OutStream << HdrMsg << LevelMsg << LogMsg << "\n"; //std::endl;
+                    printf("%s%s\n\r",(Color+HdrMsg+" : "+LevelMsg+" : "+LogMsg).c_str(),CL_DEFAULT.c_str());
                 }
 
                 fflush(hFile); // Scrivi subito
+
+                if (Callback) {
+                    DoCallback(LogMsg,LevelMsg,HdrMsg);
+                }
             }
     };
 }

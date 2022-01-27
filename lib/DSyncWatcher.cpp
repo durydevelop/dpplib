@@ -40,7 +40,7 @@ namespace DTools
      * @brief Destructor. Wait 5 seconds for thread to terminate.
      */
     DSyncWatcher::~DSyncWatcher() {
-        Clear(5);
+        Clear();
     }
 
     /**
@@ -106,20 +106,38 @@ namespace DTools
     }
 
     /**
-     * @brief Execute a one shot check of all watches.
+     * @brief Execute a one-shot check of all watches.
      * One callback is fired for each file change detected.
      */
-    void DSyncWatcher::Check(void) {
+    DSyncFile::DSyncStatus DSyncWatcher::Check(void) {
         DSyncFile::DSyncStatus SyncStatus=DSyncFile::SYNC_NO_NEEDED;
-        for (DSyncFile& Sync : SyncList) {
-            SyncStatus=Sync.DoSync();
-            if (SyncStatus == DSyncFile::SYNC_DONE) {
-                DoCallback(CALLBACK_WATCHER_SYNC_DONE,Sync.Source);
-            }
-            else if (SyncStatus == DSyncFile::SYNC_ERROR) {
-                DoCallback(CALLBACK_WATCHER_SYNC_ERROR,Sync.Source,Sync.LastStrStatus);
+        auto itrSync=std::vector<DSyncFile>::iterator();
+        for (itrSync=SyncList.begin(); itrSync != SyncList.end(); itrSync++) {
+            SyncStatus=itrSync->DoSync();
+            switch (SyncStatus) {
+                case DTools::DSyncFile::SYNC_DONE:
+                    DoCallback(CALLBACK_WATCHER_SYNC_DONE,itrSync->Source);
+                    break;
+                case DTools::DSyncFile::SYNC_NOT_YET:
+                    break;
+                case DTools::DSyncFile::SYNC_NO_NEEDED:
+                    break;
+                case DTools::DSyncFile::SYNC_RESTORED:
+                    break;
+                case DTools::DSyncFile::SYNC_CALLBACK_STR_MSG:
+                    break;
+                case DTools::DSyncFile::SYNC_ERR_FILE_NOT_FOUND:
+                    SyncList.erase(itrSync);
+                    DoCallback(CALLBACK_WATCHER_SYNC_ERROR,itrSync->Source,itrSync->LastStrStatus);
+                    break;
+                case DTools::DSyncFile::SYNC_ERR_SAME_AS_DEST:
+                case DTools::DSyncFile::SYNC_ERR_BHO:
+                case DTools::DSyncFile::SYNC_ERR_COPY:
+                    DoCallback(CALLBACK_WATCHER_SYNC_ERROR,itrSync->Source,itrSync->LastStrStatus);
+                    break;
             }
         }
+        return(SyncStatus);
     }
 
     /**
@@ -136,14 +154,14 @@ namespace DTools
             return false;
         }
 
-        Log("Sync thread starting...");
+        //Log("Sync thread starting...");
         Starting=true;
 
         // Reset promise (for reuse)
         PromiseEnded=std::promise<bool>();
         ThreadFuture=PromiseEnded.get_future();
 
-        WatchThread=std::thread([&]() {
+        WatchThread=std::thread([this]() {
             //Log("Sync thread started");
             Starting=false;
             Watching=true;
@@ -152,15 +170,33 @@ namespace DTools
             while (!NeedToQuit) {
                 auto delta=std::chrono::steady_clock::now() + std::chrono::milliseconds(IntervalMSec);
                 DSyncFile::DSyncStatus SyncStatus=DSyncFile::SYNC_NO_NEEDED;
-                for (DSyncFile& Sync : SyncList) {
-                    SyncStatus=Sync.DoSync();
-                    if (SyncStatus == DSyncFile::SYNC_DONE) {
-                        DoCallback(CALLBACK_WATCHER_SYNC_DONE,Sync.Source);
-                    }
-                    else if (SyncStatus == DSyncFile::SYNC_ERROR) {
-                        DoCallback(CALLBACK_WATCHER_SYNC_ERROR,Sync.Source,Sync.LastStrStatus);
+                auto itrSync=std::vector<DSyncFile>::iterator();
+                for (itrSync=SyncList.begin(); itrSync != SyncList.end(); itrSync++) {
+                    SyncStatus=itrSync->DoSync();
+                    switch (SyncStatus) {
+                        case DTools::DSyncFile::SYNC_DONE:
+                            DoCallback(CALLBACK_WATCHER_SYNC_DONE,itrSync->Source);
+                            break;
+                        case DTools::DSyncFile::SYNC_NOT_YET:
+                            break;
+                        case DTools::DSyncFile::SYNC_NO_NEEDED:
+                            break;
+                        case DTools::DSyncFile::SYNC_RESTORED:
+                            break;
+                        case DTools::DSyncFile::SYNC_CALLBACK_STR_MSG:
+                            break;
+                        case DTools::DSyncFile::SYNC_ERR_FILE_NOT_FOUND:
+                            SyncList.erase(itrSync);
+                            DoCallback(CALLBACK_WATCHER_SYNC_ERROR,itrSync->Source,itrSync->LastStrStatus);
+                            break;
+                        case DTools::DSyncFile::SYNC_ERR_SAME_AS_DEST:
+                        case DTools::DSyncFile::SYNC_ERR_BHO:
+                        case DTools::DSyncFile::SYNC_ERR_COPY:
+                            DoCallback(CALLBACK_WATCHER_SYNC_ERROR,itrSync->Source,itrSync->LastStrStatus);
+                            break;
                     }
                 }
+                //Check();
                 std::this_thread::sleep_until(delta);
             }
             Watching=false;
@@ -188,16 +224,16 @@ namespace DTools
     /**
      * @brief Set stop flag to inform thread to stop watching loop and wait until thread is finished.
      * @param TimeOutMSec   ->  Nr of milliseconds to wait before return.
-     * @return true if thread is really stopped, false if thread is not alive or timeout is reached.
+     * @return false on timeout reached, otherwise true.
      */
     bool DSyncWatcher::StopAndWait(size_t TimeOutMSec) {
         if (!Watching || Stopping) {
             //Log("Sync thread is not alive, no stop needed");
-            return false;
+            return true;
         }
         if (Stopping) {
             //Log("Sync thread is already stopping");
-            return false;
+            return true;
         }
 
         NeedToQuit=true;
@@ -216,25 +252,30 @@ namespace DTools
         return(ThreadFuture.get());
     }
 
-    //! Execute callback using last sync status of dSyncFile
+    //! Execute callback wrapping DSyncFile::LastSyncStatus of dSyncFile
     void DSyncWatcher::NotifySyncStatus(DSyncFile &dSyncFile) {
-        switch (dSyncFile.LastSyncStatus) {
-            case DSyncFile::SYNC_NOT_YET:
+        DSyncFile::DSyncStatus SyncStatus=dSyncFile.LastSyncStatus;
+        switch (SyncStatus) {
+            case DTools::DSyncFile::SYNC_NOT_YET:
                 DoCallback(CALLBACK_WATCHER_SYNC_NOT_YET,dSyncFile.Source);
                 break;
-            case DSyncFile::SYNC_NO_NEEDED:
+            case DTools::DSyncFile::SYNC_NO_NEEDED:
                 DoCallback(CALLBACK_WATCHER_SYNC_NO_NEEDED,dSyncFile.Source);
                 break;
-            case DSyncFile::SYNC_ERROR:
-                DoCallback(CALLBACK_WATCHER_SYNC_ERROR,dSyncFile.Source,dSyncFile.LastStrStatus);
-                break;
-            case DSyncFile::SYNC_DONE:
+            case DTools::DSyncFile::SYNC_DONE:
                 DoCallback(CALLBACK_WATCHER_SYNC_DONE,dSyncFile.Source);
                 break;
-            case DSyncFile::SYNC_CALLBACK_STR_MSG:
+            case DTools::DSyncFile::SYNC_RESTORED:
+                DoCallback(CALLBACK_WATCHER_SYNC_RESTORED,dSyncFile.Source);
+                break;
+            case DTools::DSyncFile::SYNC_CALLBACK_STR_MSG:
                 DoCallback(CALLBACK_WATCHER_STR_MSG,dSyncFile.Source);
                 break;
-            default:
+            case DTools::DSyncFile::SYNC_ERR_COPY:
+            case DTools::DSyncFile::SYNC_ERR_FILE_NOT_FOUND:
+            case DTools::DSyncFile::SYNC_ERR_SAME_AS_DEST:
+            case DTools::DSyncFile::SYNC_ERR_BHO:
+                DoCallback(CALLBACK_WATCHER_SYNC_ERROR,dSyncFile.Source,dSyncFile.LastStrStatus);
                 break;
         }
     }

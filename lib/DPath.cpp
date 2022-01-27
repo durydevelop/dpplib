@@ -10,8 +10,8 @@
     #define O_BINARY 0
 #endif
 
-// Debug macro if DEBUG is defined, DEBUG_PRINT(Msg) macro prints Msg on stdout, otherwise do nothing (I use it to debug issues).
-//#define DEBUG
+// Debug macro: if DEBUG is defined, DEBUG_PRINT(Msg) macro prints Msg on stdout, otherwise do nothing (I use it to debug issues).
+#define DEBUG
 #ifdef DEBUG
 	#include<iostream>
 	#define DEBUG_PRINT(Msg) std::cout << Msg << std::endl;
@@ -40,20 +40,45 @@ namespace DPath
         #endif
     }
 
+    std::string GetExt(fs::path Path) {
+        std::string Ext=Path.extension().string();
+        return(DTools::DString::RemoveChars(Ext,"."));
+    }
+
     /**
      * @brief Change the extension of a file/dir
      * @param Path      ->  Filename or directory.
      * @param NewExt    ->  New extension (with or without dot).
      * @param Execute   ->  If false only string new name is returned, if true also file/dir on disk is renamed.
-     * @param ec        ->  a pointer to error_code variable to fill with result (can be null).
      * @return new file/dir name or empty path if rename on disk fails.
      */
-    fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute, err::error_code *ec) {
+    fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute) {
         fs::path NewPath=Path.parent_path() / (Path.stem().string() + "." + DString::LTrim(NewExt,"."));
 
 		if (Execute) {
-			fs::rename(Path,NewPath,*ec);
-			if (ec->value() != 0) {
+			try {
+				fs::rename(Path,NewPath);
+			} catch (std::exception &e) {
+				return (fs::path());
+			}
+		}
+		return (NewPath);
+	}
+
+    /**
+     * @brief Change the extension of a file/dir (error code version)
+     * @param Path      ->  Filename or directory.
+     * @param NewExt    ->  New extension (with or without dot).
+     * @param Execute   ->  If false only string new name is returned, if true also file/dir on disk is renamed.
+     * @param ec        ->  a pointer to std::error_code variable to fill with result (can be null).
+     * @return new file/dir name or empty path if rename on disk fails.
+     */
+    fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute, err::error_code &ec) {
+        fs::path NewPath=Path.parent_path() / (Path.stem().string() + "." + DString::LTrim(NewExt,"."));
+
+		if (Execute) {
+			fs::rename(Path,NewPath,ec);
+			if (ec) {
 				return (fs::path());
 			}
 		}
@@ -154,9 +179,9 @@ namespace DPath
         DWORD genericAccessRights=AccessRights;
         bool bRet = false;
         DWORD length = 0;
-         if (!GetFileSecurity(Path.string().c_str(), OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, NULL, 0, &length ) && ERROR_INSUFFICIENT_BUFFER == ::GetLastError()) {
+         if (!GetFileSecurityA(Path.string().c_str(), OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, NULL, 0, &length ) && ERROR_INSUFFICIENT_BUFFER == ::GetLastError()) {
             PSECURITY_DESCRIPTOR security = static_cast< PSECURITY_DESCRIPTOR >( ::malloc( length ) );
-            if (security && GetFileSecurity(Path.string().c_str(),OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, security, length, &length )) {
+            if (security && GetFileSecurityA(Path.string().c_str(),OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, security, length, &length )) {
                 HANDLE hToken = NULL;
                 if (OpenProcessToken(GetCurrentProcess(),TOKEN_IMPERSONATE | TOKEN_QUERY | TOKEN_DUPLICATE | STANDARD_RIGHTS_READ, &hToken)) {
                     HANDLE hImpersonatedToken = NULL;
@@ -207,10 +232,13 @@ namespace DPath
 	*
 	* @return 0 on success or an error_code if any arrors occours.
 	**/
-	err::error_code Copy_File(const fs::path &From, const fs::path &To, bool OverwriteExisting, bool SafeMode) {
-		err::error_code ec;
+	bool Copy_File(const fs::path &From, const fs::path &To, bool OverwriteExisting, bool SafeMode) {
+		if (From == To) {
+			return false;
+		}
+
 		#if __cplusplus > 201402L // C++17
-			fs::copy_options options=OverwriteExisting ? fs::copy_options::overwrite_existing : fs::copy_options::none;
+			fs::copy_options options=OverwriteExisting ? fs::copy_options::update_existing : fs::copy_options::none;
 		#else
 			fs::copy_option options=OverwriteExisting ? fs::copy_option::overwrite_if_exists : fs::copy_option::none;
 		#endif
@@ -218,15 +246,16 @@ namespace DPath
         // Store file permission
         fs::perms FilePerms=fs::status(From).permissions();
 
+		err::error_code ec;
 		if (SafeMode) {
-			std::cout << "Safemode copy " << From.string() << " -> " << To.string() << std::endl;
+			//std::cout << "Safemode copy " << From.string() << " -> " << To.string() << std::endl;
 			if (OverwriteExisting) {
 				if (Exists(To)) {
 					// Safe mode work-around:
 					// delete dest before copy (some version of filesystem lib does not copy if dest existing)
 					fs::remove(To,ec);
-					if (ec.value() != 0) {
-						return(ec);
+					if (ec) {
+						return false;
 					}
 				}
 			}
@@ -241,7 +270,14 @@ namespace DPath
             //std::cout << "Restore permissions " << GetPermissionsString(FilePerms) << std::endl;
             fs::permissions(To,FilePerms,ec);
         }
-		return(ec);
+
+        if (ec) {
+            //std::cout << "Copy " << From.string() << " -> " << To.string() << " ERROR: " << ec.message() << std::endl;
+            DEBUG_PRINT("DString::Copy_File() " << From.string() << " -> " << To.string() << " ERROR: " << ec.message());
+            return false;
+        }
+
+        return true;
 	}
 
 	/**
@@ -255,7 +291,16 @@ namespace DPath
 	 * @return true on succes, otherwise false.
      * TODO: Copy permissions
 	 */
+	#include <sys/stat.h>
 	bool Copy_File_Posix(const char* SourceFile, const char* DestFile, bool OverwriteExisting, DCallback Callback, size_t BufferSize) {
+		if (!OverwriteExisting) {
+			struct stat buffer;
+			if (stat(SourceFile, &buffer) == 0) {
+				// exists
+				return false;
+			}
+		}
+
 		int in=open(SourceFile, O_RDONLY | O_BINARY);
 		if (in < 0) {
 			//std::cout << "Can't open input file: " << inFile << std::endl;
@@ -305,39 +350,41 @@ namespace DPath
 	* @param FailifExists	->	when false, destination is overwitten.
 	* @param Callback		->	Callback function to call on copy operation starts. Callback pass COUNT_DIR before directory copy and COUNT_FILE before file copy.
 	*
-	* @return 0 on success or an error_code if any arrors occours.
+	* @return true on success or false if any arrors occours.
+	* TODO: DErrorCode
 	**/
-	err::error_code CopyDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DCallback Callback) {
-
-		err::error_code ec;
-
+	bool CopyDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DCallback Callback) {
 		// Verifica esistenza
 		if (!Exists(SourceDir)) {
-			return(ec);
+			return false;
 		}
-		if (!IsDirectory(SourceDir,ec)) {
-			return(ec);
+
+		if (!IsDirectory(SourceDir)) {
+			return false;
 		}
 
 		if (FailIfExists) {
 			if (Exists(DestDir)) {
-				return(ec);
+				return false;
 			}
 		}
 
 		// N.B. !!!! Crea solo la DestDir copiando gli attributi dalla SourceDir !!!!
+		err::error_code ec;
 		#if __cplusplus > 201402L // C++17
-			fs::create_directory(SourceDir,DestDir,ec);
+			fs::create_directory(DestDir,SourceDir,ec);
 		#else
 			fs::copy_directory(SourceDir,DestDir,ec);
 		#endif
 		if (ec.value() != 0) {
-			return ec;
+			std::string s=ec.message();
+			Callback(CALLBACK_SET_FILES,1);
+			return false;
 		}
 
 		if (Callback) {
-			int nFiles=CountFiles(SourceDir,false);
-			int nDirs=CountDirs(SourceDir,false);
+			int nFiles=CountFiles(SourceDir,false,nullptr);
+			int nDirs=CountDirs(SourceDir,false,nullptr);
 
 			Callback(CALLBACK_SET_FILES,nFiles);
 			Callback(CALLBACK_SET_DIRS,nDirs);
@@ -348,9 +395,9 @@ namespace DPath
 			if (fs::is_directory(iterator->status())) {
 				if (Callback) Callback(CALLBACK_INC_DIR,1);
 				// In ricorsione
-				ec=CopyDir(iterator->path(),DestDir / iterator->path().filename(),FailIfExists,nullptr); // nessuna callback perché viene eseguita solo per gli oggetti presenti nella root
-				if (ec.value() != 0) {
-					return(ec);
+				// nessuna callback perché viene eseguita solo per gli oggetti presenti nella root
+				if (!CopyDir(iterator->path(),DestDir / iterator->path().filename(),FailIfExists,nullptr)) {
+					return false;
 				}
 			}
 			else if (is_regular_file(iterator->status())) {
@@ -361,14 +408,13 @@ namespace DPath
 					fs::copy_option options=fs::copy_option::overwrite_if_exists;
 				#endif
 
-				fs::copy_file(iterator->path(),DestDir / iterator->path().filename(),options,ec);
-				if (ec.value() != 0) {
-					return(ec);
+				if (!fs::copy_file(iterator->path(),DestDir / iterator->path().filename(),options,ec)) {
+					return false;
 				}
 			}
 		}
 
-		return(ec);
+		return true;
 	}
 
 	//! Move a directory recoursively (doing copy and delete)
@@ -378,73 +424,79 @@ namespace DPath
 	* @param FailifExists	->	when false, destination is overwitten.
 	* @param Callback		->	Callback function to call on copy operation starts. Callback pass COUNT_DIR before directory copy and COUNT_FILE before file copy.
 	*
-	* @return 0 on success or an error_code if any arrors occours.
+	* @return true on success or false if any arrors occours.
 	**/
-	err::error_code MoveDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DCallback Callback) {
+	bool MoveDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DCallback Callback) {
 		if (Callback) {
 			// If You want callback, need to copy and delete...
-			err::error_code ec=CopyDir(SourceDir,DestDir,FailIfExists,Callback);
-
-			if (ec.value() != 0) {
-				return(ec);
+			if (!CopyDir(SourceDir,DestDir,FailIfExists,Callback)) {
+				return false;
 			}
 
+			err::error_code ec;
 			fs::remove_all(SourceDir,ec);
-			return(ec);
+			if (ec) {
+				return false;
+			}
 		}
 		else {
 			#if __cplusplus > 201402L // C++17
 				// C++17 fast move
 				err::error_code ec;
 				fs::rename(SourceDir,DestDir,ec);
-				return(ec);
+				if (ec) {
+					return false;
+				}
 			#else
 				#ifdef WIN32
 					// windows fast move
 					if (SourceDir.string().substr(0,2) == DestDir.string().substr(0,2) && DestDir.string().substr(0,2) != "\\\\") {
 						// use windows api for c++ < 17
-						bool ret=MoveFileEx(SourceDir,DestDir,MOVEFILE_REPLACE_EXISTING);
-						if (!ret) {
-							ec.error_code=1;
+						if (!MoveFileEx(SourceDir,DestDir,MOVEFILE_REPLACE_EXISTING)) {
+							return false;
 						}
 					}
 					else {
 						// use c++ copy and delete
-						ec=CopyDir(SourceDir,DestDir,FailIfExists,Callback,MemberCallbackClassObj);
-						if (ec.value() != 0) {
-							return(ec);
+						if (!CopyDir(SourceDir,DestDir,FailIfExists,Callback,MemberCallbackClassObj)) {
+							return false;
 						}
 
-						dfs::remove_all(SourceDir,ec);
-						return(ec);
+						if (!fs::remove_all(SourceDir,ec))
+						return false;
 					}
 				#else
-					err::error_code ec=CopyDir(SourceDir,DestDir,FailIfExists,nullptr);
-					if (ec.value() != 0) {
-						return(ec);
+					if (!CopyDir(SourceDir,DestDir,FailIfExists,Callback)) {
+						return false;
 					}
 
+					err::error_code ec;
 					fs::remove_all(SourceDir,ec);
-					return(ec);
+					if (ec) {
+						return false;
+					}
 				#endif
 			#endif
 		}
+		return true;
 	}
 
 	//! Delete a directory recoursively
 	/**
 	* @param Dir	->	Directory to delete.
 	*
-	* @return 0 on success or an error_code if any arrors occours.
+	* @return true on success or false if any arrors occours.
 	**/
-	err::error_code DeleteDir(fs::path Dir) {
-		err::error_code ec;
-		bool Ret=Exists(Dir);
-		if (!Ret) {
-			return(ec);
+	bool DeleteDir(fs::path Dir) {
+		if (!Exists(Dir)) {
+			return false;
 		}
+		err::error_code ec;
 		fs::remove_all(Dir,ec);
-		return(ec);
+		if (ec) {
+			return false;
+		}
+		return true;
 	}
 
 	//! Cerca tutte le cartelle all'interno di una cartella.
@@ -463,14 +515,15 @@ namespace DPath
 	* @param CaseSensitive		->	Se true tiene conto di maiuscole e minuscole.
 	* @param FindAll			->	Se true esegue una ricerca di tipo AND: tutte le stringhe di @ref NameContent e @ExtContent devono essere trovate in ogni nome ed estensione.
 	*								Se false esegue una ricerca di tipo OR: basta che una delle stringhe di @ref NameContent e @ExtContent venga trovata in ogni nome ed estensione.
+	* @param StopRequest		->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	*
 	* @return il numero di directory trovate, -1 in caso di errore.
 	* N.B. @ref Result non viene pulita quindi se non è vuota  risultati vengono aggiunti.
 	**/
-	int ListDirs(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll) {
+	int ListDirs(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool *StopRequest) {
 		err::error_code ec;
 		unsigned int Tot=0;
-		DEBUG_PRINT("ListDirs in "+PathToScan.string()+" Recoursive="+std::to_string(Recoursive)+" CaseSensitive="+std::to_string(CaseSensitive)+" NameContentList="+std::to_string(NameContentList->size())+" ExtContentList="+std::to_string(ExtContentList->size()));
+		//DEBUG_PRINT("ListDirs in "+PathToScan.string()+" Recoursive="+std::to_string(Recoursive)+" CaseSensitive="+std::to_string(CaseSensitive)+" NameContentList="+std::to_string(NameContentList->size())+" ExtContentList="+std::to_string(ExtContentList->size()));
 
 		// Verifica esistenza
 		bool Ret=Exists(PathToScan);
@@ -479,11 +532,18 @@ namespace DPath
 		}
 
 		for (fs::directory_iterator iterator(PathToScan); iterator != fs::directory_iterator(); ++iterator) {
+			if (StopRequest) {
+				if (*StopRequest) {
+					//Log("Stop requested");
+					break;
+				}
+			}
+
 			if (fs::is_directory(iterator->status())) {
 				if (Recoursive) {
 					// In ricorsione
-					DEBUG_PRINT("Ricorsione su "+iterator->path().string());
-					Tot+=ListDirs(Result,iterator->path(),Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll);
+					//DEBUG_PRINT("Ricorsione su "+iterator->path().string());
+					Tot+=ListDirs(Result,iterator->path(),Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest);
 				}
 
 				fs::path CurrPath=iterator->path();
@@ -492,7 +552,9 @@ namespace DPath
 				if (NameContentList != nullptr) {
 					if (NameContentList->size() > 0) {
 						// Ricerca patterns all'interno del nome
+						std::string CurrName=CurrPath.stem().string();
 						if (FindAll) {
+							// Cerca tutte le ricorrenze
 							// Found rimane true solo se vengono trovati tutti i pattern
 							Found=true;
 							for (std::string NameContent : *NameContentList) {
@@ -501,25 +563,25 @@ namespace DPath
 								if (NameWholeWord) {
 									// Ricerca parola intera
 									if (CaseSensitive) {
-										if (CurrPath.stem() != NameContent) {
+										if (CurrName != NameContent) {
 											Found=false;
 										}
 									}
 									else {
-										if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),NameContent)) {
+										if (!DTools::DString::CmpNoCase(CurrName,NameContent)) {
 											Found=false;
 										}
 									}
 								}
 								else {
-									// Ricerca all'interno del nome file
+									// Ricerca contenuto
 									if (CaseSensitive) {
-										if (CurrPath.stem().string().find(NameContent) == std::string::npos) {
+										if (CurrName.find(NameContent) == std::string::npos) {
 											Found=false;
 										}
 									}
 									else {
-										if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(NameContent)) == std::string::npos) {
+										if (DTools::DString::ToUpperCopy(CurrName).find(DTools::DString::ToUpperCopy(NameContent)) == std::string::npos) {
 											Found=false;
 										}
 									}
@@ -527,9 +589,9 @@ namespace DPath
 							}
 						}
 						else {
-							Found=false;
+							// Cerca almeno una ricorrenza
 							// Found diventa true al primo match
-							std::string CurrName=CurrPath.stem().string();
+							Found=false;
 							for (std::string NameContent : *NameContentList) {
 								DString::RemoveChars(NameContent,"*");
 								DString::RemoveChars(NameContent,".");
@@ -549,7 +611,7 @@ namespace DPath
 									}
 								}
 								else {
-									// Ricerca all'interno dell'estensione
+									// Ricerca contenuto
 									if (CaseSensitive) {
 										if (NameContent.find(CurrName) != std::string::npos) {
 											Found=true;
@@ -557,7 +619,7 @@ namespace DPath
 										}
 									}
 									else {
-										if (DTools::DString::ToUpperCopy(NameContent).find(DTools::DString::ToUpperCopy(CurrName)) != std::string::npos) {
+										if (DTools::DString::ToUpperCopy(CurrName).find(DTools::DString::ToUpperCopy(NameContent)) != std::string::npos) {
 											Found=true;
 											break;
 										}
@@ -576,10 +638,17 @@ namespace DPath
 					Found=true;
 				}
 
+				// Se la ricerca nel nome non ha dato risultati non è neccessario proseguire
+				if (!Found) {
+					continue;
+				}
+
 				if (ExtContentList != nullptr) {
 					if (ExtContentList->size() > 0) {
 						// Cerca il pattern nell'estensione
+						std::string CurrExt=CurrPath.extension().string();
 						if (FindAll) {
+							// Cerca tutte le ricorrenze
 							// Found rimane true solo se vengono trovati tutti i pattern
 							for (std::string ExtContent : *ExtContentList) {
 								DString::RemoveChars(ExtContent,"*");
@@ -587,25 +656,25 @@ namespace DPath
 								if (NameWholeWord) {
 									// Ricerca parola intera
 									if (CaseSensitive) {
-										if (CurrPath.stem() != ExtContent) {
+										if (CurrExt != ExtContent) {
 											Found=false;
 										}
 									}
 									else {
-										if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),ExtContent)) {
+										if (!DTools::DString::CmpNoCase(CurrExt,ExtContent)) {
 											Found=false;
 										}
 									}
 								}
 								else {
-									// Ricerca all'interno del nome file
+									// Ricerca contenuto
 									if (CaseSensitive) {
-										if (CurrPath.stem().string().find(ExtContent) == std::string::npos) {
+										if (CurrExt.find(ExtContent) == std::string::npos) {
 											Found=false;
 										}
 									}
 									else {
-										if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(ExtContent)) == std::string::npos) {
+										if (DTools::DString::ToUpperCopy(CurrExt).find(DTools::DString::ToUpperCopy(ExtContent)) == std::string::npos) {
 											Found=false;
 										}
 									}
@@ -613,9 +682,9 @@ namespace DPath
 							}
 						}
 						else {
-							Found=false;
+							// Cerca almeno una ricorrenza
 							// Found diventa true al primo match
-							std::string CurrExt=CurrPath.extension().string();
+							Found=false;
 							DTools::DString::RemoveChars(CurrExt,".");
 							for (std::string ExtContent : *ExtContentList) {
 								DTools::DString::RemoveChars(ExtContent,"*");
@@ -638,15 +707,15 @@ namespace DPath
 								else {
 									// Ricerca all'interno dell'estensione
 									if (CaseSensitive) {
-										if (ExtContent.find(CurrExt) != std::string::npos) {
-											DEBUG_PRINT("Found Case: "+CurrPath.string()+" ext="+CurrExt+" in "+ExtContent);
+										if (CurrExt.find(ExtContent) != std::string::npos) {
+											//DEBUG_PRINT("Found Case: "+CurrPath.string()+" ext="+CurrExt+" in "+ExtContent);
 											Found=true;
 											break;
 										}
 									}
 									else {
-										if (DTools::DString::ToUpperCopy(ExtContent).find(DTools::DString::ToUpperCopy(CurrExt)) != std::string::npos) {
-											DEBUG_PRINT("Found No Case: "+CurrPath.string()+" ext="+CurrExt+" in "+ExtContent);
+										if (DTools::DString::ToUpperCopy(CurrExt).find(DTools::DString::ToUpperCopy(ExtContent)) != std::string::npos) {
+											//DEBUG_PRINT("Found No Case: "+CurrPath.string()+" ext="+CurrExt+" in "+ExtContent);
 											Found=true;
 											break;
 										}
@@ -676,7 +745,7 @@ namespace DPath
 				}
 			}
 		}
-		DEBUG_PRINT("Ritorno da "+PathToScan.string()+" : "+std::to_string(Tot));
+		//DEBUG_PRINT("Ritorno da "+PathToScan.string()+" : "+std::to_string(Tot));
 		return(Tot);
 	}
 
@@ -692,11 +761,12 @@ namespace DPath
 	* @param ExtContent		->	Stringa di ricerca per l'estensione, vuota equilave a tutto.
 	* @param ExtWholeWord	->	Se true confronta la ricerca con l'intera estensione.
 	* @param CaseSensitive	->	Se true tiene conto di maiuscole e minuscole.
+	* @param StopRequest		->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	*
 	* @return il numero di directory trovate, -1 in caso di errore.
 	* N.B. @ref Result non viene pulita qindi s non è vuoa  risultati vengono aggiunti.
 	**/
-	int ListDirs(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive) {
+	int ListDirs(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive, bool *StopRequest) {
 		std::vector<std::string> NameContentList;
 		std::vector<std::string> ExtContentList;
 		if (!NameContent.empty()) {
@@ -705,7 +775,7 @@ namespace DPath
 		if (!ExtContent.empty()) {
 			ExtContentList.push_back(ExtContent);
 		}
-		return(ListDirs(Result,PathToScan,Recoursive,&NameContentList,NameWholeWord,&ExtContentList,ExtWholeWord,CaseSensitive,false));
+		return(ListDirs(Result,PathToScan,Recoursive,&NameContentList,NameWholeWord,&ExtContentList,ExtWholeWord,CaseSensitive,false,StopRequest));
 	}
 
 	//! Conta le cartelle all'interno di una cartella
@@ -719,35 +789,38 @@ namespace DPath
 	* @param ExtWholeWord		->	Se true confronta la ricerca con l'intera estensione.
 	* @param FindAll			->	Se true esegue una ricerca di tipo AND: tutte le stringhe di @ref NameContent e @ExtContent devono essere trovate in ogni nome ed estensione.
 	*								Se false esegue una ricerca di tipo OR: basta che una delle stringhe di @ref NameContent e @ExtContent venga trovata in ogni nome ed estensione.
+	* @param StopRequest		->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	*
 	* @return il numero di directory trovate, -1 in caso di errore.
 	**/
-	int CountDirs(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll) {
-		return(ListDirs(nullptr,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll));
+	int CountDirs(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool *StopRequest) {
+		return(ListDirs(nullptr,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest));
 	}
 
 	//! Conta le cartelle all'interno di una cartella.
 	/**
-	* @param PathToScan	->	Directory di partenza.
-	* @param NameConent	->	Stringa di ricerca per il nome, vuota equilave a tutto.
-	* @param ExtContent	->	Stringa di ricerca per l'estensione, vuota equilave a tutto.
-	* @param Recoursive	->	Se true va in ricorsione.
+	* @param PathToScan		->	Directory di partenza.
+	* @param NameConent		->	Stringa di ricerca per il nome, vuota equilave a tutto.
+	* @param ExtContent		->	Stringa di ricerca per l'estensione, vuota equilave a tutto.
+	* @param Recoursive		->	Se true va in ricorsione.
+	* @param StopRequest	->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	*
 	* @return il numero di directory trovate, -1 in caso di errore.
 	**/
-	int CountDirs(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive) {
-		return(ListDirs(nullptr,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensitive));
+	int CountDirs(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive, bool *StopRequest) {
+		return(ListDirs(nullptr,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensitive,StopRequest));
 	}
 
 	//! Conta tutte le cartelle all'interno di una cartella.
 	/**
-	* @param PathToScan	->	Directory di partenza.
-	* @param Recoursive	->	Se true va in ricorsione.
+	* @param PathToScan		->	Directory di partenza.
+	* @param Recoursive		->	Se true va in ricorsione.
+	* @param StopRequest	->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	*
 	* @return il numero di directory trovate, -1 in caso di errore.
 	**/
-	int CountDirs(fs::path PathToScan, bool Recoursive) {
-		return(ListDirs(nullptr,PathToScan,Recoursive,nullptr,false,nullptr,false,false,false));
+	int CountDirs(fs::path PathToScan, bool Recoursive, bool *StopRequest) {
+		return(ListDirs(nullptr,PathToScan,Recoursive,nullptr,false,nullptr,false,false,false,StopRequest));
 	}
 
 	//! Cerca tutti i files all'interno di una cartella.
@@ -766,11 +839,13 @@ namespace DPath
 	* @param CaseSensitive		->	Se true tiene conto di maiuscole e minuscole.
 	* @param FindAll			->	Se true esegue una ricerca di tipo AND: tutte le stringhe di @ref NameContent e @ExtContent devono essere trovate in ogni nome ed estensione.
 	*								Se false esegue una ricerca di tipo OR: basta che una delle stringhe di @ref NameContent e @ExtContent venga trovata in ogni nome ed estensione.
+	* @param StopRequest		->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	*
 	* @return il numero di files trovati, -1 in caso di errore.
-	* N.B. @ref Result non viene pulita quindi se non è vuota  risultati vengono aggiunti.
+	* NameContentList e ExtConentList sono sempre legati da una corrispondenza AND quindi: se entrambi hanno contenuto, entrambi devono essere trovati
+	* N.B. @ref Result non viene pulita quindi se non è vuota i risultati vengono aggiunti.
 	**/
-	int ListFiles(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll) {
+	int ListFiles(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool *StopRequest) {
 		err::error_code ec;
 		unsigned int Tot=0;
 		//DEBUG_PRINT("ListFiles in "+PathToScan.string()+" Recoursive="+std::to_string(Recoursive)+" CaseSensitive="+std::to_string(CaseSensitive));
@@ -782,11 +857,17 @@ namespace DPath
 		}
 
 		for (fs::directory_iterator iterator(PathToScan); iterator != fs::directory_iterator(); ++iterator) {
+			if (StopRequest) {
+				if (*StopRequest) {
+					//Log("Stop requested");
+					break;
+				}
+			}
 			if (fs::is_directory(iterator->status())) {
 				if (Recoursive) {
 					// In ricorsione
 					//DEBUG_PRINT("Ricorsione su "+iterator->path().string());
-					Tot+=ListFiles(Result,iterator->path(),Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll);
+					Tot+=ListFiles(Result,iterator->path(),Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest);
 				}
 			}
 			else {
@@ -796,7 +877,9 @@ namespace DPath
 				if (NameContentList != nullptr) {
 					if (NameContentList->size() > 0) {
 						// Ricerca patterns all'interno del nome
+						std::string CurrName=CurrPath.stem().string();
 						if (FindAll) {
+							// Cerca tutte le ricorrenze
 							// Found rimane true solo se vengono trovati tutti i pattern
 							Found=true;
 							for (std::string NameContent : *NameContentList) {
@@ -805,25 +888,25 @@ namespace DPath
 								if (NameWholeWord) {
 									// Ricerca parola intera
 									if (CaseSensitive) {
-										if (CurrPath.stem() != NameContent) {
+										if (CurrName != NameContent) {
 											Found=false;
 										}
 									}
 									else {
-										if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),NameContent)) {
+										if (!DTools::DString::CmpNoCase(CurrName,NameContent)) {
 											Found=false;
 										}
 									}
 								}
 								else {
-									// Ricerca all'interno del nome file
+									// Ricerca contenuto
 									if (CaseSensitive) {
-										if (CurrPath.stem().string().find(NameContent) == std::string::npos) {
+										if (CurrName.find(NameContent) == std::string::npos) {
 											Found=false;
 										}
 									}
 									else {
-										if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(NameContent)) == std::string::npos) {
+										if (DTools::DString::ToUpperCopy(CurrName).find(DTools::DString::ToUpperCopy(NameContent)) == std::string::npos) {
 											Found=false;
 										}
 									}
@@ -831,9 +914,9 @@ namespace DPath
 							}
 						}
 						else {
-							Found=false;
+							// Cerca almeno una ricorrenza
 							// Found diventa true al primo match
-							std::string CurrName=CurrPath.stem().string();
+							Found=false;
 							for (std::string NameContent : *NameContentList) {
 								DString::RemoveChars(NameContent,"*");
 								DString::RemoveChars(NameContent,".");
@@ -853,7 +936,7 @@ namespace DPath
 									}
 								}
 								else {
-									// Ricerca all'interno dell'estensione
+									// Ricerca contenuto
 									if (CaseSensitive) {
 										if (NameContent.find(CurrName) != std::string::npos) {
 											Found=true;
@@ -880,10 +963,19 @@ namespace DPath
 					Found=true;
 				}
 
+				// Se la ricerca nel nome non ha dato risultati non è neccessario proseguire
+				if (!Found) {
+					continue;
+				}
+
+				//DEBUG_PRINT(CurrPath.stem().string());
+
 				if (ExtContentList != nullptr) {
 					if (ExtContentList->size() > 0) {
 						// Cerca il pattern nell'estensione
+						std::string CurrExt=GetExt(CurrPath);
 						if (FindAll) {
+							// Cerca tutte le ricorrenze
 							// Found rimane true solo se vengono trovati tutti i pattern
 							for (std::string ExtContent : *ExtContentList) {
 								DString::RemoveChars(ExtContent,"*");
@@ -891,25 +983,25 @@ namespace DPath
 								if (NameWholeWord) {
 									// Ricerca parola intera
 									if (CaseSensitive) {
-										if (CurrPath.stem() != ExtContent) {
+										if (CurrExt != ExtContent) {
 											Found=false;
 										}
 									}
 									else {
-										if (!DTools::DString::CmpNoCase(CurrPath.stem().string(),ExtContent)) {
+										if (!DTools::DString::CmpNoCase(CurrExt,ExtContent)) {
 											Found=false;
 										}
 									}
 								}
 								else {
-									// Ricerca all'interno del nome file
+									// Ricerca contenuto
 									if (CaseSensitive) {
-										if (CurrPath.stem().string().find(ExtContent) == std::string::npos) {
+										if (CurrExt.find(ExtContent) == std::string::npos) {
 											Found=false;
 										}
 									}
 									else {
-										if (DTools::DString::ToUpperCopy(CurrPath.stem().string()).find(DTools::DString::ToUpperCopy(ExtContent)) == std::string::npos) {
+										if (DTools::DString::ToUpperCopy(CurrExt).find(DTools::DString::ToUpperCopy(ExtContent)) == std::string::npos) {
 											Found=false;
 										}
 									}
@@ -917,10 +1009,9 @@ namespace DPath
 							}
 						}
 						else {
-							Found=false;
+							// Cerca almeno una ricorrenza
 							// Found diventa true al primo match
-							std::string CurrExt=CurrPath.extension().string();
-							DTools::DString::RemoveChars(CurrExt,".");
+							Found=false;
 							for (std::string ExtContent : *ExtContentList) {
 								DTools::DString::RemoveChars(ExtContent,"*");
 								DTools::DString::RemoveChars(ExtContent,".");
@@ -940,7 +1031,7 @@ namespace DPath
 									}
 								}
 								else {
-									// Ricerca all'interno dell'estensione
+									// Ricerca contenuto
 									if (CaseSensitive) {
 										if (ExtContent.find(CurrExt) != std::string::npos) {
 											Found=true;
@@ -948,8 +1039,7 @@ namespace DPath
 										}
 									}
 									else {
-										if (DTools::DString::ToUpperCopy(ExtContent).find(DTools::DString::ToUpperCopy(CurrExt)) != std::string::npos) {
-											//DEBUG_PRINT("Found : "+CurrPath.string()+" ext="+CurrExt+" in "+ExtContent);
+										if (DTools::DString::ToUpperCopy(CurrExt).find(DTools::DString::ToUpperCopy(ExtContent)) != std::string::npos) {
 											Found=true;
 											break;
 										}
@@ -994,11 +1084,12 @@ namespace DPath
 	* @param NameWholeWord	->	Se true confronta la ricerca con l'intero nome.
 	* @param ExtContent		->	Stringa di ricerca per l'estensione, vuota equilave a tutto.
 	* @param ExtWholeWord	->	Se true confronta la ricerca con l'intera estensione.
+	* @param StopRequest		->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	*
 	* @return il numero di files trovati, -1 in caso di errore.
 	* N.B. @ref Result non viene pulita quindi se non è vuota i risultati vengono aggiunti.
 	**/
-	int ListFiles(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive) {
+	int ListFiles(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive, bool *StopRequest) {
 		std::vector<std::string> NameContentList;
 		std::vector<std::string> ExtContentList;
 		if (!NameContent.empty()) {
@@ -1007,7 +1098,7 @@ namespace DPath
 		if (!ExtContent.empty()) {
 			ExtContentList.push_back(ExtContent);
 		}
-		return(ListFiles(Result,PathToScan,Recoursive,&NameContentList,NameWholeWord,&ExtContentList,ExtWholeWord,CaseSensitive,false));
+		return(ListFiles(Result,PathToScan,Recoursive,&NameContentList,NameWholeWord,&ExtContentList,ExtWholeWord,CaseSensitive,false,StopRequest));
 	}
 
 	//! Conta i files all'interno di una cartella
@@ -1024,11 +1115,12 @@ namespace DPath
 	* @param ExtWholeWord		->	Se true confronta la ricerca con l'intera estensione (Ignorato se @ref ExtContentList contiene più di una stringa).
 	* @param FindAll			->	Se true esegue una ricerca di tipo AND: tutte le stringhe di @ref NameContent e @ExtContent devono essere trovate in ogni nome ed estensione.
 	*								Se false esegue una ricerca di tipo OR: basta che una delle stringhe di @ref NameContent e @ExtContent venga trovata in ogni nome ed estensione.
+	* @param StopRequest		->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	*
 	* @return il numero di files trovati, -1 in caso di errore.
 	**/
-	int CountFiles(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll) {
-		return(ListFiles(nullptr,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll));
+	int CountFiles(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool *StopRequest) {
+		return(ListFiles(nullptr,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest));
 	}
 
 	//! Conta i files all'interno di una cartella
@@ -1045,21 +1137,22 @@ namespace DPath
 	*
 	* @return il numero di files trovati, -1 in caso di errore
 	**/
-	int CountFiles(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensistive) {
-		return(ListFiles(nullptr,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensistive));
+	int CountFiles(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensistive, bool *StopRequest) {
+		return(ListFiles(nullptr,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensistive,StopRequest));
 	}
 
 	//! Conta tutti i files all'interno di una cartella
 	/**
 	* Ricerca tramite una stringa per nome e una stringa per l'estensione.
 	*
-	* @param PathToScan	->	Directory di partenza.
-	* @param Recoursive	->	Se true va in ricorsione.
+	* @param PathToScan		->	Directory di partenza.
+	* @param Recoursive		->	Se true va in ricorsione.
+	* @param StopRequest	->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	*
 	* @return il numero di files trovati, -1 in caso di errore.
 	**/
-	int CountFiles(fs::path PathToScan, bool Recoursive) {
-		return(ListFiles(nullptr,PathToScan,Recoursive,nullptr,false,nullptr,false,false,false));
+	int CountFiles(fs::path PathToScan, bool Recoursive, bool *StopRequest) {
+		return(ListFiles(nullptr,PathToScan,Recoursive,nullptr,false,nullptr,false,false,false,StopRequest));
 	}
 
 	//! Elimina files all'interno di una cartella
@@ -1077,19 +1170,20 @@ namespace DPath
 	* @param CaseSensitive		->	Se true tiene conto di maiuscole e minuscole
 	* @param FindAll			->	Se true esegue una ricerca di tipo AND: tutte le stringhe di @ref NameContent e @ExtContent devono essere trovate in ogni nome ed estensione
 	*								Se false esegue una ricerca di tipo OR: basta che una delle stringhe di @ref NameContent e @ExtContent venga trovata in ogni nome ed estensione
+	* @param StopRequest		->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	*
 	* @return il numero di files eliminat, -1 in caso di errore
 	**/
-	int DeleteFiles(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll) {
+	int DeleteFiles(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool *StopRequest) {
 		std::vector<fs::path> Result;
-		int nFiles=ListFiles(&Result,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll);
+		int nFiles=ListFiles(&Result,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest);
 		if (nFiles == -1) {
 			return(-1);
 		}
 
 		int nDeleted=0;
 		err::error_code ec;
-		for (fs::path Filename : Result) {
+		for (fs::path& Filename : Result) {
 			fs::remove(Filename,ec);
 			if (ec.value() == 0) {
 				nDeleted++;
@@ -1099,32 +1193,34 @@ namespace DPath
 		return(nDeleted);
 	}
 
-	//! Elimina files all'interno di una cartella
+	//! Elimina files (e solo i files) all'interno di una cartella
 	/**
 	* Ricerca tramite una stringa per nome e una stringa per l'estensione
 	*
-	* @param PathToScan	->	Directory di partenza
-	* @param Recoursive		->	Se true va in ricorsione (solo se non è un ordine Prodig)
-	* @param NameContent	->	Stringa di ricerca per il nome, vuota equilave a tutto
-	* @param NameWholeWord	->	Se true confronta la ricerca con l'intero nome
-	* @param ExtContent		->	Stringa di ricerca per l'estensione, vuota equilave a tutto
-	* @param ExtWholeWord	->	Se true confronta la ricerca con l'intera estensione
-	* @param CaseSensitive	->	Se true tiene conto di maiuscole e minuscole
+	* @param PathToScan		->	Directory di partenza
+	* @param Recoursive		->	Se true va in ricorsione (solo se non è un ordine Prodig).
+	* @param NameContent	->	Stringa di ricerca per il nome, vuota equilave a tutto.
+	* @param NameWholeWord	->	Se true confronta la ricerca con l'intero nome.
+	* @param ExtContent		->	Stringa di ricerca per l'estensione, vuota equilave a tutto.
+	* @param ExtWholeWord	->	Se true confronta la ricerca con l'intera estensione.
+	* @param CaseSensitive	->	Se true tiene conto di maiuscole e minuscole.
+	* @param StopRequest	->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	*
 	* @return il numero di files eliminati, -1 in caso di errore
 	**/
-	int DeleteFiles(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive) {
+	int DeleteFiles(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive, bool *StopRequest) {
 		std::vector<fs::path> Result;
-		int nFiles=ListFiles(&Result,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensitive);
+		int nFiles=ListFiles(&Result,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensitive,StopRequest);
 		if (nFiles == -1) {
 			return(-1);
 		}
+		DEBUG_PRINT("Found " << Result.size() << " files to remove");
 
 		int nDeleted=0;
 		err::error_code ec;
-		for (fs::path Filename : Result) {
+		for (fs::path& Filename : Result) {
 			fs::remove(Filename,ec);
-			if (ec.value() == 0) {
+			if (!ec) {
 				nDeleted++;
 			}
 		}
@@ -1132,28 +1228,30 @@ namespace DPath
 		return(nDeleted);
 	}
 
-	//! Elimina tutti i files all'interno di una cartella
+	//! Elimina tutti i files (e solo i files) all'interno di una cartella
 	/**
 	* Ricerca tramite una stringa per nome e una stringa per l'estensione
 	*
-	* @param PathToScan	->	Directory di partenza.
-	* @param Recoursive	->	Se true va in ricorsione.
+	* @param PathToScan		->	Directory di partenza.
+	* @param Recoursive		->	Se true va in ricorsione.
+	* @param StopRequest	->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	* N.B. In ricorsione vengono eliminati solo i files, non le cartelle.
 	*
 	* @return il numero di files eliminati, -1 in caso di errore
 	**/
-	int DeleteFiles(fs::path PathToScan, bool Recoursive) {
+	int DeleteFiles(fs::path PathToScan, bool Recoursive, bool *StopRequest) {
 		std::vector<fs::path> Result;
-		int nFiles=ListFiles(nullptr,PathToScan,Recoursive,nullptr,false,nullptr,false,false,false);
+		int nFiles=ListFiles(&Result,PathToScan,Recoursive,nullptr,false,nullptr,false,false,false,StopRequest);
 		if (nFiles == -1) {
 			return(-1);
 		}
+		DEBUG_PRINT("Found " << Result.size() << " files to remove");
 
 		int nDeleted=0;
 		err::error_code ec;
-		for (fs::path Filename : Result) {
+		for (fs::path& Filename : Result) {
 			fs::remove(Filename,ec);
-			if (ec.value() == 0) {
+			if (!ec) {
 				nDeleted++;
 			}
 		}
@@ -1171,7 +1269,8 @@ namespace DPath
 	bool Exists(fs::path Path) {
 		err::error_code ec;
 		// Try first normal way
-		bool Ret=fs::exists(Path,ec);
+		fs::file_status Status=fs::status(Path,ec);
+		bool Ret=fs::exists(Status);
 		if (Ret) {
 			return true;
 		}
@@ -1182,21 +1281,19 @@ namespace DPath
 	}
 
 	/**
-	 * @brief Wrapper for filesystem::is_directory.
-	 * This is a workaround, from gcc 8 and above filesystem::is_directory() return false on some linux samba share that are directory.
-	 * @param Path	->	Path to check.
+	 * @brief Checks to see if a directory/file exists (posix version).
+	 * @param path	->	Directory name string.
 	 * @return true if the path exists, otherwise false.
-	 * N.B. Exceptions will not be trown.
 	 */
-	bool IsDirectory(fs::path Path, err::error_code& ec) {
-		if (!fs::is_directory(Path,ec)) {
-			if (Exists(Path)) {
-				if (!fs::is_regular_file(Path,ec)) {
-					return true;
-				}
-			}
+	bool Exists_Posix(const char* const path) {
+		struct stat info;
+
+		int statRC=stat(path,&info);
+		if(statRC != 0 ) {
+			return false;
 		}
-		return false;
+
+		return ((info.st_mode & S_IFDIR) || (info.st_mode & S_IFREG)) ? true : false;
 	}
 
 	/**
@@ -1207,13 +1304,19 @@ namespace DPath
 	 * N.B. Exceptions will be trown is error occours.
 	 */
 	bool IsDirectory(fs::path Path) {
-		if (!fs::is_directory(Path)) {
-			if (Exists(Path)) {
-				if (!fs::is_regular_file(Path)) {
-					return true;
-				}
+		err::error_code ec;
+		fs::file_status Status=fs::status(Path,ec);
+		if (fs::is_directory(Status)) {
+			return true;
+		}
+
+		// Aternative way
+		if (fs::exists(Status)) {
+			if (!fs::is_regular_file(Status)) {
+				return true;
 			}
 		}
+
 		return false;
 	}
 

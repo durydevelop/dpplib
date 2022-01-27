@@ -1,5 +1,6 @@
 #include "libdpp/DShell.h"
 #include "libdpp/DCsv.h"
+#include "libdpp/DString.h"
 
 #ifdef __linux__
     #include <spawn.h>
@@ -35,7 +36,9 @@ namespace DShell
             exec_info.hwnd = NULL;
             exec_info.lpVerb = NULL;
             exec_info.lpFile = Filename.c_str();
+            //exec_info.lpFile = DString::StrToWideStr(Filename).c_str();
             exec_info.lpParameters = Args.c_str();
+            //exec_info.lpParameters = DString::StrToWideStr(Args).c_str();
             exec_info.lpDirectory = NULL;
 
             return(ShellExecuteEx(&exec_info));

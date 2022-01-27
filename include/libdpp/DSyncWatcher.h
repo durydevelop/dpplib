@@ -17,7 +17,7 @@ namespace DTools
             ~DSyncWatcher();
             void SetInterval(size_t MSec);
             size_t GetSyncCount(void);
-            void Check(void);
+            DSyncFile::DSyncStatus Check(void);
             bool Start(void);
             void Stop(void);
             bool StopAndWait(size_t TimeoutMSec = 0);

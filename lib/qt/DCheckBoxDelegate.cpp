@@ -44,18 +44,26 @@ void DCheckBoxDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opt
         QStyleOptionButton checkBoxStyleOption;
         checkBoxStyleOption.rect=CheckBoxRect(option);
 
-        // Checked status
+        // Checked role
         bool checked=index.model()->data(index,Qt::EditRole).toBool();
         checkBoxStyleOption.state|=checked? QStyle::State_On : QStyle::State_Off;
 
-        // Enabled status
+        // Enabled role
         bool enabled=true; //default
         if (index.model()->data(index,ROLE_ENABLE).isValid()) {
             // Custom role for enable/disable. If is set use it
             enabled=index.model()->data(index,ROLE_ENABLE).toBool();
         }
+
         if (enabled) {
             checkBoxStyleOption.state|=QStyle::State_Enabled;
+        }
+
+        // Visible role
+        bool visible=true; //default
+        if (index.model()->data(index,ROLE_VISIBLE).isValid()) {
+            // Custom role for enable/disable. If is set use it
+            visible=index.model()->data(index,ROLE_VISIBLE).toBool();
         }
 
         // BackgroundBrush color
@@ -69,7 +77,9 @@ void DCheckBoxDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opt
         }
 
         // Draw control
-        QApplication::style()->drawControl(QStyle::CE_CheckBox,&checkBoxStyleOption,painter);
+        if (visible) {
+            QApplication::style()->drawControl(QStyle::CE_CheckBox,&checkBoxStyleOption,painter);
+        }
     }
     else {
         QStyledItemDelegate::paint(painter,option,index);

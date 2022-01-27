@@ -24,8 +24,9 @@ void DProgressDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opt
     // Set up a QStyleOptionProgressBar to precisely mimic the
     // environment of a progress bar.
     QStyleOptionProgressBar progressBarOption;
+    progressBarOption.bottomToTop=false;
     progressBarOption.state=QStyle::State_Enabled;
-    progressBarOption.direction=QApplication::layoutDirection();
+    //progressBarOption.direction=QApplication::layoutDirection();
     progressBarOption.rect=option.rect;
     progressBarOption.fontMetrics=QFontMetrics(QApplication::font());
     progressBarOption.minimum=0;
