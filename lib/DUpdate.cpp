@@ -22,6 +22,11 @@ namespace pt=boost::property_tree;
 #define PARAM_REPO_AUTH         "Authenticate"
 #define PARAM_REPO_USER         "User"
 #define PARAM_REPO_PWD          "Pwd"
+#define PARAM_REPLACE_LIST      "ReplaceList"
+#define PARAM_ACTION            "Action"
+
+#define VALUE_SET_JSON_VALUE    "SET JSON VALUE"
+#define VALUE_REPLACE_TEXT      "REPLACE TEXT"
 
 #define PARAM_APP_NAME          "AppName"
 #define PARAM_UPGRADE_VERSION   "Version"
@@ -323,7 +328,8 @@ namespace DTools
                     Log("Cannot create file " FILENAME_JUST_UPDATE);
                 }
 
-                std::string MainExecutable=UpdateData->ReadDotString(SECTION_UPGRADE_INFO,PARAM_MAIN_EXE,"");
+                // Use an alternative translator due to the dot in filename
+                std::string MainExecutable=UpdateData->ReadString(SECTION_UPGRADE_INFO,PARAM_MAIN_EXE,"",'/');
                 Log("Start main exe "+MainExecutable);
                 if (DShell::ExecuteDetached(MainExecutable.c_str())) {
                     Log("Done");
@@ -353,6 +359,16 @@ namespace DTools
         }
         else if (DTools::DPath::Exists(fs::current_path() / FILENAME_UPDATER_EXE)) {
             Log("Detected " FILENAME_UPDATER_EXE " wihout " FILENAME_JUST_UPDATE " : something was wrong during last update");
+            Log("Try to clean");
+            err::error_code ec;
+            fs::remove(fs::current_path() / FILENAME_UPDATER_EXE, ec);
+            if (ec) {
+                Log("ERROR "+ec.message());
+            }
+            fs::remove(fs::current_path() / FILENAME_JUST_UPDATE, ec);
+            if (ec) {
+                Log("ERROR "+ec.message());
+            }
             Ready=false;
         }
     }
@@ -388,13 +404,13 @@ namespace DTools
         // Default updater executable is myseflf
         fs::path FromFilename=DPath::GetExeFilename();
 
-        // Check if MainExe has been downloaded
-        std::string MainExe=UpdateData->ReadDotString(SECTION_UPGRADE_INFO,PARAM_MAIN_EXE,"");
+        // Check if MainExe is in downloaded files
+        std::string MainExe=UpdateData->ReadString(SECTION_UPGRADE_INFO,PARAM_MAIN_EXE,"",'/');
         std::vector<std::string> Files;
-        std::string FilesNodeName=SECTION_FILES "." SECTION_REPLACE;
-        UpdateData->ReadItemNames(FilesNodeName,Files);
+        std::string FilesNodeName=SECTION_FILES "/" SECTION_REPLACE;
+        UpdateData->ReadItemNames(FilesNodeName,Files,'/');
         for (std::string& Source : Files) {
-            std::string Dest=UpdateData->ReadDotString(FilesNodeName,Source,"");
+            std::string Dest=UpdateData->ReadString(FilesNodeName,Source,"",'/');
             bool IsMainExe=false;
             #ifdef _WIN32
                 IsMainExe=DString::CmpNoCase(MainExe,Dest);
@@ -515,10 +531,10 @@ namespace DTools
                 // TODO
             }
 
-            // Read replace files list
+            // Read "replace files" list
             std::vector<std::string> Files;
-            std::string NodeName=SECTION_FILES "." SECTION_REPLACE;
-            UpdateData->ReadItemNames(NodeName,Files);
+            std::string NodeName=SECTION_FILES "/" SECTION_REPLACE;
+            UpdateData->ReadItemNames(NodeName,Files,'/');
             for (std::string& Source : Files) {
                 // Make filenames
                 fs::path SourceFilename=fs::path(dRepository.MainUri) / dRepository.SubUri / Source;
@@ -556,18 +572,22 @@ namespace DTools
     }
 
     /**
-     * @brief Apply download update files: backup files to udate, than replace them or modify them (as written in update file).
+     * @brief Apply download update files: backup files to udate, than replace or modify them (as written in update file).
      * @return true on succeed otherwise false (use GelLastStatus() to retrive error text).
      */
-    bool DUpdate::ApplyUpdate(void) {
+    bool DUpdate::ApplyUpdate(bool CleanAfter) {
         if (!Ready) return false;
-        // Read files list
         std::vector<std::string> Files;
-        std::string NodeName=SECTION_FILES "." SECTION_REPLACE;
-        UpdateData->ReadItemNames(NodeName,Files);
+
+        // **** "Replace" section ****
+        Log("Begin replacing files");
+        // Read files list
+        std::string NodeName=SECTION_FILES "/" SECTION_REPLACE;
+        UpdateData->ReadItemNames(NodeName,Files,'/');
         for (std::string& Source : Files) {
+            Log(Source);
             // Dest file name (real name)
-            std::string RealName=UpdateData->ReadDotString(NodeName,Source,"");
+            std::string RealName=UpdateData->ReadString(NodeName,Source,"",'/');
             // Source filename (downloaded one)
             fs::path SourceFilename=UpdateTempDir / Source;
             if (!DTools::DPath::Exists(SourceFilename)) {
@@ -612,16 +632,103 @@ namespace DTools
             Log("Done "+LogMsg);
         }
 
-        Log("Clean update folder "+UpdateTempDir.string());
-        int nDeleted=DPath::DeleteFiles(UpdateTempDir,false,nullptr);
-        if (nDeleted == -1) {
-            Log("Cannot delete temporary udate files");
+        if (Files.empty()) {
+            Log("No files to replace");
         }
         else {
-            Log("Cleaned "+std::to_string(nDeleted)+" files");
+            Log(std::to_string(Files.size())+" file/s replaced");
+        }
+
+        // **** "Modify" section ****
+        Log("Begin modifying files");
+        // Read files list
+        // Use '/' translator because in tree there is dot in filename
+        NodeName=SECTION_FILES "/" SECTION_MODIFY;
+        UpdateData->ReadItemNames(NodeName,Files,'/');
+        for (std::string& Name : Files) {
+            fs::path Filename=fs::current_path() / Name;
+            if (!DTools::DPath::Exists(Filename)) {
+                Log("Error: "+Filename.string()+" does not exists");
+                return false;
+            }
+            Log("Processing "+Name);
+            // Replace dots in file name
+            //std::replace(Name.begin(),Name.end(),'.','_');
+            // Get Action
+            std::string Action=UpdateData->ReadString(NodeName+"/"+Name,PARAM_ACTION,"",'/');
+            if (Action == VALUE_REPLACE_TEXT) {
+                std::vector<std::string> TextList;
+                bool CaseSensistive=UpdateData->ReadBool(NodeName+"/"+Name,PARAM_CASE_SENSITIVE,false,'/');
+                UpdateData->ReadItemNames(NodeName+"/"+Name+"/"+SECTION_LIST,TextList,'/');
+                std::map<std::string,std::string> ReplaceList;
+                for (std::string& TextToReplace : TextList) {
+                    std::string ReplacedText=UpdateData->ReadString(NodeName+"/"+Name+"/"+SECTION_LIST,TextToReplace,"",'/');
+                    ReplaceList.emplace(std::make_pair(TextToReplace,ReplacedText));
+                }
+                // Replace text in file
+            }
+            else if (Action == VALUE_SET_JSON_VALUE) {
+                DTools::DPreferences Json(Filename.string());
+                if (!Json.IsReady()) {
+                    Log("Error: "+Json.GetLastStatus());
+                    return false;
+                }
+                std::vector<std::string> DottedKeyList;
+                std::string ListNodeName=NodeName+"/"+Name+"/"+SECTION_LIST;
+                UpdateData->ReadItemNames(ListNodeName,DottedKeyList,'/');
+                // Each key in List section is in dot separated format
+                // like "Settings.General.Path"
+                for (std::string& DottedKey : DottedKeyList) {
+                    // Read value of DottedKey from UpdateData (using '/' as translator)
+                    std::string Value=UpdateData->ReadString(ListNodeName,DottedKey,"",'/');
+                    if (Value.empty()) {
+                        Log("Key \""+DottedKey+"\" is empty");
+                    }
+                    // Write Dotted to dest Json (using '.' Translator)
+                    if (!Json.WriteString(DottedKey,Value)) {
+                        Log("Error: "+Json.GetLastStatus());
+                        Log("Skip file");
+                        continue;
+                    }
+                    Log("Done replace key \""+DottedKey+"\" as \""+Value+"\"");
+                }
+
+                if (!Json.Save()) {
+                    Log("Save error: "+Json.GetLastStatus());
+                    return false;
+                }
+            }
+            else {
+                Log("Action <"+Action+"> unkown");
+                return false;
+            }
+            Log("Done");
+        }
+
+        if (Files.empty()) {
+            Log("No files to modify");
+        }
+        else {
+            Log(std::to_string(Files.size())+" file/s modified");
+        }
+
+        if (CleanAfter) {
+            Log("Clean update folder "+UpdateTempDir.string());
+            int nDeleted=DPath::DeleteFiles(UpdateTempDir,false,nullptr);
+            if (nDeleted == -1) {
+                Log("Cannot delete temporary udate files");
+            }
+            else {
+                Log("Cleaned "+std::to_string(nDeleted)+" files");
+            }
         }
 
         return true;
+    }
+
+    void DUpdate::TestUpdater(void) {
+        ParseLocalRepoInfoFile();
+        ApplyUpdate(false);
     }
 
     // ******************************  Callback stuffs ***************************************

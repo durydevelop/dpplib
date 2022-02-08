@@ -33,6 +33,7 @@ namespace DTools
             void DoUpgrade(void);
             void SendFiles(std::vector<std::string> FilesList, std::string DestRepoSubPath);
             std::string GetLastStatus(void);
+            void TestUpdater(void);
 
         private:
             typedef struct _DRepository{
@@ -61,7 +62,7 @@ namespace DTools
             bool DownloadRemoteInfoFile(void);
             bool ParseLocalRepoInfoFile(void);
             bool DownloadFiles(void);
-            bool ApplyUpdate(void);
+            bool ApplyUpdate(bool CleanAfter = true);
 
             // Logging stuffs
             std::string LastStrStatus;

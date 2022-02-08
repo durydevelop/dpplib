@@ -6,7 +6,11 @@ DSplashScreen::DSplashScreen(QPixmap splashPixmap, bool showProgress) : DSplashS
 {
 }
 
-DSplashScreen::DSplashScreen(QScreen *screen, QPixmap splashPixmap, bool showProgress) : QSplashScreen(splashPixmap)
+#if QT_VERSION < QT_VERSION_CHECK(5,15,0)
+DSplashScreen::DSplashScreen(QScreen *screen, QPixmap splashPixmap, bool showProgress) : QSplashScreen(screen,splashPixmap)
+#else
+DSplashScreen::DSplashScreen(QScreen *screen, QPixmap splashPixmap, bool showProgress) : QSplashScreen(screen,splashPixmap)
+#endif
 {
     // Pixmap
     this->setPixmap(splashPixmap);

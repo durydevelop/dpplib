@@ -7,9 +7,7 @@ namespace DTools
 {
 namespace DError
 {
-
     class DErrorCode {
-
         public:
             enum DErrorCodeID { ERR_NOT_SET = -1, ERR_SUCCESS, ERR_WARNING, ERR_ERROR };
             DErrorCodeID ErrorCodeID;

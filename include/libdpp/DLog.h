@@ -8,6 +8,7 @@
 #include <iostream>
 #include <filesystem>
 #include <functional>
+#include <set>
 
 namespace DTools
 {
@@ -29,21 +30,27 @@ namespace DTools
     *
     *
     * \section futures_sec Futures
+    * -2 deep levels.
+    * -Storage files can be set for be kept by max size or by time period.
+    * -Errors are shown on stderr.
     *
     * \section todo_sec TODO
-    * _SetMaxFileSize()
-    * _SetTotMaxSize()
-    * _SetTotMaxTime()
+    * _Callback
     **/
+
+    namespace fs=std::filesystem;
+
     class DLog {
         public:
-            //! Log deep level
+            //! Log deep levels
             enum DLogLevel {PRINT_LEVEL_NORMAL, PRINT_LEVEL_DEEP};
             //! Output types
-            enum DOutputType {OUTPUT_INFO,OUTPUT_ERROR,OUTPUT_DEBUG,OUTPUT_WARNING};
+            enum DOutputType {OUTPUT_INFO, OUTPUT_ERROR, OUTPUT_DEBUG, OUTPUT_WARNING};
+            //! Storage modes
+            enum DStorageMode {STORAGE_MODE_SIZE, STORAGE_MODE_TIME};
 
-            bool LogToFile;
-            bool LogToStdout;
+            bool LogToFile;                 //! if true messages are written to file.
+            bool LogToStdout;               //! if true messages are written to stdout.
 
             /**
             * @brief Contructor
@@ -61,54 +68,32 @@ namespace DTools
                 Filename=LogFilename;
                 hFile=nullptr;
                 LogToFile=false;
+                LogToStdout=StdoutEnabled;
+                CurrFPos=0;
+                // Default storage mode
+                // Size mode, single file size 10 MB, total storage size 1 GB
+                SetStorageMode(STORAGE_MODE_SIZE,10,1000);
 
                 // Create parent dir if not exists
-                std::filesystem::path LogDir=std::filesystem::path(Filename).parent_path();
+                fs::path LogDir=fs::path(Filename).parent_path();
                 std::error_code ec;
-                std::filesystem::file_status Status=std::filesystem::status(LogDir,ec);
-                if (!std::filesystem::exists(Status)) {
-                    std::filesystem::create_directories(LogDir,ec);
+                fs::file_status Status=fs::status(LogDir,ec);
+                if (!fs::exists(Status)) {
+                    fs::create_directories(LogDir,ec);
                     if (ec) {
                         perror(("Log file <"+Filename+"> ERROR: "+ec.message()).c_str());
                         return;
                     }
                 }
 
-                // Open or create file
-                hFile=fopen(Filename.c_str(),"aw+");
-                if (hFile == nullptr) {
-                    perror("Log file not opened");
-                    LogToFile=false;
-                    LogToStdout=true; // se non posso loggare su file uso comunque lo stdout
-                }
-                else {
-                    LogToFile=true;
-                    LogToStdout=StdoutEnabled;
-                }
+                OpenLogFile();
             }
 
             //! Destructor
             ~DLog() {
                 if (hFile != nullptr) fclose(hFile);
             }
-/*
-            // TODO: testare: non funziona perché mentre leggo possono arrivare chiamate di log
-            //! Get all log content
-            std::string Read(void) {
-                fseek(hFile,0,SEEK_END);
-                size_t fSize=ftell(hFile);
-                //std::string Buff(fSize,' ');
-                std::unique_ptr<char[]> buff(new char[fSize]);
-                fseek(hFile,0,SEEK_SET);
-                size_t len=fread(buff.get(),fSize,1,hFile);
-                if (len != fSize) {
-                    e("File size %d is different from readed %d bytes",fSize,len);
-                }
-                fseek(hFile,0,SEEK_END);
 
-                return(std::string(buff.get()));
-            }
-*/
             template<typename ... Args>
             void d(const std::string& formatStr, Args ... args) {
                 size_t size = snprintf(nullptr,0,formatStr.c_str(),args ...)+1;
@@ -212,10 +197,185 @@ namespace DTools
                 }
             }
 
+            /**
+             * @brief Set files storage mode and parameters.
+             * 2 modes are avalilable:
+             *      -STORAGE_MODE_SIZE : when storage size exceed max size, oldest file is deleted.
+             *      -STORAGE_MODE_TIME : when oldest file in storage is exceed max numbers of days, is deleted.
+             * @param Mode          ->  One of DStorageMode enum.
+             *                          In STORAGE_MODE_SIZE ModeParam must be entire storage max size in MB.
+             *                          In STORAGE_MODE_TIME ModeParam must be max number of days to keep storage files.
+             * @param FileSizeMB    ->  Max file size in MB of each log file.
+             * @param ModeParam     ->  Total storage size in MB for STORAGE_MODE_SIZE, nubmer of days to keep for STORAGE_MODE_TIME.
+             */
+            void SetStorageMode(DStorageMode Mode, size_t FileSizeMB, size_t ModeParam) {
+                StorageMode=Mode;
+                // MB to B
+                StorageFileSize=FileSizeMB*1024*1024;
+                if (Mode == STORAGE_MODE_SIZE) {
+                    StorageModeParam=ModeParam*1024*1024;
+                }
+                else if (Mode == STORAGE_MODE_TIME) {
+                    StorageModeParam=ModeParam;
+                }
+            }
+
+            /**
+             * @brief Delete oldest file that exceed storage policy.
+             */
+            void DeleteOldestFile(void) {
+                std::set<fs::path> FilesList;
+                std::string LogExt=fs::path(Filename).extension().string();
+                std::string LogName=fs::path(Filename).stem().string();
+                fs::path LogDir=fs::path(Filename).parent_path();
+                for (fs::directory_iterator itr(LogDir); itr != fs::directory_iterator(); ++itr) {
+                    if (!fs::is_regular_file(itr->status())) {
+                        continue;
+                    }
+                    std::string CurrName=itr->path().stem().string();
+                    std::string CurrExt=itr->path().extension().string();
+                    // TODO cmp no case
+                    if (CurrExt == LogExt) {
+                        // ext match
+                        if (CurrName.find(LogName) != std::string::npos) {
+                            // name match
+                            if (CurrName.size() > LogName.size()) {
+                                // is not current one
+                                FilesList.insert(*itr);
+                            }
+                        }
+                    }
+                }
+
+                if (FilesList.empty()) {
+                    return;
+                }
+
+                if (StorageMode == STORAGE_MODE_SIZE) {
+                    // calculate storage size
+                    size_t TotSize=0;
+                    for (auto itr=FilesList.rbegin(); itr != FilesList.rend(); itr++) {
+                        TotSize+=fs::file_size(*itr);
+                        if (TotSize > StorageModeParam) {
+                            std::error_code ec;
+                            fs::remove(*itr,ec);
+                            if (ec) {
+                                std::string Err="DLogFile error deleting <"+(*itr).string()+"> "+ec.message();
+                                perror(Err.c_str());
+                            }
+                        }
+                    }
+                }
+                else if (StorageMode == STORAGE_MODE_TIME) {
+                    // find delete all files exceed max days
+                    for (auto& File : FilesList) {
+                        // get now as time_point
+                        std::chrono::system_clock::time_point now=std::chrono::system_clock::now();
+                        // get file_time of file
+                        fs::file_time_type fttime=fs::last_write_time(File);
+                        // convert to time_t
+                        auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(fttime - fs::file_time_type::clock::now() + std::chrono::system_clock::now());
+                        time_t ftimet=std::chrono::system_clock::to_time_t(sctp);
+                        // then in time_point
+                        std::chrono::system_clock::time_point tptime=std::chrono::system_clock::from_time_t(ftimet);
+                        // and make the difference as hours
+                        std::chrono::hours diff=std::chrono::duration_cast<std::chrono::hours>(now - tptime);
+
+                        if (diff.count() > StorageModeParam*24) {
+                            std::error_code ec;
+                            fs::remove(File,ec);
+                            if (ec) {
+                                std::string Err="DLogFile error deleting <"+File.string()+"> "+ec.message();
+                                perror(Err.c_str());
+                            }
+                        }
+                    }
+                }
+            }
+
+            /**
+             * @brief Check storage files for:
+             * -Deleting old files due to the storage policy.
+             * -Creating new file if current exceed size.
+             */
+            void CheckStorage(void) {
+                if (CurrFPos > StorageFileSize) {
+                    // Current log file side exceeded
+                    // Delete old ones
+                    DeleteOldestFile();
+
+                    // Rename current file
+                    if(!RenameFileAsNow()) {
+                        return;
+                    }
+
+                    // Create new one
+                    if (!OpenLogFile()) {
+                        return;
+                    }
+                }
+            }
+
+            /**
+             * @brief Open current log file, if doesn't exists, create a new one.
+             * @return true on success otherwise false.
+             */
+            bool OpenLogFile(void) {
+                // Open or create file
+                hFile=fopen(Filename.c_str(),"aw+");
+                if (hFile == nullptr) {
+                    std::string Err="DLogFile <"+Filename+"> not opened";
+                    perror(Err.c_str());
+                    LogToFile=false;
+                    LogToStdout=true; // se non posso loggare su file uso comunque lo stdout
+                    return false;
+                }
+
+                LogToFile=true;
+                // seek to eof
+                fseek(hFile,0,SEEK_END);
+                fgetpos(hFile,&CurrFPos);
+                return true;
+            }
+
+            /**
+             * @brief Rename current log file as "Name_YYYY_MM_DD_HH_MM_SS.ext"
+             * @return
+             */
+            bool RenameFileAsNow(void) {
+                if (hFile != nullptr) {
+                    fclose(hFile);
+                    hFile=nullptr;
+                }
+
+                std::string LogExt=fs::path(Filename).extension().string();
+                std::string LogName=fs::path(Filename).stem().string();
+                fs::path LogDir=fs::path(Filename).parent_path();
+                // get now() formatted string
+                auto now_time_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+                std::stringstream ss;
+                ss << std::put_time(localtime(&now_time_t),"_%Y_%m_%d_%H_%M_%S");
+                // create new name
+                fs::path NewName=LogDir / (LogName+ss.str()+LogExt);
+                std::error_code ec;
+                // rename it
+                fs::rename(Filename,NewName,ec);
+                if (ec) {
+                    std::string Err="DLogFile <"+Filename+"> "+ec.message();
+                    perror(Err.c_str());
+                    return false;
+                }
+                return true;
+            }
+
         private:
             std::string Filename;
             FILE *hFile;
             DLogLevel LogLevel;
+            DStorageMode StorageMode;
+            fpos_t CurrFPos;
+            fpos_t StorageFileSize;
+            size_t StorageModeParam;
 
             //! Colors defines for printf
             const std::string CL_RED        =   "\x1b[31m";
@@ -292,7 +452,12 @@ namespace DTools
                     printf("%s%s\n\r",(Color+HdrMsg+" : "+LevelMsg+" : "+LogMsg).c_str(),CL_DEFAULT.c_str());
                 }
 
-                fflush(hFile); // Scrivi subito
+                // Write imediatly
+                fflush(hFile);
+
+                // Update file pos
+                fgetpos(hFile,&CurrFPos);
+                CheckStorage();
 
                 if (Callback) {
                     DoCallback(LogMsg,LevelMsg,HdrMsg);
