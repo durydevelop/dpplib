@@ -124,6 +124,39 @@ namespace DPath
 	}
 
 	/**
+	 * @brief Check if a file/dir is older than a number of hours.
+	 * @param Path		->	File/dir to check.
+	 * @param Hrs		->	Number of hours.
+	 * @param Result	->	If file/dir has been modified last time before Hrs hours, Result will be set to true, otherwise false.
+	 * @return DError::DErrorCode with an error set case of filesystem error.
+	 */
+	DError::DErrorCode IsOlderThanHrs(const fs::path& Path, const int Hrs, bool &Result) {
+		DError::DErrorCode dEc;
+		Result=false;
+		// get now as time_point
+		std::chrono::system_clock::time_point now=std::chrono::system_clock::now();
+		// get file_time of file
+		err::error_code ec;
+		fs::file_time_type fttime=fs::last_write_time(Path,ec);
+		if (ec) {
+			dEc.SetError("IsOlderThanHours() error: "+ec.message());
+			return dEc;
+		}
+		// convert to time_t
+		std::time_t ftimet=DChrono::to_time_t(fttime);
+		// then in time_point
+		std::chrono::system_clock::time_point tptime=std::chrono::system_clock::from_time_t(ftimet);
+		// and make the difference as hours
+		std::chrono::hours diff=std::chrono::duration_cast<std::chrono::hours>(now - tptime);
+
+		if (diff.count() >= Hrs) {
+			Result=true;
+		}
+
+		return(dEc);
+	}
+
+	/**
      * @brief Retrive the last modification time of file/dir.
 	 * @param Path	->	file/dir to check.
 	 * @return a time_point format time.

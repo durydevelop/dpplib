@@ -109,10 +109,11 @@ namespace DTools
 	* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
 	* @param Item			->	the item name to retrive.
 	* @param Default		->	default value to return if @ref Item is empty or missing
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
-	int DPreferences::ReadInteger(std::string SectionTree, std::string Item, int Default) {
+	int DPreferences::ReadInteger(std::string SectionTree, std::string Item, int Default, char Translator) {
 		if (!Ready) return Default;
-		return(RootNode.get(SectionTree+"."+Item,Default));
+		return(RootNode.get(pt::ptree::path_type(SectionTree+Translator+Item,Translator),Default));
 	}
 
 	//! Retrive a string value
@@ -121,37 +122,75 @@ namespace DTools
 	* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
 	* @param Item			->	the item name to retrive.
 	* @param Default		->	default value to return if @ref Item is empty or missing
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
-	std::string DPreferences::ReadString(std::string SectionTree, std::string Item, std::string Default) {
+	std::string DPreferences::ReadString(std::string SectionTree, std::string Item, std::string Default, char Translator) {
 		if (!Ready) return Default;
-		return(RootNode.get<std::string>(SectionTree+"."+Item,Default));
+		return(RootNode.get<std::string>(pt::ptree::path_type(SectionTree+Translator+Item,Translator),Default));
 	}
 
-	//! Retrive a path type value. This method is usefull to retrive strings values containing dots, like path.
+	//! Retrive a path type value. This method is usefull to retrive a Value containing dots, like path.
 	/**
-	* Try to get the string value of @ref Item inside @ref SectionTree
+	* Try to get the string value of Item inside SectionTree
 	* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
 	* @param Item			->	the item name to retrive.
 	* @param Default		->	default value to return if @ref Item is empty or missing
+	* @param DotTranslator	->	alternative char to use
+	* WARNING: SectionTree MUST NOT contain node names with dots. If in your tree there are node name containing dots, the result tree for read becomes wrong.
+	* In this case You MUST REPLACE Your dots in node names with an alternatice char and pass it as DotTranslator.
+	* e.g.:
+	* In json node:
+	*	@code
+	*	{
+	*		"Files": {
+	*			"List": {
+	*				"Settings.json": { <---- DOTTED NAME
+	*					"Action": "DELETE",
+	*				}
+	*			}
+	*		}
+	*	}
+	*	@code
+	*	The result tree becomes "Files.List.Settings.json" and read will missing.
+	*
+	*	You must create Sectiontree string as "Files.List.Settings_json" and then retrive "Action" Item:
+	*	@code
+	*	std::string TreeString="Files.List.Settings_json";
+	*	std::string Value=ReadDotString(TreeString,"Action","",'_');
+	*	@code
+	*
 	**/
-	std::string DPreferences::ReadDotString(std::string SectionTree, std::string Item, std::string Default) {
+/*
+	std::string DPreferences::ReadDotString(std::string SectionTree, std::string Item, std::string Default, char DotTranslator) {
 		if (!Ready) return Default;
-		// replace dots in tree
-		std::replace(SectionTree.begin(),SectionTree.end(),'.','/');
-		// use getter with translator '/'
-		return(RootNode.get<std::string>(pt::ptree::path_type(SectionTree+"/"+Item,'/'),Default));
-	}
 
+		// By default all '.' becomes '/'
+		// and all '_' becomes '.'
+		char NodeTranslator='/';
+		// but if DotTranslator passed is '/'
+		// needs to change NodeTranslator
+		if (DotTranslator == '/') {
+			NodeTranslator='_';
+		}
+		// replace translator in tree
+		std::replace(SectionTree.begin(),SectionTree.end(),'.',NodeTranslator);
+		std::replace(SectionTree.begin(),SectionTree.end(),DotTranslator,'.');
+
+		// use getter with translator
+		return(RootNode.get<std::string>(pt::ptree::path_type(SectionTree+NodeTranslator+Item,NodeTranslator),Default));
+	}
+*/
 	//! Retrive a float value
 	/**
 	* Try to get the float value of @ref Item inside @ref SectionTree
 	* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
 	* @param Item			->	the item name to retrive.
 	* @param Default		->	default value to return if @ref Item is empty or missing
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
-	float DPreferences::ReadFloat(std::string SectionTree, std::string Item, float Default) {
+	float DPreferences::ReadFloat(std::string SectionTree, std::string Item, float Default, char Translator) {
 		if (!Ready) return Default;
-		return(RootNode.get<float>(SectionTree+"."+Item,Default));
+		return(RootNode.get<float>(pt::ptree::path_type(SectionTree+Translator+Item,Translator),Default));
 	}
 
 	//! Retrive a byte value
@@ -159,11 +198,12 @@ namespace DTools
 	* Try to get the uint8_t value of @ref Item inside @ref SectionTree
 	* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
 	* @param Item			->	the item name to retrive.
-	* @param Default		->	default value to return if @ref Item is empty or missing
+	* @param Default		->	default value to return if @ref Item is empty or missing.
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
-	uint8_t DPreferences::ReadByte(std::string SectionTree, std::string Item, uint8_t Default) {
+	uint8_t DPreferences::ReadByte(std::string SectionTree, std::string Item, uint8_t Default, char Translator) {
 		if (!Ready) return Default;
-		return(RootNode.get<uint8_t>(SectionTree+"."+Item,Default));
+		return(RootNode.get<uint8_t>(pt::ptree::path_type(SectionTree+Translator+Item,Translator),Default));
 	}
 
 	//! Retrive a boolean value
@@ -173,22 +213,23 @@ namespace DTools
 	* @param Item			->	the item name to retrive.
 	* @param Default		->	default value to return if @ref Item is empty or missing
 	**/
-	bool DPreferences::ReadBool(std::string SectionTree, std::string Item, bool Default) {
+	bool DPreferences::ReadBool(std::string SectionTree, std::string Item, bool Default, char Translator) {
 		if (!Ready) return Default;
-		return(RootNode.get<bool>(SectionTree+"."+Item,Default));
+		return(RootNode.get<bool>(pt::ptree::path_type(SectionTree+Translator+Item,Translator),Default));
 	}
 
 	//! Read all item names in (@link SectionTree) node and put them in @ResultList
 	/**
 	* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
 	* @param ResultList		->	reference to vector of strings to fill with results.
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	* @return numbers of items found
 	**/
-	size_t DPreferences::ReadItemNames(std::string SectionTree,std::vector<std::string>& ResultList) {
+	size_t DPreferences::ReadItemNames(std::string SectionTree,std::vector<std::string>& ResultList, char Translator) {
 		ResultList.clear();
 		if (!Ready) return 0;
 		// Find SectionTree
-		auto inValue=RootNode.get_child_optional(SectionTree);
+		auto inValue=RootNode.get_child_optional(pt::ptree::path_type(SectionTree,Translator));
 		if (!inValue.is_initialized()) {
 			return 0;
 		}
@@ -209,15 +250,16 @@ namespace DTools
 	* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
 	* @param Item			->	the item name to write.
 	* @param Value			->	value to write.
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	* @return true on successfully write otherwhise false (to get error message call @ref GetLastStatus()).
 	*
 	* N.B. This method overwrite existing Item if exists
 	**/
-	bool DPreferences::WriteInteger(std::string SectionTree, std::string Item, int Value)
+	bool DPreferences::WriteInteger(std::string SectionTree, std::string Item, int Value, char Translator)
 	{
 		if (!Ready) return false;
 		try {
-			RootNode.put(SectionTree+"."+Item,Value);
+			RootNode.put(pt::ptree::path_type(SectionTree+Translator+Item,Translator),Value);
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -234,15 +276,41 @@ namespace DTools
 	* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
 	* @param Item			->	the item name to write.
 	* @param Value			->	string value to write.
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	* @return true on successfully write otherwhise false (to get error message call @ref GetLastStatus()).
 	*
-	* N.B. This method overwrite existing Item if exists
+	* N.B. This method overwrite existing Value if exists
 	**/
-	bool DPreferences::WriteString(std::string SectionTree, std::string Item, std::string Value)
+	bool DPreferences::WriteString(std::string SectionTree, std::string Item, std::string Value, char Translator)
 	{
 		if (!Ready) return false;
 		try {
-			RootNode.put(SectionTree+"."+Item,Value);
+			RootNode.put(pt::ptree::path_type(SectionTree+Translator+Item,Translator),Value);
+		}
+		catch (boost::exception& e) {
+			LastStatus=boost::diagnostic_information(e);
+			return false;
+		}
+
+		LastStatus="Write succesfully";
+		return true;
+	}
+
+	//! Write string data into node
+	/**
+	* Write string value into @ref Item inside @ref SectionTree node
+	* @param Tree		->	node tree separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
+	* @param Value		->	string value to write.
+	* @param Translator	->	Alternative json tree translator char other that '.' (which is default).
+	* @return true on successfully write otherwhise false (to get error message call @ref GetLastStatus()).
+	*
+	* N.B. This method overwrite existing Value if exists
+	**/
+	bool DPreferences::WriteString(std::string Tree, std::string Value, char Translator)
+	{
+		if (!Ready) return false;
+		try {
+			RootNode.put(pt::ptree::path_type(Tree,Translator),Value);
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -255,23 +323,26 @@ namespace DTools
 
 	// TODO WriteDotString()
 
-	//! Write path data as "value"
+	//! Write filesystem path as "value"
 	/**
-	* Write path_type value into @ref Item inside @ref SectionTree node.
-	* This is usefull when You need to insert int value a path like filename with '.' char.
-	* The Value is converted to a @ref fs::path type to avoid issues with trailing chars
+	* Write filesystem path value into Item inside SectionTree node.
+	* N.B.:
+	* -Value is converted to a fs::path type (to avoid issues with trailing chars).
 	* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
 	* @param Item			->	the item name to write.
-	* @param Value			->	path string to write.
+	* @param Path			->	path string to write.
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	* @return true on successfully write otherwhise false (to get error message call @ref GetLastStatus()).
 	*
-	* N.B. This method overwrite existing Item if exists
+	* N.B. This method overwrite existing Item if exists.
 	**/
-	bool DPreferences::WritePath(std::string SectionTree, std::string Item, std::string Path) {
+	bool DPreferences::WritePath(std::string SectionTree, std::string Item, std::string Path, char Translator) {
 		if (!Ready) return false;
 		try {
+			// Convert to fs::path
 			fs::path p(Path);
-			RootNode.put(SectionTree+"."+Item,p.string());
+			// Write
+			RootNode.put(pt::ptree::path_type(SectionTree+Translator+Item,Translator),p.string());
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -288,14 +359,15 @@ namespace DTools
 	* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
 	* @param Item			->	the item name to write.
 	* @param Value			->	value to write.
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	* @return true on successfully write otherwhise false (to get error message call @ref GetLastStatus()).
 	*
 	* N.B. This method overwrite existing Item if exists
 	**/
-	bool DPreferences::WriteFloat(std::string SectionTree, std::string Item, float Value) {
+	bool DPreferences::WriteFloat(std::string SectionTree, std::string Item, float Value, char Translator) {
 		if (!Ready) return false;
 		try {
-			RootNode.put(SectionTree+"."+Item,Value);
+			RootNode.put(pt::ptree::path_type(SectionTree+Translator+Item,Translator),Value);
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -312,14 +384,15 @@ namespace DTools
 	* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
 	* @param Item			->	the item name to write.
 	* @param Value			->	value to write.
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	* @return true on successfully write otherwhise false (to get error message call @ref GetLastStatus()).
 	*
 	* N.B. This method overwrite existing Item if exists
 	**/
-	bool DPreferences::WriteByte(std::string SectionTree, std::string Item, uint8_t Value) {
+	bool DPreferences::WriteByte(std::string SectionTree, std::string Item, uint8_t Value, char Translator) {
 		if (!Ready) return false;
 		try {
-			RootNode.put(SectionTree+"."+Item,Value);
+			RootNode.put(pt::ptree::path_type(SectionTree+Translator+Item,Translator),Value);
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -336,14 +409,15 @@ namespace DTools
 	* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
 	* @param Item			->	the item name to write.
 	* @param Value			->	value to write.
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	* @return true on successfully write otherwhise false (to get error message call @ref GetLastStatus()).
 	*
 	* N.B. This method overwrite existing Item if exists
 	**/
-	bool DPreferences::WriteBool(std::string SectionTree, std::string Item, bool Value)	{
+	bool DPreferences::WriteBool(std::string SectionTree, std::string Item, bool Value, char Translator)	{
 		if (!Ready) return false;
 		try {
-			RootNode.put(SectionTree+"."+Item,Value);
+			RootNode.put(pt::ptree::path_type(SectionTree+Translator+Item,Translator),Value);
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -354,10 +428,18 @@ namespace DTools
 		return true;
 	}
 
-	bool DPreferences::DeleteItem(std::string SectionTree, std::string Item) {
+	/**
+	* @brief Delete Item (and its value) of SectionTree.
+	* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
+	* @param Item			->	the item name to write.
+	* @param Value			->	value to write.
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+	* @return true on successfully write otherwhise false (to get error message call @ref GetLastStatus()).
+	*/
+	bool DPreferences::DeleteItem(std::string SectionTree, std::string Item, char Translator) {
 		if (!Ready) return false;
 		// Find SectionTree
-		auto inValue=RootNode.get_child_optional(SectionTree);
+		auto inValue=RootNode.get_child_optional(pt::ptree::path_type(SectionTree,Translator));
 		if (!inValue.is_initialized()) {
 			return true;
 		}
@@ -371,10 +453,16 @@ namespace DTools
 		}
 	}
 
-	bool DPreferences::DeleteContent(std::string SectionTree) {
+	/**
+	* @brief Delete all SectionTree content.
+	* @param SectionTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+	* @return true on successfully write otherwhise false (to get error message call @ref GetLastStatus()).
+	*/
+	bool DPreferences::DeleteContent(std::string SectionTree, char Translator) {
 		if (!Ready) return false;
 		// Find SectionTree
-		auto inValue=RootNode.get_child_optional(SectionTree);
+		auto inValue=RootNode.get_child_optional(pt::ptree::path_type(SectionTree,Translator));
 		if (!inValue.is_initialized()) {
 			LastStatus=SectionTree + "Not found";
 			return true;

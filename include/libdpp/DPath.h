@@ -6,6 +6,7 @@
 #include <chrono>
 #include <functional>
 #include "libdpp/DFilesystem.h"
+#include "libdpp/DError.h"
 
 #ifdef _WIN32
     #include <windows.h>    //GetModuleFileNameW
@@ -51,6 +52,7 @@ namespace DPath
 	fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute);
 	fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute, err::error_code &ec);
 	bool IsOlderThanHrs(const fs::path& Path, const int Hrs);
+	DError::DErrorCode IsOlderThanHrs(const fs::path& Path, const int Hrs, bool &Result);
 	std::chrono::system_clock::time_point LastWriteTime(const fs::path Path);
 	std::vector<std::string> ReadAllExts(fs::path Path);
     std::string GetPermissionsString(fs::path Path);
