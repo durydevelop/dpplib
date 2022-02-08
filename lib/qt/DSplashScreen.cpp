@@ -6,7 +6,7 @@ DSplashScreen::DSplashScreen(QPixmap splashPixmap, bool showProgress) : DSplashS
 {
 }
 
-DSplashScreen::DSplashScreen(QScreen *screen, QPixmap splashPixmap, bool showProgress) : QSplashScreen(screen,splashPixmap)
+DSplashScreen::DSplashScreen(QScreen *screen, QPixmap splashPixmap, bool showProgress) : QSplashScreen(splashPixmap)
 {
     // Pixmap
     this->setPixmap(splashPixmap);
