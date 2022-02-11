@@ -47,6 +47,7 @@ class DFormLog : public QDialog
         void DLogCallback(std::string Msg, std::string OutputLevel, std::string Header);
 
         Ui::DFormLog *ui;
+        QString Separator;
 };
 
 #endif

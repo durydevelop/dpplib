@@ -25,6 +25,8 @@
  *
  */
 
+#define DEFAULT_SEPARATOR " : "
+
 DFormLog::DFormLog(QWidget *parent, std::shared_ptr<DTools::DLog> dLog) :
     QDialog(parent),
     ui(new Ui::DFormLog)
@@ -32,6 +34,7 @@ DFormLog::DFormLog(QWidget *parent, std::shared_ptr<DTools::DLog> dLog) :
     ui->setupUi(this);
     ShowDateTime=true;
     ShowOutputLevel=true;
+    Separator=DEFAULT_SEPARATOR;
     if (dLog) {
         SetDLog(dLog);
     }
@@ -94,6 +97,9 @@ void DFormLog::SetDLog(std::shared_ptr<DTools::DLog> dLog)
  * @return true on success, otherwise false.
  */
 bool DFormLog::LoadFile(void) {
+    ui->PlainTextEditLog->clear();
+    DuryLog->Read();
+/*
     std::string Filename=DuryLog->GetFilename();
     QFile LogFile(Filename.c_str());
     LogFile.open(QIODevice::Text | QIODevice::ReadOnly);
@@ -105,10 +111,10 @@ bool DFormLog::LoadFile(void) {
     ui->PlainTextEditLog->clear();
     while(!LogFile.atEnd()) {
         QString Line=LogFile.readLine();
-        ui->PlainTextEditLog->appendPlainText(Line);
+        ui->PlainTextEditLog->appendPlainText(Line+"\n");
     }
     LogFile.close();
-
+*/
     return true;
 }
 
@@ -118,20 +124,21 @@ bool DFormLog::LoadFile(void) {
  * @param OutputLevel   ->  is used to
  * @param Header
  */
-void DFormLog::Add(QString Msg, QString OutputLevel, QString Header)
+void DFormLog::Add(QString Msg, QString OutputLevel, QString TimeStamp)
 {
     QString LogString;
-    if (ShowDateTime)  {
-        LogString.append(Header+" : ");
+
+    if (ShowDateTime && !TimeStamp.isEmpty())  {
+            LogString.append(TimeStamp+Separator);
     }
 
-    if (ShowOutputLevel) {
-        LogString.append(OutputLevel);
+    if (ShowOutputLevel && !OutputLevel.isEmpty()) {
+        LogString.append(OutputLevel+Separator);
     }
 
     LogString.append(Msg);
 
-    ui->PlainTextEditLog->appendPlainText(Msg);
+    ui->PlainTextEditLog->appendPlainText(LogString);
 }
 
 void DFormLog::DLogCallback(std::string Msg, std::string OutputLevel, std::string Header) {

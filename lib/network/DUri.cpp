@@ -168,7 +168,7 @@ std::string DUri::Decode(const std::string& EncodedUri)
 
     for (int i=0; i<dynamicLength; i++) {
         haystack = DecodedUri.substr(i, 3);
-        if (std::regex_match(haystack, sm, std::regex("%[0-9A-F]{2}"))) {
+        if (std::regex_match(haystack,sm,std::regex("%[0-9A-F]{2}"))) {
             haystack=haystack.replace(0, 1, "0x");
             std::string rc={(char)std::stoi(haystack, nullptr, 16)};
             DecodedUri=DecodedUri.replace(DecodedUri.begin() + i, DecodedUri.begin() + i + 3, rc);

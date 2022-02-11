@@ -6,9 +6,11 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <fstream>
 #include <filesystem>
 #include <functional>
 #include <set>
+#include <regex>
 
 namespace DTools
 {
@@ -27,6 +29,12 @@ namespace DTools
     *
     * \section intro_sec Intro
     * This file can be used as single header lib, simply @code#include "DLog.h"@code
+    * Log format for file:
+    * DateTime              :   Message Type    :   Message Text
+    *
+    * Log format for stdout:
+    * Color pattern : DateTime            : Message Type : Message Text    : Color Restore
+    * \x1b[31m      : 2022/02/03 20.59.17 : DEBUG        : reading file... : \x1b[0m
     *
     *
     * \section futures_sec Futures
@@ -35,7 +43,7 @@ namespace DTools
     * -Errors are shown on stderr.
     *
     * \section todo_sec TODO
-    * _Callback
+    * _Read(FromWhen,SinceWhen);
     **/
 
     namespace fs=std::filesystem;
@@ -48,6 +56,10 @@ namespace DTools
             enum DOutputType {OUTPUT_INFO, OUTPUT_ERROR, OUTPUT_DEBUG, OUTPUT_WARNING};
             //! Storage modes
             enum DStorageMode {STORAGE_MODE_SIZE, STORAGE_MODE_TIME};
+            //! Date Time format string
+            const std::string TIME_FORMAT="%Y/%m/%d %H.%M.%S";
+            //! Separator pattern
+            std::string Sep=" : ";
 
             bool LogToFile;                 //! if true messages are written to file.
             bool LogToStdout;               //! if true messages are written to stdout.
@@ -92,6 +104,27 @@ namespace DTools
             //! Destructor
             ~DLog() {
                 if (hFile != nullptr) fclose(hFile);
+            }
+
+            bool Read() {
+                std::ifstream fLog(Filename,std::ios::in);
+                if (!fLog.is_open()) {
+                    Write(OUTPUT_ERROR,"Log file not opened for read request");
+                    return false;
+                }
+                std::string Line;
+                while(std::getline(fLog,Line)) {
+                    if (Line.empty()) {
+                        continue;
+                    }
+
+                    std::string Header(Line.substr(0,Line.find(Sep)));
+                    std::string OutputType(Line.substr(Header.size()+Sep.size(),7));
+                    std::string Msg(Line.substr(Header.size()+Sep.size()+OutputType.size()+Sep.size()));
+                    DoCallback(Msg,OutputType,Header);
+                }
+                fLog.close();
+                return true;
             }
 
             template<typename ... Args>
@@ -417,7 +450,7 @@ namespace DTools
                 }
                 auto now_time_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
                 std::stringstream ss;
-                ss << std::put_time(localtime(&now_time_t),"%Y/%m/%d %H.%M.%S");
+                ss << std::put_time(localtime(&now_time_t),TIME_FORMAT.c_str());
                 std::string HdrMsg=ss.str();
                 std::string Color;
                 std::string LevelMsg;
@@ -446,10 +479,13 @@ namespace DTools
 
                 // Print log message
                 if (LogToFile) {
-                    fprintf(hFile,"%s\r",(HdrMsg+" : "+LevelMsg+" : "+LogMsg).c_str());
+                    fprintf(hFile,"%s\n",(HdrMsg+Sep+LevelMsg+Sep+LogMsg).c_str());
                 }
                 if (LogToStdout) {
-                    printf("%s%s\n\r",(Color+HdrMsg+" : "+LevelMsg+" : "+LogMsg).c_str(),CL_DEFAULT.c_str());
+                    printf("%s%s\n\r",(Color+HdrMsg+Sep+LevelMsg+Sep+LogMsg).c_str(),CL_DEFAULT.c_str());
+                }
+                if (Callback) {
+                    DoCallback(LogMsg,LevelMsg,HdrMsg);
                 }
 
                 // Write imediatly
@@ -458,10 +494,6 @@ namespace DTools
                 // Update file pos
                 fgetpos(hFile,&CurrFPos);
                 CheckStorage();
-
-                if (Callback) {
-                    DoCallback(LogMsg,LevelMsg,HdrMsg);
-                }
             }
     };
 }
