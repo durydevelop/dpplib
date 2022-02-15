@@ -43,6 +43,7 @@ namespace DTools
     * -Errors are shown on stderr.
     *
     * \section todo_sec TODO
+    * _Read()
     * _Read(FromWhen,SinceWhen);
     **/
 
@@ -50,10 +51,20 @@ namespace DTools
 
     class DLog {
         public:
+            //! Colors defines for printf
+            const std::string CL_RED        =   "\x1b[31m";
+            const std::string CL_GREEN      =   "\x1b[32m";
+            const std::string CL_YELLOW     =   "\x1b[33m";
+            const std::string CL_BLUE       =   "\x1b[34m";
+            const std::string CL_MAGENTA    =   "\x1b[35m";
+            const std::string CL_CYAN       =   "\x1b[36m";
+            const std::string CL_DEFAULT    =   "\x1b[0m";
             //! Log deep levels
             enum DLogLevel {PRINT_LEVEL_NORMAL, PRINT_LEVEL_DEEP};
             //! Output types
-            enum DOutputType {OUTPUT_INFO, OUTPUT_ERROR, OUTPUT_DEBUG, OUTPUT_WARNING};
+            enum DOutputType                            { OUTPUT_INFO   , OUTPUT_ERROR  , OUTPUT_DEBUG  , OUTPUT_WARNING};
+            std::vector<std::string> DOutputTypeString= { "INFO   "     , "ERROR  "     , "DEBUG  "     , "WARNING"     };
+            std::vector<std::string> DOutputTypeColor=  { CL_DEFAULT    , CL_RED        , CL_CYAN       , CL_YELLOW     };
             //! Storage modes
             enum DStorageMode {STORAGE_MODE_SIZE, STORAGE_MODE_TIME};
             //! Date Time format string
@@ -64,6 +75,16 @@ namespace DTools
             bool LogToFile;                 //! if true messages are written to file.
             bool LogToStdout;               //! if true messages are written to stdout.
 
+        private:
+            std::string Filename;
+            FILE *hFile;
+            DLogLevel LogLevel;
+            DStorageMode StorageMode;
+            fpos_t CurrFPos;
+            fpos_t StorageFileSize;
+            size_t StorageModeParam;
+
+        public:
             /**
             * @brief Contructor
             * @details Create the log object
@@ -106,6 +127,7 @@ namespace DTools
                 if (hFile != nullptr) fclose(hFile);
             }
 
+            //! Read content of log file and send it line by line to Callback.
             bool Read() {
                 std::ifstream fLog(Filename,std::ios::in);
                 if (!fLog.is_open()) {
@@ -118,8 +140,15 @@ namespace DTools
                         continue;
                     }
 
-                    std::string Header(Line.substr(0,Line.find(Sep)));
-                    std::string OutputType(Line.substr(Header.size()+Sep.size(),7));
+                    size_t Pos=Line.find(Sep);
+                    if (Pos == std::string::npos) {
+                        DoCallback(Line,"","");
+                        continue;
+                    }
+
+                    std::string Header(Line.substr(0,Pos));
+                    int n=Line.size()-Header.size()-Sep.size();
+                    std::string OutputType(Line.substr(Header.size()+Sep.size(),n>7 ? 7 : n));
                     std::string Msg(Line.substr(Header.size()+Sep.size()+OutputType.size()+Sep.size()));
                     DoCallback(Msg,OutputType,Header);
                 }
@@ -367,7 +396,7 @@ namespace DTools
                 LogToFile=true;
                 // seek to eof
                 fseek(hFile,0,SEEK_END);
-                CurrFPos=ftell(hFile);
+                fgetpos(hFile,&CurrFPos);
                 return true;
             }
 
@@ -401,24 +430,6 @@ namespace DTools
                 return true;
             }
 
-        private:
-            std::string Filename;
-            FILE *hFile;
-            DLogLevel LogLevel;
-            DStorageMode StorageMode;
-            size_t CurrFPos;
-            size_t StorageFileSize;
-            size_t StorageModeParam;
-
-            //! Colors defines for printf
-            const std::string CL_RED        =   "\x1b[31m";
-            const std::string CL_GREEN      =   "\x1b[32m";
-            const std::string CL_YELLOW     =   "\x1b[33m";
-            const std::string CL_BLUE       =   "\x1b[34m";
-            const std::string CL_MAGENTA    =   "\x1b[35m";
-            const std::string CL_CYAN       =   "\x1b[36m";
-            const std::string CL_DEFAULT    =   "\x1b[0m";
-
         // ******************************  Callback stuffs ***************************************
         public:
             typedef std::function<void(std::string,std::string,std::string)> DLogCallback;
@@ -451,48 +462,29 @@ namespace DTools
                 auto now_time_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
                 std::stringstream ss;
                 ss << std::put_time(localtime(&now_time_t),TIME_FORMAT.c_str());
-                std::string HdrMsg=ss.str();
-                std::string Color;
-                std::string LevelMsg;
-
+                // Time
+                std::string TimeMsg=ss.str();
                 // Debug level
-                switch (OutputType) {
-                    case OUTPUT_DEBUG:
-                        LevelMsg+="DEBUG  ";
-                        Color=CL_CYAN;
-                        break;
-                    case OUTPUT_INFO:
-                        LevelMsg+="INFO   ";
-                        Color=CL_DEFAULT;
-                        break;
-                    case OUTPUT_ERROR:
-                        LevelMsg+="ERROR  ";
-                        Color=CL_RED;
-                        break;
-                    case OUTPUT_WARNING:
-                        LevelMsg+="WARNING";
-                        Color=CL_YELLOW;
-                        break;
-                    default:
-                        break;
-                }
+                std::string LevelMsg=DOutputTypeString[OutputType];
+                // Color
+                std::string Color=DOutputTypeColor[OutputType];
 
                 // Print log message
                 if (LogToFile) {
-                    fprintf(hFile,"%s\n",(HdrMsg+Sep+LevelMsg+Sep+LogMsg).c_str());
+                    fprintf(hFile,"%s\n",(TimeMsg+Sep+LevelMsg+Sep+LogMsg).c_str());
                 }
                 if (LogToStdout) {
-                    printf("%s%s\n\r",(Color+HdrMsg+Sep+LevelMsg+Sep+LogMsg).c_str(),CL_DEFAULT.c_str());
+                    printf("%s%s\n\r",(Color+TimeMsg+Sep+LevelMsg+Sep+LogMsg).c_str(),CL_DEFAULT.c_str());
                 }
                 if (Callback) {
-                    DoCallback(LogMsg,LevelMsg,HdrMsg);
+                    DoCallback(LogMsg,LevelMsg,TimeMsg);
                 }
 
                 // Write imediatly
                 fflush(hFile);
 
                 // Update file pos
-                CurrFPos=ftell(hFile);
+                fgetpos(hFile,&CurrFPos);
                 CheckStorage();
             }
     };

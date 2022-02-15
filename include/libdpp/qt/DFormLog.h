@@ -33,7 +33,7 @@ class DFormLog : public QDialog
         bool ShowOutputLevel;
 
     signals:
-        void SignalAdd(QString Msg, QString OutputLevel, QString Header);
+        void SignalAdd(QString Msg, QString OutputLevel = "", QString Header = "");
 
     private slots:
         void on_ButtonReload_clicked();
@@ -41,7 +41,7 @@ class DFormLog : public QDialog
         void on_ButtonSendLogs_clicked();
 
     public slots:
-        void Add(QString Msg, QString OutputLevel, QString Header);
+        void Add(QString Msg, QString OutputLevel = "", QString Header = "");
 
     private:
         void DLogCallback(std::string Msg, std::string OutputLevel, std::string Header);
