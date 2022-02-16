@@ -21,9 +21,11 @@ namespace DTools
 		PrefFile=Filename;
 		if (!DTools::DPath::Exists(PrefFile)) {
 			if (CreateIfNotExists) {
+                LastStatus.append(PrefFile+" missing, try to create...\n");
 				Ready=Save();
 			}
 			else {
+                LastStatus.append(PrefFile+" missing, preferences not ready\n");
 				Ready=false;
 			}
 		}
@@ -53,7 +55,7 @@ namespace DTools
 			pt::json_parser::read_json(PrefFile,RootNode);
 			//info_parser::read_info(sFilename,RootNode);
 		}catch (boost::exception& e) {
-			LastStatus=boost::diagnostic_information(e);
+			LastStatus.append(boost::diagnostic_information(e));
 			return false;
 		}
 		return true;

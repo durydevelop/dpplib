@@ -245,7 +245,11 @@ namespace DPath
     }
 #elif __linux__
     bool CanAccess(fs::path Path, fs::perms AccessRights) {
-        fs::perms p=fs::status(Path).permissions();
+        err::error_code ec;
+        fs::perms p=fs::status(Path,ec).permissions();
+        if (ec) {
+            return false;
+        }
         bool Ret=(p & AccessRights) == AccessRights ? true : false;
         return Ret;
     }
@@ -1301,15 +1305,18 @@ namespace DPath
 	 */
 	bool Exists(fs::path Path) {
 		err::error_code ec;
+        
 		// Try first normal way
-		fs::file_status Status=fs::status(Path,ec);
+        fs::file_status Status=fs::status(Path,ec);
 		bool Ret=fs::exists(Status);
 		if (Ret) {
 			return true;
 		}
-
-		// If Ret is false try also the alternative way
-		Ret=DTools::DPath::CanAccess(Path,DTools::DPath::ACCESS_READ);
+		
+        #ifdef _WIN32
+            // Only for Windows, if Ret is false try also the alternative way
+            Ret=DTools::DPath::CanAccess(Path,DTools::DPath::ACCESS_READ);
+        #endif
 		return(Ret);
 	}
 

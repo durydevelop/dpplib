@@ -80,8 +80,8 @@ namespace DTools
             FILE *hFile;
             DLogLevel LogLevel;
             DStorageMode StorageMode;
-            fpos_t CurrFPos;
-            fpos_t StorageFileSize;
+            size_t CurrFPos;
+            size_t StorageFileSize;
             size_t StorageModeParam;
 
         public:
@@ -396,7 +396,7 @@ namespace DTools
                 LogToFile=true;
                 // seek to eof
                 fseek(hFile,0,SEEK_END);
-                fgetpos(hFile,&CurrFPos);
+                CurrFPos=ftell(hFile);
                 return true;
             }
 
@@ -484,7 +484,7 @@ namespace DTools
                 fflush(hFile);
 
                 // Update file pos
-                fgetpos(hFile,&CurrFPos);
+                CurrFPos=ftell(hFile);
                 CheckStorage();
             }
     };
