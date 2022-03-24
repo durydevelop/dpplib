@@ -10,15 +10,6 @@
     #define O_BINARY 0
 #endif
 
-// Debug macro: if DEBUG is defined, DEBUG_PRINT(Msg) macro prints Msg on stdout, otherwise do nothing (I use it to debug issues).
-#define DEBUG
-#ifdef DEBUG
-	#include<iostream>
-	#define DEBUG_PRINT(Msg) std::cout << Msg << std::endl;
-#else
-	#define DEBUG_PRINT(Msg)
-#endif
-
 // Macro ridefined from basestd.h
 // #define DIntToPtr(i) (void *)(uintptr_t)(i)
 
@@ -26,6 +17,23 @@ namespace DTools
 {
 namespace DPath
 {
+// Debug macro: if DEBUG is defined, DEBUG_PRINT(Msg) macro prints Msg on stdout, otherwise do nothing (I use it to debug issues).
+#define DEBUG_EX
+#ifdef DEBUG_EX
+	#include<iostream>
+	#define DEBUG_PRINT(Msg) std::cout << Msg << std::endl;
+	void DEBUG_PRINT_E(std::filesystem::filesystem_error const& e) {
+		std::cout	<< "what():  " << e.what() << std::endl
+					<< "path1(): " << e.path1() << std::endl
+					<< "path2(): " << e.path2() << std::endl
+					<< "code().value():    " << e.code().value() << std::endl
+					<< "code().message():  " << e.code().message() << std::endl
+					<< "code().category(): " << e.code().category().name() << std::endl;
+	}
+#else
+	#define DEBUG_PRINT(Msg)
+	#define DEBUG_PRINT_E(Msg)
+#endif
 
     //! @return filename of current executable.
     fs::path GetExeFilename() {
@@ -40,6 +48,11 @@ namespace DPath
         #endif
     }
 
+    /**
+     * @brief Extract path name extention without dot.
+     * @param Path  ->  Path name
+     * @return Only extension string without dots.
+     */
     std::string GetExt(fs::path Path) {
         std::string Ext=Path.extension().string();
         return(DTools::DString::RemoveChars(Ext,"."));
@@ -106,9 +119,10 @@ namespace DPath
 	 * @brief Check if a file/dir is older than a number of hours.
 	 * @param Path	->	File/dir to check.
 	 * @param Hrs	->	Number of hours.
-	 * @return true if file/dir has been modified last time before Hrs hours, otherwise false.
+	 * @return true if Path has been modified more than Hrs ago, otherwise false.
 	 */
 	bool IsOlderThanHrs(const fs::path& Path, const int Hrs) {
+		// TODO: try catch e trow
 		// get now as time_point
 		std::chrono::system_clock::time_point now=std::chrono::system_clock::now();
 		// get file_time of file
@@ -121,6 +135,27 @@ namespace DPath
 		std::chrono::hours diff=std::chrono::duration_cast<std::chrono::hours>(now - tptime);
 
 		return(diff.count() >= Hrs);
+	}
+
+	/**
+	 * @brief Check if a file/dir is older than a number of minutes.
+	 * @param Path	->	File/dir to check.
+	 * @param Min	->	Number of minutes.
+	 * @return true if Path has been modified more than Min ago, otherwise false.
+	 */
+	bool IsOlderThanMin(const fs::path& Path, const int Min) {
+		// get now as time_point
+		std::chrono::system_clock::time_point now=std::chrono::system_clock::now();
+		// get file_time of file
+		fs::file_time_type fttime=fs::last_write_time(Path);
+		// convert to time_t
+		std::time_t ftimet=DChrono::to_time_t(fttime);
+		// then in time_point
+		std::chrono::system_clock::time_point tptime=std::chrono::system_clock::from_time_t(ftimet);
+		// and make the difference as hours
+		std::chrono::minutes diff=std::chrono::duration_cast<std::chrono::minutes>(now - tptime);
+
+		return(diff.count() >= Min);
 	}
 
 	/**
@@ -209,6 +244,7 @@ namespace DPath
     * @param genericAccessRights	->	GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE | GENERIC_ALL
     **/
     bool CanAccess(fs::path Path, DWORD AccessRights) {
+        // TODO: try catch
         DWORD genericAccessRights=AccessRights;
         bool bRet = false;
         DWORD length = 0;
@@ -267,11 +303,13 @@ namespace DPath
 	* @param From	->	Source File.
 	* @param To		->	Destination file.
 	*
-	* @return 0 on success or an error_code if any arrors occours.
+	* @return true on success otherwise false.
 	**/
-	bool Copy_File(const fs::path &From, const fs::path &To, bool OverwriteExisting, bool SafeMode) {
+	DError::DErrorCode Copy_File(const fs::path &From, const fs::path &To, bool OverwriteExisting, bool SafeMode) {
+		DError::DErrorCode ErrorCode;
 		if (From == To) {
-			return false;
+			ErrorCode.SetError("Source are same as dest");
+			return(ErrorCode);
 		}
 
 		#if __cplusplus > 201402L // C++17
@@ -292,7 +330,8 @@ namespace DPath
 					// delete dest before copy (some version of filesystem lib does not copy if dest existing)
 					fs::remove(To,ec);
 					if (ec) {
-						return false;
+						ErrorCode.SetError(ec.message());
+						return(ErrorCode);
 					}
 				}
 			}
@@ -309,12 +348,12 @@ namespace DPath
         }
 
         if (ec) {
-            //std::cout << "Copy " << From.string() << " -> " << To.string() << " ERROR: " << ec.message() << std::endl;
-            DEBUG_PRINT("DString::Copy_File() " << From.string() << " -> " << To.string() << " ERROR: " << ec.message());
-            return false;
+            //DEBUG_PRINT("DPath::Copy_File() " << From.string() << " -> " << To.string() << " ERROR: " << ec.message());
+            ErrorCode.SetError(ec.message());
+            return(ErrorCode);
         }
 
-        return true;
+		return ErrorCode;
 	}
 
 	/**
@@ -380,7 +419,7 @@ namespace DPath
 		return true;
 	}
 
-	//! Copy a directory recoursively.
+	//! Copy a directory Recursively.
 	/**
 	* @param SourceDir		->	Directory to copy.
 	* @param DestDir		->	Destination directory.
@@ -388,21 +427,25 @@ namespace DPath
 	* @param Callback		->	Callback function to call on copy operation starts. Callback pass COUNT_DIR before directory copy and COUNT_FILE before file copy.
 	*
 	* @return true on success or false if any arrors occours.
-	* TODO: DErrorCode
+	* TODO: StopRequest
 	**/
-	bool CopyDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DCallback Callback) {
+	DError::DErrorCode CopyDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DCallback Callback) {
+		DError::DErrorCode ErrorCode;
 		// Verifica esistenza
 		if (!Exists(SourceDir)) {
-			return false;
+			ErrorCode.SetError(SourceDir.string()+" do not not exists");
+			return(ErrorCode);
 		}
 
 		if (!IsDirectory(SourceDir)) {
-			return false;
+			ErrorCode.SetError(SourceDir.string()+" is not a directory");
+			return(ErrorCode);
 		}
 
 		if (FailIfExists) {
 			if (Exists(DestDir)) {
-				return false;
+				ErrorCode.SetError(SourceDir.string()+" already exists");
+				return(ErrorCode);
 			}
 		}
 
@@ -413,15 +456,16 @@ namespace DPath
 		#else
 			fs::copy_directory(SourceDir,DestDir,ec);
 		#endif
-		if (ec.value() != 0) {
-			std::string s=ec.message();
+		if (ec) {
 			Callback(CALLBACK_SET_FILES,1);
-			return false;
+			ErrorCode.SetError(ec.message());
+			return(ErrorCode);
 		}
 
 		if (Callback) {
-			int nFiles=CountFiles(SourceDir,false,nullptr);
-			int nDirs=CountDirs(SourceDir,false,nullptr);
+			bool StopRequest=false;
+			int nFiles=CountFiles(SourceDir,false,StopRequest);
+			int nDirs=CountDirs(SourceDir,false,StopRequest);
 
 			Callback(CALLBACK_SET_FILES,nFiles);
 			Callback(CALLBACK_SET_DIRS,nDirs);
@@ -433,8 +477,9 @@ namespace DPath
 				if (Callback) Callback(CALLBACK_INC_DIR,1);
 				// In ricorsione
 				// nessuna callback perché viene eseguita solo per gli oggetti presenti nella root
-				if (!CopyDir(iterator->path(),DestDir / iterator->path().filename(),FailIfExists,nullptr)) {
-					return false;
+				ErrorCode=CopyDir(iterator->path(),DestDir / iterator->path().filename(),FailIfExists,nullptr);
+				if (ErrorCode.IsSet()) {
+					return(ErrorCode);
 				}
 			}
 			else if (is_regular_file(iterator->status())) {
@@ -446,15 +491,16 @@ namespace DPath
 				#endif
 
 				if (!fs::copy_file(iterator->path(),DestDir / iterator->path().filename(),options,ec)) {
-					return false;
+					ErrorCode.SetError(ec.message());
+					return(ErrorCode);
 				}
 			}
 		}
 
-		return true;
+		return ErrorCode;
 	}
 
-	//! Move a directory recoursively (doing copy and delete)
+	//! Move a directory Recursively (doing copy and delete)
 	/**
 	* @param SourceDir		->	Directory to move.
 	* @param DestDir		->	Destination directory.
@@ -462,18 +508,22 @@ namespace DPath
 	* @param Callback		->	Callback function to call on copy operation starts. Callback pass COUNT_DIR before directory copy and COUNT_FILE before file copy.
 	*
 	* @return true on success or false if any arrors occours.
+	* //TODO: DErrorCode
 	**/
-	bool MoveDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DCallback Callback) {
+	DError::DErrorCode MoveDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DCallback Callback) {
+		DError::DErrorCode ErrorCode;
 		if (Callback) {
 			// If You want callback, need to copy and delete...
-			if (!CopyDir(SourceDir,DestDir,FailIfExists,Callback)) {
-				return false;
+			ErrorCode=CopyDir(SourceDir,DestDir,FailIfExists,Callback);
+			if (ErrorCode.IsSet()) {
+				return(ErrorCode);
 			}
 
 			err::error_code ec;
 			fs::remove_all(SourceDir,ec);
 			if (ec) {
-				return false;
+				ErrorCode.SetError(ec.message());
+				return(ErrorCode);
 			}
 		}
 		else {
@@ -482,7 +532,8 @@ namespace DPath
 				err::error_code ec;
 				fs::rename(SourceDir,DestDir,ec);
 				if (ec) {
-					return false;
+					ErrorCode.SetError(ec.message());
+					return(ErrorCode);
 				}
 			#else
 				#ifdef WIN32
@@ -510,15 +561,16 @@ namespace DPath
 					err::error_code ec;
 					fs::remove_all(SourceDir,ec);
 					if (ec) {
-						return false;
+						ErrorCode.SetError(ec.message());
+						return(ErrorCode);
 					}
 				#endif
 			#endif
 		}
-		return true;
+		return(ErrorCode);
 	}
 
-	//! Delete a directory recoursively
+	//! Delete a directory Recursively
 	/**
 	* @param Dir	->	Directory to delete.
 	*
@@ -542,7 +594,7 @@ namespace DPath
 	*
 	* @param Result				->	Puntatore ad una array di path da popolare con i risultati, se nullptr ritorna solo il conteggio.
 	* @param PathToScan			->	Directory di partenza.
-	* @param Recoursive			->	Se true va in ricorsione.
+	* @param Recursive			->	Se true va in ricorsione.
 	* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), nullptr o vuoto equivale a tutto.
 	*								N.B. Tutte le stringhe devo essere contenute nel nome.
 	* @param NameWholeWord		->	Se true confronta la ricerca con l'intero nome (Ignorato se @ref NameContentList contiene più di una stringa).
@@ -557,10 +609,10 @@ namespace DPath
 	* @return il numero di directory trovate, -1 in caso di errore.
 	* N.B. @ref Result non viene pulita quindi se non è vuota  risultati vengono aggiunti.
 	**/
-	int ListDirs(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool *StopRequest) {
+	int ListDirs(std::shared_ptr<DPathList> Result, fs::path PathToScan, bool Recursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool& StopRequest) {
 		err::error_code ec;
 		unsigned int Tot=0;
-		//DEBUG_PRINT("ListDirs in "+PathToScan.string()+" Recoursive="+std::to_string(Recoursive)+" CaseSensitive="+std::to_string(CaseSensitive)+" NameContentList="+std::to_string(NameContentList->size())+" ExtContentList="+std::to_string(ExtContentList->size()));
+		//DEBUG_PRINT("ListDirs in "+PathToScan.string()+" Recursive="+std::to_string(Recursive)+" CaseSensitive="+std::to_string(CaseSensitive)+" NameContentList="+std::to_string(NameContentList->size())+" ExtContentList="+std::to_string(ExtContentList->size()));
 
 		// Verifica esistenza
 		bool Ret=Exists(PathToScan);
@@ -570,17 +622,15 @@ namespace DPath
 
 		for (fs::directory_iterator iterator(PathToScan); iterator != fs::directory_iterator(); ++iterator) {
 			if (StopRequest) {
-				if (*StopRequest) {
-					//Log("Stop requested");
-					break;
-				}
+				//Log("Stop requested");
+				break;
 			}
 
 			if (fs::is_directory(iterator->status())) {
-				if (Recoursive) {
+				if (Recursive) {
 					// In ricorsione
 					//DEBUG_PRINT("Ricorsione su "+iterator->path().string());
-					Tot+=ListDirs(Result,iterator->path(),Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest);
+					Tot+=ListDirs(Result,iterator->path(),Recursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest);
 				}
 
 				fs::path CurrPath=iterator->path();
@@ -792,7 +842,7 @@ namespace DPath
 	*
 	* @param Result			->	Puntatore ad una array di path da popolare con i risultati, se nullptr ritorna solo il conteggio.
 	* @param PathToScan		->	Directory di partenza.
-	* @param Recoursive		->	Se true va in ricorsione.
+	* @param Recursive		->	Se true va in ricorsione.
 	* @param NameContent	->	Stringa di ricerca per il nome, vuota equilave a tutto.
 	* @param NameWholeWord	->	Se true confronta la ricerca con l'intero nome.
 	* @param ExtContent		->	Stringa di ricerca per l'estensione, vuota equilave a tutto.
@@ -803,7 +853,7 @@ namespace DPath
 	* @return il numero di directory trovate, -1 in caso di errore.
 	* N.B. @ref Result non viene pulita qindi s non è vuoa  risultati vengono aggiunti.
 	**/
-	int ListDirs(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive, bool *StopRequest) {
+	int ListDirs(std::shared_ptr<DPathList> Result, fs::path PathToScan, bool Recursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive, bool& StopRequest) {
 		std::vector<std::string> NameContentList;
 		std::vector<std::string> ExtContentList;
 		if (!NameContent.empty()) {
@@ -812,13 +862,13 @@ namespace DPath
 		if (!ExtContent.empty()) {
 			ExtContentList.push_back(ExtContent);
 		}
-		return(ListDirs(Result,PathToScan,Recoursive,&NameContentList,NameWholeWord,&ExtContentList,ExtWholeWord,CaseSensitive,false,StopRequest));
+		return(ListDirs(Result,PathToScan,Recursive,&NameContentList,NameWholeWord,&ExtContentList,ExtWholeWord,CaseSensitive,false,StopRequest));
 	}
 
 	//! Conta le cartelle all'interno di una cartella
 	/**
 	* @param PathToScan			->	Directory di partenza.
-	* @param Recoursive			->	Se true va in ricorsione.
+	* @param Recursive			->	Se true va in ricorsione.
 	* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), nullptr o vuoto equivale a tutto.
 	* @param NameWholeWord		->	Se true confronta la ricerca con l'intero nome.
 	* @param ExtContentList		->	Puntatore ad un array di estensioni da cercare, nullptr o vuoto equivale a tutto.
@@ -830,8 +880,8 @@ namespace DPath
 	*
 	* @return il numero di directory trovate, -1 in caso di errore.
 	**/
-	int CountDirs(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool *StopRequest) {
-		return(ListDirs(nullptr,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest));
+	int CountDirs(fs::path PathToScan, bool Recursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool& StopRequest) {
+		return(ListDirs(nullptr,PathToScan,Recursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest));
 	}
 
 	//! Conta le cartelle all'interno di una cartella.
@@ -839,25 +889,25 @@ namespace DPath
 	* @param PathToScan		->	Directory di partenza.
 	* @param NameConent		->	Stringa di ricerca per il nome, vuota equilave a tutto.
 	* @param ExtContent		->	Stringa di ricerca per l'estensione, vuota equilave a tutto.
-	* @param Recoursive		->	Se true va in ricorsione.
+	* @param Recursive		->	Se true va in ricorsione.
 	* @param StopRequest	->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	*
 	* @return il numero di directory trovate, -1 in caso di errore.
 	**/
-	int CountDirs(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive, bool *StopRequest) {
-		return(ListDirs(nullptr,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensitive,StopRequest));
+	int CountDirs(fs::path PathToScan, bool Recursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive, bool& StopRequest) {
+		return(ListDirs(nullptr,PathToScan,Recursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensitive,StopRequest));
 	}
 
 	//! Conta tutte le cartelle all'interno di una cartella.
 	/**
 	* @param PathToScan		->	Directory di partenza.
-	* @param Recoursive		->	Se true va in ricorsione.
+	* @param Recursive		->	Se true va in ricorsione.
 	* @param StopRequest	->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	*
 	* @return il numero di directory trovate, -1 in caso di errore.
 	**/
-	int CountDirs(fs::path PathToScan, bool Recoursive, bool *StopRequest) {
-		return(ListDirs(nullptr,PathToScan,Recoursive,nullptr,false,nullptr,false,false,false,StopRequest));
+	int CountDirs(fs::path PathToScan, bool Recursive, bool& StopRequest) {
+		return(ListDirs(nullptr,PathToScan,Recursive,nullptr,false,nullptr,false,false,false,StopRequest));
 	}
 
 	//! Cerca tutti i files all'interno di una cartella.
@@ -866,7 +916,7 @@ namespace DPath
 	*
 	* @param Result				->	Puntatore ad una array di path da popolare con i risultati, se nullptr ritorna solo il conteggio.
 	* @param PathToScan			->	Directory di partenza.
-	* @param Recoursive			->	Se true va in ricorsione.
+	* @param Recursive			->	Se true va in ricorsione.
 	* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), nullptr o vuoto equivale a tutto.
 	*								N.B. Tutte le stringhe devo essere contenute nel nome.
 	* @param NameWholeWord		->	Se true confronta la ricerca con l'intero nome (Ignorato se @ref NameContentList contiene più di una stringa).
@@ -881,11 +931,12 @@ namespace DPath
 	* @return il numero di files trovati, -1 in caso di errore.
 	* NameContentList e ExtConentList sono sempre legati da una corrispondenza AND quindi: se entrambi hanno contenuto, entrambi devono essere trovati
 	* N.B. @ref Result non viene pulita quindi se non è vuota i risultati vengono aggiunti.
+	* TODO: callback
 	**/
-	int ListFiles(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool *StopRequest) {
+	int ListFiles(std::shared_ptr<DPathList> Result, fs::path PathToScan, bool Recursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool& StopRequest) {
 		err::error_code ec;
 		unsigned int Tot=0;
-		//DEBUG_PRINT("ListFiles in "+PathToScan.string()+" Recoursive="+std::to_string(Recoursive)+" CaseSensitive="+std::to_string(CaseSensitive));
+		//DEBUG_PRINT("ListFiles in "+PathToScan.string()+" Recursive="+std::to_string(Recursive)+" CaseSensitive="+std::to_string(CaseSensitive));
 
 		// Verifica esistenza
 
@@ -895,16 +946,14 @@ namespace DPath
 
 		for (fs::directory_iterator iterator(PathToScan); iterator != fs::directory_iterator(); ++iterator) {
 			if (StopRequest) {
-				if (*StopRequest) {
-					//Log("Stop requested");
-					break;
-				}
+				//Log("Stop requested");
+				break;
 			}
 			if (fs::is_directory(iterator->status())) {
-				if (Recoursive) {
+				if (Recursive) {
 					// In ricorsione
 					//DEBUG_PRINT("Ricorsione su "+iterator->path().string());
-					Tot+=ListFiles(Result,iterator->path(),Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest);
+					Tot+=ListFiles(Result,iterator->path(),Recursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest);
 				}
 			}
 			else {
@@ -975,13 +1024,13 @@ namespace DPath
 								else {
 									// Ricerca contenuto
 									if (CaseSensitive) {
-										if (NameContent.find(CurrName) != std::string::npos) {
+										if (CurrName.find(NameContent) != std::string::npos) {
 											Found=true;
 											break;
 										}
 									}
 									else {
-										if (DTools::DString::ToUpperCopy(NameContent).find(DTools::DString::ToUpperCopy(CurrName)) != std::string::npos) {
+										if (DTools::DString::ToUpperCopy(CurrName).find(DTools::DString::ToUpperCopy(NameContent)) != std::string::npos) {
 											Found=true;
 											break;
 										}
@@ -1070,7 +1119,7 @@ namespace DPath
 								else {
 									// Ricerca contenuto
 									if (CaseSensitive) {
-										if (ExtContent.find(CurrExt) != std::string::npos) {
+										if (CurrExt.find(ExtContent) != std::string::npos) {
 											Found=true;
 											break;
 										}
@@ -1101,7 +1150,7 @@ namespace DPath
 
 				// Trovato
 				Tot++;
-				if (Result != nullptr) {
+				if (Result) {
 					Result->push_back(CurrPath);
 				}
 			}
@@ -1116,7 +1165,7 @@ namespace DPath
 	*
 	* @param Result			->	Puntatore ad una array di path da popolare con i risultati, se nullptr ritorna solo il conteggio.
 	* @param PathToScan		->	Directory di partenza.
-	* @param Recoursive		->	Se true va in ricorsione.
+	* @param Recursive		->	Se true va in ricorsione.
 	* @param NameContent	->	Stringa di ricerca per il nome, vuota equilave a tutto.
 	* @param NameWholeWord	->	Se true confronta la ricerca con l'intero nome.
 	* @param ExtContent		->	Stringa di ricerca per l'estensione, vuota equilave a tutto.
@@ -1126,7 +1175,7 @@ namespace DPath
 	* @return il numero di files trovati, -1 in caso di errore.
 	* N.B. @ref Result non viene pulita quindi se non è vuota i risultati vengono aggiunti.
 	**/
-	int ListFiles(std::vector<fs::path> *Result, fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive, bool *StopRequest) {
+	int ListFiles(std::shared_ptr<DPathList> Result, fs::path PathToScan, bool Recursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive, bool& StopRequest) {
 		std::vector<std::string> NameContentList;
 		std::vector<std::string> ExtContentList;
 		if (!NameContent.empty()) {
@@ -1135,7 +1184,11 @@ namespace DPath
 		if (!ExtContent.empty()) {
 			ExtContentList.push_back(ExtContent);
 		}
-		return(ListFiles(Result,PathToScan,Recoursive,&NameContentList,NameWholeWord,&ExtContentList,ExtWholeWord,CaseSensitive,false,StopRequest));
+		return(ListFiles(Result,PathToScan,Recursive,&NameContentList,NameWholeWord,&ExtContentList,ExtWholeWord,CaseSensitive,false,StopRequest));
+	}
+	int ListFiles(std::shared_ptr<DPathList> Result, fs::path PathToScan, bool Recursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive) {
+		bool StopRequest=false;
+		return(ListFiles(Result,PathToScan,Recursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensitive,StopRequest));
 	}
 
 	//! Conta i files all'interno di una cartella
@@ -1143,7 +1196,7 @@ namespace DPath
 	* Ricerca tramite una lista per nome e una lista per l'estensione.
 	*
 	* @param PathToScan		->	Directory di partenza.
-	* @param Recoursive			->	Se true va in ricorsione.
+	* @param Recursive			->	Se true va in ricorsione.
 	* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), nullptr o vuoto equivale a tutto.
 	*								N.B. Tutte le stringhe devo essere contenute nel nome.
 	* @param NameWholeWord		->	Se true confronta la ricerca con l'intero nome (Ignorato se @ref NameContentList contiene più di una stringa).
@@ -1156,8 +1209,8 @@ namespace DPath
 	*
 	* @return il numero di files trovati, -1 in caso di errore.
 	**/
-	int CountFiles(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool *StopRequest) {
-		return(ListFiles(nullptr,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest));
+	int CountFiles(fs::path PathToScan, bool Recursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool& StopRequest) {
+		return(ListFiles(nullptr,PathToScan,Recursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest));
 	}
 
 	//! Conta i files all'interno di una cartella
@@ -1165,7 +1218,7 @@ namespace DPath
 	* Ricerca tramite una stringa per nome e una stringa per l'estensione
 	*
 	* @param PathToScan	->	Directory di partenza
-	* @param Recoursive		->	Se true va in ricorsione (solo se non è un ordine Prodig)
+	* @param Recursive		->	Se true va in ricorsione (solo se non è un ordine Prodig)
 	* @param NameContent	->	Stringa di ricerca per il nome, vuota equilave a tutto
 	* @param NameWholeWord	->	Se true confronta la ricerca con l'intero nome
 	* @param ExtContent		->	Stringa di ricerca per l'estensione, vuota equilave a tutto
@@ -1174,8 +1227,8 @@ namespace DPath
 	*
 	* @return il numero di files trovati, -1 in caso di errore
 	**/
-	int CountFiles(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensistive, bool *StopRequest) {
-		return(ListFiles(nullptr,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensistive,StopRequest));
+	int CountFiles(fs::path PathToScan, bool Recursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensistive, bool& StopRequest) {
+		return(ListFiles(nullptr,PathToScan,Recursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensistive,StopRequest));
 	}
 
 	//! Conta tutti i files all'interno di una cartella
@@ -1183,13 +1236,13 @@ namespace DPath
 	* Ricerca tramite una stringa per nome e una stringa per l'estensione.
 	*
 	* @param PathToScan		->	Directory di partenza.
-	* @param Recoursive		->	Se true va in ricorsione.
+	* @param Recursive		->	Se true va in ricorsione.
 	* @param StopRequest	->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	*
 	* @return il numero di files trovati, -1 in caso di errore.
 	**/
-	int CountFiles(fs::path PathToScan, bool Recoursive, bool *StopRequest) {
-		return(ListFiles(nullptr,PathToScan,Recoursive,nullptr,false,nullptr,false,false,false,StopRequest));
+	int CountFiles(fs::path PathToScan, bool Recursive, bool& StopRequest) {
+		return(ListFiles(nullptr,PathToScan,Recursive,nullptr,false,nullptr,false,false,false,StopRequest));
 	}
 
 	//! Elimina files all'interno di una cartella
@@ -1197,7 +1250,7 @@ namespace DPath
 	* Ricerca tramite una lista per nome e una lista per l'estensione
 	*
 	* @param PathToScan			->	Directory di partenza
-	* @param Recoursive			->	Se true va in ricorsione (solo se non è un ordine Prodig)
+	* @param Recursive			->	Se true va in ricorsione (solo se non è un ordine Prodig)
 	* @param NameContentList	->	Puntatore ad un array di stringhe di ricerca per il nome (esclusa l'estensione), nullptr o vuoto equivale a tutto
 	*								N.B. Tutte le stringhe devo essere contenute nel nome
 	* @param NameWholeWord		->	Se true confronta la ricerca con l'intero nome (Ignorato se @ref NameContentList contiene più di una stringa)
@@ -1211,16 +1264,16 @@ namespace DPath
 	*
 	* @return il numero di files eliminat, -1 in caso di errore
 	**/
-	int DeleteFiles(fs::path PathToScan, bool Recoursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool *StopRequest) {
-		std::vector<fs::path> Result;
-		int nFiles=ListFiles(&Result,PathToScan,Recoursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest);
+	int DeleteFiles(fs::path PathToScan, bool Recursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool& StopRequest) {
+		auto Result=std::make_shared<DPathList>();
+		int nFiles=ListFiles(Result,PathToScan,Recursive,NameContentList,NameWholeWord,ExtContentList,ExtWholeWord,CaseSensitive,FindAll,StopRequest);
 		if (nFiles == -1) {
 			return(-1);
 		}
 
 		int nDeleted=0;
 		err::error_code ec;
-		for (fs::path& Filename : Result) {
+		for (fs::path& Filename : *Result) {
 			fs::remove(Filename,ec);
 			if (ec.value() == 0) {
 				nDeleted++;
@@ -1235,7 +1288,7 @@ namespace DPath
 	* Ricerca tramite una stringa per nome e una stringa per l'estensione
 	*
 	* @param PathToScan		->	Directory di partenza
-	* @param Recoursive		->	Se true va in ricorsione (solo se non è un ordine Prodig).
+	* @param Recursive		->	Se true va in ricorsione (solo se non è un ordine Prodig).
 	* @param NameContent	->	Stringa di ricerca per il nome, vuota equilave a tutto.
 	* @param NameWholeWord	->	Se true confronta la ricerca con l'intero nome.
 	* @param ExtContent		->	Stringa di ricerca per l'estensione, vuota equilave a tutto.
@@ -1245,17 +1298,17 @@ namespace DPath
 	*
 	* @return il numero di files eliminati, -1 in caso di errore
 	**/
-	int DeleteFiles(fs::path PathToScan, bool Recoursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive, bool *StopRequest) {
-		std::vector<fs::path> Result;
-		int nFiles=ListFiles(&Result,PathToScan,Recoursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensitive,StopRequest);
+	int DeleteFiles(fs::path PathToScan, bool Recursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive, bool& StopRequest) {
+		auto Result=std::make_shared<DPathList>();
+		int nFiles=ListFiles(Result,PathToScan,Recursive,NameContent,NameWholeWord,ExtContent,ExtWholeWord,CaseSensitive,StopRequest);
 		if (nFiles == -1) {
 			return(-1);
 		}
-		DEBUG_PRINT("Found " << Result.size() << " files to remove");
+		DEBUG_PRINT("Found " << Result->size() << " files to remove");
 
 		int nDeleted=0;
 		err::error_code ec;
-		for (fs::path& Filename : Result) {
+		for (fs::path& Filename : *Result) {
 			fs::remove(Filename,ec);
 			if (!ec) {
 				nDeleted++;
@@ -1270,23 +1323,23 @@ namespace DPath
 	* Ricerca tramite una stringa per nome e una stringa per l'estensione
 	*
 	* @param PathToScan		->	Directory di partenza.
-	* @param Recoursive		->	Se true va in ricorsione.
+	* @param Recursive		->	Se true va in ricorsione.
 	* @param StopRequest	->	Puntatore alla variabile che contiene il flag di richiesta di stop, quando diventa true la ricerca si interrompe.
 	* N.B. In ricorsione vengono eliminati solo i files, non le cartelle.
 	*
 	* @return il numero di files eliminati, -1 in caso di errore
 	**/
-	int DeleteFiles(fs::path PathToScan, bool Recoursive, bool *StopRequest) {
-		std::vector<fs::path> Result;
-		int nFiles=ListFiles(&Result,PathToScan,Recoursive,nullptr,false,nullptr,false,false,false,StopRequest);
+	int DeleteFiles(fs::path PathToScan, bool Recursive, bool& StopRequest) {
+		auto Result=std::make_shared<DPathList>();
+		int nFiles=ListFiles(Result,PathToScan,Recursive,nullptr,false,nullptr,false,false,false,StopRequest);
 		if (nFiles == -1) {
 			return(-1);
 		}
-		DEBUG_PRINT("Found " << Result.size() << " files to remove");
+		DEBUG_PRINT("Found " << Result->size() << " files to remove");
 
 		int nDeleted=0;
 		err::error_code ec;
-		for (fs::path& Filename : Result) {
+		for (fs::path& Filename : *Result) {
 			fs::remove(Filename,ec);
 			if (!ec) {
 				nDeleted++;
@@ -1296,6 +1349,17 @@ namespace DPath
 		return(nDeleted);
 	}
 
+	int DeleteFiles(fs::path PathToScan, bool Recursive) {
+		bool StopRequest=false;
+		return(DeleteFiles(PathToScan,Recursive,StopRequest));
+	}
+
+
+	bool Exists(fs::path Path) {
+		return(Exists_StdFs(Path));
+		//return(Exists_Posix(Path.string().c_str()));
+	}
+
 	/**
 	 * @brief Wrapper for filesystem::exists.
 	 * This is a workaround, from gcc 8 and above filesystem::exists() return false on some linux samba share that exists instead.
@@ -1303,21 +1367,31 @@ namespace DPath
 	 * @return true if the path exists, otherwise false.
 	 * N.B. Exceptions will not trown.
 	 */
-	bool Exists(fs::path Path) {
+	bool Exists_StdFs(fs::path Path) {
 		err::error_code ec;
         
 		// Try first normal way
-        fs::file_status Status=fs::status(Path,ec);
-		bool Ret=fs::exists(Status);
-		if (Ret) {
-			return true;
+		try {
+			fs::file_status Status=fs::status(Path,ec);
+			bool Ret=fs::exists(Status);
+			if (Ret) {
+				return true;
+			}
+		}catch(std::filesystem::filesystem_error const& e) {
+			DEBUG_PRINT_E(e);
 		}
 		
         #ifdef _WIN32
             // Only for Windows, if Ret is false try also the alternative way
-            Ret=DTools::DPath::CanAccess(Path,DTools::DPath::ACCESS_READ);
+            try {
+               return(DTools::DPath::CanAccess(Path,DTools::DPath::ACCESS_READ));
+            }catch(std::filesystem::filesystem_error const& e) {
+                DEBUG_PRINT_E(e);
+                return false;
+            }
         #endif
-		return(Ret);
+
+		return false;
 	}
 
 	/**
@@ -1373,6 +1447,26 @@ namespace DPath
 		ErrorList.end()
 	);
 	//v.erase(std::remove_if(v.begin(), v.end(), IsOdd), v.end());
+	*/
+
+	/*
+	 // TODO: recursive iterator
+	 for (auto &File : fs::recursive_directory_iterator(Path)) {
+		std::string Filename=File.path().string();
+		if (!Contains(Filename)) {
+			DirScanResult[Filename] = fs::last_write_time(File);
+			return(CHANGE_STATUS_CREATED);
+		}
+		else {
+			if (DirScanResult[Filename] != fs::last_write_time(File)) {
+				DirScanResult[Filename] = fs::last_write_time(File);
+				return(CHANGE_STATUS_MODIFIED);
+			}
+		}
+		if (Stop) {
+			return(CHANGE_STATUS_STOPPED_FROM_REQUEST);
+		}
+	}
 	*/
 } // DPath
 } // DTools

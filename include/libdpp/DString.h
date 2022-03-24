@@ -64,7 +64,7 @@ namespace DString
 		return(Num);
 	}
 
-	//! Strings Format
+	// Strings Format
 	template<typename ... Args>
 	std::string FormatString(const std::string& format,Args ... args) {
 		size_t len = snprintf(nullptr,0,format.c_str(),args ...)+1; // Extra space for '\0'
@@ -81,11 +81,12 @@ namespace DString
 	std::string ToUpperCopy(std::string str);
 	std::string& ToLower(std::string& str);
 	std::string ToLowerCopy(std::string str);
-	std::wstring StrToWideStr(const std::string& str);
-	std::string WideStrToStr(const std::wstring& wstr);
+	std::wstring ToWideStr(const std::string& str);
+	std::string ToStdStr(const std::wstring& wstr);
 
 	// Compare
 	bool CmpNoCase(std::string str1, std::string str2);
+	bool Contains(std::string str, std::string pattern, bool CaseSensitive = false);
 
 	//std::string& RemoveAll(std::string& str, std::string& Search);
 } // DString

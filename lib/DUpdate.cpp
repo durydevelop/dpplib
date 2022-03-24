@@ -459,8 +459,9 @@ namespace DTools
                 // TODO
             }
             std::string LogMsg="Copy repo file"+RemoteInfoFilename.string()+" to "+LocalInfoFilename.string();
-            if (!DTools::DPath::Copy_File(RemoteInfoFilename,LocalInfoFilename,true,true)) {
-                Log("Error "+LogMsg);
+            DError::DErrorCode ErrorCode=DTools::DPath::Copy_File(RemoteInfoFilename,LocalInfoFilename,true,true);
+            if (ErrorCode.IsSet()) {
+                Log("Error "+LogMsg+" : "+ErrorCode.Message());
                 Ready=false;
                 return false;
             }
@@ -546,8 +547,9 @@ namespace DTools
 
                 // copy to local temp
                 std::string LogMsg="Copy "+SourceFilename.string()+" to "+DestFilename.string();
-                if (!DTools::DPath::Copy_File(SourceFilename,DestFilename,false)) {
-                    Log("Error "+LogMsg);
+                DError::DErrorCode ErrorCode=DTools::DPath::Copy_File(SourceFilename,DestFilename,false);
+                if (ErrorCode.IsSet()) {
+                    Log("Error "+LogMsg+" : "+ErrorCode.Message());
                     Ready=false;
                     return false;
                 }
@@ -714,7 +716,7 @@ namespace DTools
 
         if (CleanAfter) {
             Log("Clean update folder "+UpdateTempDir.string());
-            int nDeleted=DPath::DeleteFiles(UpdateTempDir,false,nullptr);
+            int nDeleted=DPath::DeleteFiles(UpdateTempDir,false);
             if (nDeleted == -1) {
                 Log("Cannot delete temporary udate files");
             }

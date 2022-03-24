@@ -9,7 +9,7 @@ namespace DTools
 {
 	class DSyncFile {
 		public:
-			enum DSyncStatus { SYNC_ERR_BHO=-4, SYNC_ERR_COPY=-3, SYNC_ERR_FILE_NOT_FOUND=-2, SYNC_ERR_SAME_AS_DEST=-1, SYNC_NOT_YET=0, SYNC_NO_NEEDED=1, SYNC_DONE=2, SYNC_RESTORED=3, SYNC_CALLBACK_STR_MSG=16 };
+			enum DSyncStatus { SYNC_ERR_BHO=-4, SYNC_ERR_COPY=-3, SYNC_ERR_FILE_NOT_FOUND=-2, SYNC_ERR_SAME_AS_DEST=-1, SYNC_NOT_YET=0, SYNC_NO_NEEDED=1, SYNC_DONE=2, SYNC_RESTORED=3, SYNC_NOT_READY=4, SYNC_CALLBACK_STR_MSG=16 };
 			DSyncFile(DTools::fs::path SourceFilename, DTools::fs::path DestFilename, bool SyncNow, bool SafeCopyMode);
 			DSyncStatus DoSync(void);
 			bool IsReady(void);

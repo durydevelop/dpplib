@@ -50,6 +50,27 @@ namespace DTools
     namespace fs=std::filesystem;
 
     class DLog {
+            // ******************************  Callback stuffs ***************************************
+            public:
+                typedef std::function<void(std::string,std::string,std::string)> DLogCallback;
+                /**
+                 * @brief Register a class member callback.
+                 * @param callback  ->  DCallback type function to bind like:
+                 * @code auto callback=std::bind(&MainWindow::Callback,this,std::placeholders::_1,std::placeholders::_2,std::placeholders::_3); @endcode
+                 */
+                void SetCallback(DLogCallback callback = nullptr) {
+                        Callback=callback;
+                }
+            private:
+                DLogCallback Callback;
+                /**
+                 * @brief Perform the callback
+                 */
+                void DoCallback(std::string Msg, std::string OutputType, std::string Header) {
+                    Callback(Msg,OutputType,Header);
+                }
+            // ***************************************************************************************
+
         public:
             //! Colors defines for printf
             const std::string CL_RED        =   "\x1b[31m";
@@ -128,7 +149,8 @@ namespace DTools
             }
 
             //! Read content of log file and send it line by line to Callback.
-            bool Read() {
+            //bool ReadLines(std::string FromDate, std::string ToDate, DLogCallback Callback) {
+            bool Read(void) {
                 std::ifstream fLog(Filename,std::ios::in);
                 if (!fLog.is_open()) {
                     Write(OUTPUT_ERROR,"Log file not opened for read request");
@@ -429,27 +451,6 @@ namespace DTools
                 }
                 return true;
             }
-
-        // ******************************  Callback stuffs ***************************************
-        public:
-            typedef std::function<void(std::string,std::string,std::string)> DLogCallback;
-            /**
-             * @brief Register a class member callback.
-             * @param callback  ->  DCallback type function to bind like:
-             * @code auto callback=std::bind(&MainWindow::Callback,this,std::placeholders::_1,std::placeholders::_2,std::placeholders::_3); @endcode
-             */
-            void SetCallback(DLogCallback callback = nullptr) {
-                    Callback=callback;
-            }
-        private:
-            DLogCallback Callback;
-            /**
-             * @brief Perform the callback
-             */
-            void DoCallback(std::string Msg, std::string OutputType, std::string Header) {
-                Callback(Msg,OutputType,Header);
-            }
-        // ***************************************************************************************
 
         private:
             //! Write the the message on stdout, stderr, file

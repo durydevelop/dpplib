@@ -28,7 +28,13 @@ namespace DTools
 	DSyncFile::DSyncFile(fs::path SourceFilename, fs::path DestFilename, bool SyncNow, bool SafeCopyMode) {
 		Source=SourceFilename;
 		Dest=DestFilename;
-		Ready=false;
+		if (DTools::DPath::Exists(Source)) {
+			Ready=true;
+		}
+		else {
+			LastStrStatus="Sync file "+Source.string()+" does not exist";
+			Ready=false;
+		}
 		SafeMode=SafeCopyMode;
 		if (SyncNow) {
 			DoSync();
@@ -42,9 +48,15 @@ namespace DTools
 	DSyncFile::DSyncStatus DSyncFile::DoSync(void) {
 try {
 		if (!DTools::DPath::Exists(Source)) {
-			LastStrStatus="Sync file "+Source.string()+" does not exist";
-			Ready=false;
-			LastSyncStatus=SYNC_ERR_FILE_NOT_FOUND;
+			if (!Ready) {
+				// Already not ready
+				LastSyncStatus=SYNC_NOT_READY;
+			}
+			else {
+				LastStrStatus="Sync file "+Source.string()+" does not exist";
+				Ready=false;
+				LastSyncStatus=SYNC_ERR_FILE_NOT_FOUND;
+			}
 			return(LastSyncStatus);
 		}
 
@@ -55,12 +67,35 @@ try {
 			return(LastSyncStatus);
 		}
 
+		if (!Ready) {
+			// From !Ready to Ready, notify restored and real check next time
+			Ready=true;
+			LastSyncStatus=SYNC_RESTORED;
+			return(LastSyncStatus);
+		}
+
 		Ready=true;
         LastStrStatus=Source.string()+" -> ";
 
 		if (!DTools::DPath::Exists(Dest)) {
 			LastStrStatus.append("not present, sync ");
 		}
+		else {
+			std::chrono::system_clock::time_point st=DTools::DPath::LastWriteTime(Source);
+			std::chrono::system_clock::time_point dt=DTools::DPath::LastWriteTime(Dest);
+			std::string s=DString::FormatTimeP(st);
+			std::string d=DString::FormatTimeP(dt);
+			if (st > dt) {
+				LastStrStatus.append("sync ");
+			}
+			else {
+				LastStrStatus.append("no sync needed");
+				LastSyncStatus=SYNC_NO_NEEDED;
+				return(LastSyncStatus);
+			}
+		}
+
+/*
 		else if (DTools::DPath::LastWriteTime(Source) > DTools::DPath::LastWriteTime(Dest)) {
 			LastStrStatus.append("sync ");
 		}
@@ -69,10 +104,11 @@ try {
 			LastSyncStatus=SYNC_NO_NEEDED;
 			return(LastSyncStatus);
 		}
-
+*/
 		try {
-			if (!DTools::DPath::Copy_File(Source,Dest,true,SafeMode)) {
-				LastStrStatus.append("error copying to "+Dest.string());
+			DError::DErrorCode ErrorCode=DTools::DPath::Copy_File(Source,Dest,true,SafeMode);
+			if (ErrorCode.IsSet()) {
+				LastStrStatus.append("error copying to "+Dest.string()+" : "+ErrorCode.Message());
 				LastSyncStatus=SYNC_ERR_COPY;
 				return(LastSyncStatus);
 			}
@@ -91,7 +127,7 @@ try {
 		}
 }
 catch (std::exception& e) {
-	LastStrStatus.append(std::string("Watcher Exception: ")+e.what());
+	LastStrStatus.append(std::string("Watcher DoSync() Exception: ")+e.what());
 }
 		return(LastSyncStatus);
 	}

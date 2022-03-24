@@ -176,21 +176,40 @@ namespace DString
      * @return true if string are equals, otherwise false
      */
     bool CmpNoCase(std::string str1, std::string str2) {
-        std::transform(str1.begin(), str1.end(),str1.begin(), ::tolower);
-        std::transform(str2.begin(), str2.end(),str2.begin(), ::tolower);
+        std::transform(str1.begin(),str1.end(),str1.begin(),::tolower);
+        std::transform(str2.begin(),str2.end(),str2.begin(),::tolower);
         if (str1.compare(str2) == 0) {
             return true;
         }
         return false;
     }
 
-    std::wstring StrToWideStr(const std::string& str) {
+    /**
+     * @brief Check str contains pattern.
+     * @param str       ->  Source string.
+     * @param pattern   ->  Pattern string to search for.
+     * @param CaseSensitive ->  Set to false to check case-unsensitive.
+     * @return true if pattern is contained in str (also if theay are equals).
+     */
+    bool Contains(std::string str, std::string pattern, bool CaseSensitive) {
+        if (CaseSensitive) {
+            std::transform(str.begin(),str.end(),str.begin(),::tolower);
+            std::transform(pattern.begin(),pattern.end(),pattern.begin(),::tolower);
+        }
+
+        if (str.find(pattern) != std::string::npos) {
+            return true;
+        }
+        return false;
+    }
+
+    std::wstring ToWideStr(const std::string& str) {
         using convert_typeX = std::codecvt_utf8<wchar_t>;
         std::wstring_convert<convert_typeX, wchar_t> converterX;
         return converterX.from_bytes(str);
     }
 
-    std::string WideStrToStr(const std::wstring& wstr) {
+    std::string ToStdStr(const std::wstring& wstr) {
         using convert_typeX = std::codecvt_utf8<wchar_t>;
         std::wstring_convert<convert_typeX, wchar_t> converterX;
         return converterX.to_bytes(wstr);

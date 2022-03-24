@@ -5,6 +5,9 @@
 #include <QWidget>
 #include <Qt>
 
+/**
+ * @brief The DQLabel class is an overload of the QLabel that implements also double click event.
+ */
 class DQLabel : public QLabel {
     Q_OBJECT 
 
@@ -14,11 +17,11 @@ class DQLabel : public QLabel {
         ~DQLabel(){};
 
     signals:
-        void OnDblClick();
+        void OnDblClick(QMouseEvent* event);
 
     protected:
         void mouseDoubleClickEvent(QMouseEvent* event) {
-            emit OnDblClick();
+            emit OnDblClick(event);
         };
 
 };
