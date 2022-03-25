@@ -7,10 +7,13 @@
     #include <string.h>
 #endif
 
+#ifdef _WIN32
+    #include <windows.h>
+#endif
+
 #if defined QT_CORE_LIB
     #include <QProcess>
 #endif
-
 
 namespace DTools
 {
@@ -35,10 +38,13 @@ namespace DShell
             exec_info.fMask = SEE_MASK_FLAG_DDEWAIT | SEE_MASK_FLAG_NO_UI | SEE_MASK_NOCLOSEPROCESS;
             exec_info.hwnd = NULL;
             exec_info.lpVerb = NULL;
-            exec_info.lpFile = Filename.c_str();
-            //exec_info.lpFile = DString::StrToWideStr(Filename).c_str();
-            exec_info.lpParameters = Args.c_str();
-            //exec_info.lpParameters = DString::StrToWideStr(Args).c_str();
+            #ifdef UNICODE
+                exec_info.lpFile = DString::ToWideStr(Filename).c_str();
+                exec_info.lpParameters = DString::ToWideStr(Args).c_str();
+            #else
+                exec_info.lpFile = Filename.c_str();
+                exec_info.lpParameters = Args.c_str();
+            #endif
             exec_info.lpDirectory = NULL;
 
             return(ShellExecuteEx(&exec_info));
