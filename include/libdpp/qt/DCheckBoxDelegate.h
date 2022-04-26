@@ -4,7 +4,20 @@
 #ifdef QT_GUI_LIB
 
 #include <QStyledItemDelegate>
+/*
+#include <QProxyStyle>
+class CustomStyle : public QProxyStyle
+{
+    Q_OBJECT
 
+public:
+    CustomStyle();
+    ~CustomStyle() {}
+
+    int pixelMetric(PixelMetric which, const QStyleOption *option, const QWidget *widget) const override;
+    void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget) const override;
+};
+*/
 class DCheckBoxDelegate : public QStyledItemDelegate
 {
     Q_OBJECT

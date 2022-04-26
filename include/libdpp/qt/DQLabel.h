@@ -1,6 +1,8 @@
 #ifndef CLICKABLELABEL_H
 #define CLICKABLELABEL_H
 
+#ifdef QT_GUI_LIB
+
 #include <QLabel>
 #include <QWidget>
 #include <Qt>
@@ -25,5 +27,7 @@ class DQLabel : public QLabel {
         };
 
 };
+
+#endif
 
 #endif

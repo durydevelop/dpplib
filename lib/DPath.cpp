@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include <fcntl.h>
+#include <sys/stat.h>
 #ifndef O_BINARY
     #define O_BINARY 0
 #endif
@@ -219,6 +220,27 @@ namespace DPath
 		return(tptime);
 	}
 
+    /**
+     * @brief Retrive the creation time of file/dir (Posix version).
+     * @param path	->	file/dir to check.
+     * @return a time_point format time.
+     */
+    std::chrono::system_clock::time_point CreationTime_Posix(const char* const path) {
+        struct stat info;
+        std::chrono::system_clock::time_point tptime;
+
+		int statRC=stat(path,&info);
+		if(statRC != 0 ) {
+			return tptime;
+		}
+
+		std::time_t ftimet=info.st_ctime;
+		// to time_point
+		tptime=std::chrono::system_clock::from_time_t(ftimet);
+
+		return (tptime);
+	}
+
     std::string GetPermissionsString(fs::path Path) {
         fs::perms p=fs::status(Path).permissions();
         return(GetPermissionsString(p));
@@ -367,7 +389,6 @@ namespace DPath
 	 * @return true on succes, otherwise false.
      * TODO: Copy permissions
 	 */
-	#include <sys/stat.h>
 	bool Copy_File_Posix(const char* SourceFile, const char* DestFile, bool OverwriteExisting, DCallback Callback, size_t BufferSize) {
 		if (!OverwriteExisting) {
 			struct stat buffer;

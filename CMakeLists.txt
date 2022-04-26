@@ -119,6 +119,7 @@ endif()
 if (${PROJECT_NAME}_BUILD_QT OR BUILD_QT)
     set(${PROJECT_NAME}_BUILD_QT ON)
     set(BUILD_QT ON)
+    set(CMAKE_AUTOMOC ON)
 else()
     set(${PROJECT_NAME}_BUILD_QT OFF)
     set(BUILD_QT OFF)
@@ -146,9 +147,11 @@ else()
 endif()
 
 if (NOT ${BUILD_INTERFACE_LIBS})
+    message_c("Linking filesystem lib for " ${PROJECT_NAME})
     target_link_libraries(${PROJECT_NAME} stdc++fs pthread)
     # winsock
     if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        message_c("Linking Winsock2 for " ${PROJECT_NAME})
         target_link_libraries(${PROJECT_NAME} ws2_32 wsock32)
     endif()
 endif()
@@ -159,6 +162,7 @@ endif()
 # Uncomment this line to force BOOST_ROOT folder
 get_filename_component(BOOST_ROOT "../boost" ABSOLUTE)
 include(DBoostFinder)
+#set(Boost_INCLUDE_DIR ${Boost_INCLUDE_DIR} PARENT_SCOPE)
 
 # Set make commad option Debug/Release
 include(DMakeOptions)

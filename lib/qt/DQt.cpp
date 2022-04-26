@@ -324,6 +324,22 @@ namespace DWidget {
         }
         delete item->widget();
     }
+
+    /**
+     * @brief Get index of tab with name TabName in QTabWidget.
+     * @param TabName   ->  Tab name to find.
+     * @param TabWidget ->  Pointer to QTabWidget.
+     * @return Index (0 based) of tab with TabName or -1 if it is not found.
+     */
+    int QTabWidgetUtil::IndexOf(QString TabName, QTabWidget *TabWidget) {
+        // Cerco il gruppo code corrente nel TabWidgetQueues
+        for (int ixT=0; ixT<TabWidget->count(); ixT++) {
+            if (TabWidget->tabText(ixT) == QString(TabName)) {
+                return(ixT);
+            }
+        }
+        return(-1);
+    }
 }
 }
 

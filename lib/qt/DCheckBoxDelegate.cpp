@@ -51,7 +51,7 @@ void DCheckBoxDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opt
         // Enabled role
         bool enabled=true; //default
         if (index.model()->data(index,ROLE_ENABLE).isValid()) {
-            // Custom role for enable/disable. If is set use it
+            // Custom role for enable/disable. If it is set, use it
             enabled=index.model()->data(index,ROLE_ENABLE).toBool();
         }
 
@@ -116,6 +116,59 @@ bool DCheckBoxDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, co
         return(QStyledItemDelegate::editorEvent(event, model, option, index));
     }
 }
+
+/**
+CustomStyle::CustomStyle()
+{
+
+}
+int CustomStyle::pixelMetric(PixelMetric which, const QStyleOption *option, const QWidget *widget) const
+{
+    switch (which) {
+        case PM_IndicatorWidth:
+            return (QProxyStyle::pixelMetric(which, option, widget)*2);
+        case PM_IndicatorHeight:
+            return (QProxyStyle::pixelMetric(which, option, widget)*2);
+        default:
+            return QProxyStyle::pixelMetric(which, option, widget);
+    }
+}
+
+void CustomStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *option,
+                                QPainter *painter, const QWidget *widget) const
+{
+    if (element == PE_IndicatorSpinUp || element == PE_IndicatorSpinDown) {
+        QPolygon points(3);
+        int x = option->rect.x();
+        int y = option->rect.y();
+        int w = option->rect.width() / 2;
+        int h = option->rect.height() / 2;
+        x += (option->rect.width() - w) / 2;
+        y += (option->rect.height() - h) / 2;
+
+        if (element == PE_IndicatorSpinUp) {
+            points[0] = QPoint(x, y + h);
+            points[1] = QPoint(x + w, y + h);
+            points[2] = QPoint(x + w / 2, y);
+        } else { // PE_SpinBoxDown
+            points[0] = QPoint(x, y);
+            points[1] = QPoint(x + w, y);
+            points[2] = QPoint(x + w / 2, y + h);
+        }
+
+        if (option->state & State_Enabled) {
+            painter->setPen(option->palette.mid().color());
+            painter->setBrush(option->palette.buttonText());
+        } else {
+            painter->setPen(option->palette.buttonText().color());
+            painter->setBrush(option->palette.mid());
+        }
+        painter->drawPolygon(points);
+    } else {
+    QProxyStyle::drawPrimitive(element, option, painter, widget);
+    }
+}
+*/
 
 /*
 QWidget *DCheckBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const

@@ -70,6 +70,11 @@ namespace DWidget {
             // Deletes all child widgets of the given layout item.
             static void DeleteChildWidgets(QLayoutItem *item);
     };
+
+    class QTabWidgetUtil {
+        public:
+            static int IndexOf(QString TabName, QTabWidget *TabWidget);
+    };
 }
 }
 #endif

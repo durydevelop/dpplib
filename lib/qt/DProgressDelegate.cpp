@@ -32,6 +32,7 @@ void DProgressDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opt
     progressBarOption.minimum=0;
     progressBarOption.maximum=100;
     progressBarOption.textAlignment=Qt::AlignCenter;
+    progressBarOption.state = QStyle::StateFlag::State_Horizontal;
     progressBarOption.textVisible=true;
 
     // Set the progress and text values of the style option.

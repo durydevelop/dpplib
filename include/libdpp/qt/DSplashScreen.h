@@ -1,6 +1,8 @@
 #ifndef SPLASHSCREEN_H
 #define SPLASHSCREEN_H
 
+#ifdef QT_GUI_LIB
+
 #include <QSplashScreen>
 #include <QApplication>
 
@@ -33,4 +35,5 @@ class DSplashScreen : public QSplashScreen
 		QString ProgressText;
 };
 
-#endif // SPLASHSCREEN_H
+#endif
+#endif

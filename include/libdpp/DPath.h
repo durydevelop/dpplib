@@ -58,6 +58,7 @@ namespace DPath
 	bool IsOlderThanMin(const fs::path& Path, const int Min);
 	DError::DErrorCode IsOlderThanHrs(const fs::path& Path, const int Hrs, bool &Result);
 	std::chrono::system_clock::time_point LastWriteTime(const fs::path Path);
+	std::chrono::system_clock::time_point CreationTime_Posix(const char* const path);
 	std::vector<std::string> ReadAllExts(fs::path Path);
     std::string GetPermissionsString(fs::path Path);
     std::string GetPermissionsString(fs::perms p);
