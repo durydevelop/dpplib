@@ -19,6 +19,11 @@ namespace DTools
     	}
 
 		PrefFile=Filename;
+		if (!fs::path(PrefFile).has_parent_path()) {
+			PrefFile=fs::path(fs::current_path() / Filename).string();
+		}
+		Ready=true;
+
 		if (!DTools::DPath::Exists(PrefFile)) {
 			if (CreateIfNotExists) {
                 LastStatus.append(PrefFile+" missing, try to create...\n");
