@@ -191,7 +191,6 @@ namespace DTools
             Ready=SetRepositoryFromFile(DTools::fs::current_path() / FILENAME_REPO_DATA);
         }
 
-
         CurrExeName=DPath::GetExeFilename();
         //Log("Exe name "+CurrExeName.stem().string());
         AsUpdater=false;
@@ -223,10 +222,11 @@ namespace DTools
      *
      */
     bool DUpdate::SetRepositoryFromFile(fs::path Filename) {
-        Log("Updater: load repo data from "+Filename.string());
+
+        Log("Load repo data from "+Filename.string());
         DTools::DPreferences RepoFile(Filename.string());
         if (!RepoFile.IsReady()) {
-            Log("Updater: repoInfoFile open error: "+RepoFile.GetLastStatus());
+            Log("Repo file open error: "+RepoFile.GetLastStatus());
             return false;
         }
 
@@ -270,7 +270,7 @@ namespace DTools
      */
     bool DUpdate::IsValidRepository(void) {
         if (dRepository.MainUri.empty()) {
-            Log("Missing repo");
+            Log("Missing repo info");
             return false;
         }
 
