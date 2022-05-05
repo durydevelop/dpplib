@@ -119,11 +119,7 @@ endif()
 if (${PROJECT_NAME}_BUILD_QT OR BUILD_QT)
     set(${PROJECT_NAME}_BUILD_QT ON)
     set(BUILD_QT ON)
-<<<<<<< HEAD
     set(CMAKE_AUTOUIC ON)
-=======
-	set(CMAKE_AUTOUIC ON)
->>>>>>> refs/remotes/origin/master
     set(CMAKE_AUTOMOC ON)
 else()
     set(${PROJECT_NAME}_BUILD_QT OFF)
