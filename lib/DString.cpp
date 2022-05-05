@@ -17,6 +17,12 @@ namespace DString
 		return str;
 	}
 
+	/**
+	 * @brief Trim
+	 * @param str
+	 * @param chars
+	 * @return
+	 */
 	std::string& Trim(std::string& str, const std::string& chars) {
 		return LTrim(RTrim(str, chars), chars);
 	}

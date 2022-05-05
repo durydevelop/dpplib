@@ -953,6 +953,13 @@ namespace DPath
 	* NameContentList e ExtConentList sono sempre legati da una corrispondenza AND quindi: se entrambi hanno contenuto, entrambi devono essere trovati
 	* N.B. @ref Result non viene pulita quindi se non è vuota i risultati vengono aggiunti.
 	* TODO: callback
+	*
+	@code
+		std::vector<std::string> ExtList;
+		ExtList.emplace_back("txt");
+		auto Result=std::make_shared<DTools::DPath::DPathList>();
+		DTools::DPath::ListFiles(Result,SourceDir,RecursiveSearch,nullptr,false,&ExtList,false,false,false,StopRequest);
+	@endcode
 	**/
 	int ListFiles(std::shared_ptr<DPathList> Result, fs::path PathToScan, bool Recursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool& StopRequest) {
 		err::error_code ec;

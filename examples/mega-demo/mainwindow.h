@@ -5,6 +5,7 @@
 #include "libdpp/DFilesystem.h"
 #include "libdpp/DPathWatcher.h"
 #include "libdpp/DLog.h"
+#include "libdpp/DTree.h"
 #include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
@@ -32,32 +33,30 @@ class MainWindow : public QMainWindow
         void on_ButtonWatcherAlive_clicked();
         void on_ButtonWatcherBrowseFile_clicked();
         void on_ButtonWatcherBrowseDir_clicked();
-        void on_ButtonQMLShow_clicked();
 
+        void on_ButtonQMLShow_clicked();
         void on_ButtonQMLBrowseFile_clicked();
 
         void on_ButtonUdpServer_clicked();
 
         void on_ButtonDPathBrowseDir_clicked();
-
         void on_ButtonDPathSearch_clicked();
-
-        void on_pushButton_2_clicked();
 
         void on_ButtonDShellExecute_clicked();
 
         void on_ButtonRestClientCreate_clicked();
-
         void on_ButtonRestClientConnect_clicked();
-
         void on_ButtonRestClientPost_clicked();
-
-
         void on_ButtonRestClientDIsconnect_clicked();
-
         void on_ButtonRestClientOneShot_clicked();
-
         void on_ButtonRestClientDelete_clicked();
+
+        void on_ButtonDTreeLoad_clicked();
+        void on_ButtonDTreeRootCount_clicked();
+        void on_ButtonDTreeReadString1_clicked();
+        void on_ButtonDTreeReadString2_clicked();
+        void on_ButtonDTreeReadTree_clicked();
+        void on_ButtonDTreeCounts_clicked();
 
     private:
         Ui::MainWindow *ui;
@@ -65,6 +64,7 @@ class MainWindow : public QMainWindow
         DTools::DLog *dLog;
         QTimer *timer;
         std::shared_ptr<DTools::DNetwork::DRESTClient> RESTClient;
+        DTools::DTree dTree;
 
         void WatcherChangeCallback(DTools::DPathWatcher::DChangeStatus Status, DTools::fs::path File, std::string Msg);
 

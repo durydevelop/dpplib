@@ -233,7 +233,7 @@ namespace DTools
         Ready=SetRepository(RepoFile.ReadString(SECTION_REPO,PARAM_REPO_TYPE,""),
                             RepoFile.ReadString(SECTION_REPO,PARAM_REPO_URI,""),
                             RepoFile.ReadString(SECTION_REPO,PARAM_REPO_SUB_URI,""),
-                            RepoFile.ReadBool(SECTION_REPO,PARAM_REPO_AUTH,false),
+                            RepoFile.ReadBool(std::string(SECTION_REPO),std::string(PARAM_REPO_AUTH),false),
                             RepoFile.ReadString(SECTION_REPO,PARAM_REPO_USER,""),
                             RepoFile.ReadString(SECTION_REPO,PARAM_REPO_PWD,""));
 

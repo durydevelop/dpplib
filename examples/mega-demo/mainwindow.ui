@@ -18,7 +18,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>450</y>
+      <y>470</y>
       <width>761</width>
       <height>131</height>
      </rect>
@@ -145,7 +145,6 @@
     <property name="font">
      <font>
       <pointsize>8</pointsize>
-      <weight>75</weight>
       <bold>true</bold>
       <kerning>true</kerning>
      </font>
@@ -175,12 +174,12 @@
      <rect>
       <x>10</x>
       <y>40</y>
-      <width>761</width>
-      <height>391</height>
+      <width>801</width>
+      <height>411</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>3</number>
     </property>
     <widget class="QWidget" name="TabDPath">
      <attribute name="title">
@@ -365,7 +364,6 @@
       </property>
       <property name="font">
        <font>
-        <weight>75</weight>
         <bold>true</bold>
        </font>
       </property>
@@ -569,7 +567,6 @@
       </property>
       <property name="font">
        <font>
-        <weight>75</weight>
         <bold>true</bold>
        </font>
       </property>
@@ -729,7 +726,6 @@
       </property>
       <property name="font">
        <font>
-        <weight>75</weight>
         <bold>true</bold>
        </font>
       </property>
@@ -929,6 +925,274 @@
       </property>
       <property name="text">
        <string>Delete</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="TabDTree">
+     <attribute name="title">
+      <string>Page</string>
+     </attribute>
+     <widget class="QPlainTextEdit" name="TextEditDTreeContent">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>20</y>
+        <width>561</width>
+        <height>181</height>
+       </rect>
+      </property>
+      <property name="plainText">
+       <string>{
+	&quot;Dest&quot;: {
+		&quot;Mode&quot;: &quot;FOLDER&quot;,
+		&quot;Target&quot;: &quot;C:\\Ordini\\urltrack_out&quot;
+	},
+	&quot;FroobeeTrkFolder&quot;: &quot;C:\\Ordini\\tracking_froobee&quot;,
+	&quot;FroobeeTrkStatus&quot;: &quot;ignorato&quot;
+}</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="EditDTreeSubTree1">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>280</y>
+        <width>151</width>
+        <height>26</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Dest</string>
+      </property>
+      <property name="placeholderText">
+       <string>SubTree</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="EditDTreeItem1">
+      <property name="geometry">
+       <rect>
+        <x>190</x>
+        <y>280</y>
+        <width>151</width>
+        <height>26</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Mode</string>
+      </property>
+      <property name="placeholderText">
+       <string>Item</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="EditDTreeDefault1">
+      <property name="geometry">
+       <rect>
+        <x>360</x>
+        <y>280</y>
+        <width>113</width>
+        <height>26</height>
+       </rect>
+      </property>
+      <property name="placeholderText">
+       <string>Default</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="EditDTreeSubTree2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>330</y>
+        <width>151</width>
+        <height>26</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>FroobeeTrkFolder</string>
+      </property>
+      <property name="placeholderText">
+       <string>Item</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="EditDTreeDefault2">
+      <property name="geometry">
+       <rect>
+        <x>360</x>
+        <y>330</y>
+        <width>111</width>
+        <height>26</height>
+       </rect>
+      </property>
+      <property name="placeholderText">
+       <string>Default</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="ButtonDTreeReadString1">
+      <property name="geometry">
+       <rect>
+        <x>480</x>
+        <y>280</y>
+        <width>93</width>
+        <height>29</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>ReadString()</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="ButtonDTreeReadString2">
+      <property name="geometry">
+       <rect>
+        <x>480</x>
+        <y>330</y>
+        <width>93</width>
+        <height>29</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>ReadString()</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="ButtonDTreeLoad">
+      <property name="geometry">
+       <rect>
+        <x>580</x>
+        <y>20</y>
+        <width>93</width>
+        <height>29</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Load</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_15">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>260</y>
+        <width>63</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>SubTree</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_16">
+      <property name="geometry">
+       <rect>
+        <x>190</x>
+        <y>260</y>
+        <width>63</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Item</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_17">
+      <property name="geometry">
+       <rect>
+        <x>360</x>
+        <y>260</y>
+        <width>63</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Default</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_19">
+      <property name="geometry">
+       <rect>
+        <x>360</x>
+        <y>310</y>
+        <width>63</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Default</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="ButtonDTreeRootCount">
+      <property name="geometry">
+       <rect>
+        <x>480</x>
+        <y>230</y>
+        <width>93</width>
+        <height>29</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Count</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="EditDTreeSubTreeCount">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>230</y>
+        <width>151</width>
+        <height>26</height>
+       </rect>
+      </property>
+      <property name="placeholderText">
+       <string>SubTree</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_20">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>210</y>
+        <width>63</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>SubTree</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_21">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>310</y>
+        <width>63</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>SubTree</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="ButtonDTreeReadTree">
+      <property name="geometry">
+       <rect>
+        <x>580</x>
+        <y>330</y>
+        <width>93</width>
+        <height>29</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>ReadTree()</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="ButtonDTreeCounts">
+      <property name="geometry">
+       <rect>
+        <x>680</x>
+        <y>330</y>
+        <width>93</width>
+        <height>29</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Counts</string>
       </property>
      </widget>
     </widget>

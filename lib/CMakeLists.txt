@@ -10,6 +10,7 @@ set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/DStringGrid.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DSyncFile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DSyncWatcher.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/DTree.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DUpdate.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DValue.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DVector.cpp

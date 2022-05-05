@@ -128,19 +128,20 @@ namespace DTools
                 // Size mode, single file size 10 MB, total storage size 1 GB
                 SetStorageMode(STORAGE_MODE_SIZE,10,1000);
 
-                // Create parent dir if not exists
-                fs::path LogDir=fs::path(Filename).parent_path();
-                std::error_code ec;
-                fs::file_status Status=fs::status(LogDir,ec);
-                if (!fs::exists(Status)) {
-                    fs::create_directories(LogDir,ec);
-                    if (ec) {
-                        perror(("Log file <"+Filename+"> ERROR: "+ec.message()).c_str());
-                        return;
+                if (!Filename.empty()) {
+                    // Create parent dir if not exists
+                    fs::path LogDir=fs::path(Filename).parent_path();
+                    std::error_code ec;
+                    fs::file_status Status=fs::status(LogDir,ec);
+                    if (!fs::exists(Status)) {
+                        fs::create_directories(LogDir,ec);
+                        if (ec) {
+                            perror(("Log file <"+Filename+"> ERROR: "+ec.message()).c_str());
+                            return;
+                        }
                     }
+                    OpenLogFile();
                 }
-
-                OpenLogFile();
             }
 
             //! Destructor
@@ -471,22 +472,24 @@ namespace DTools
                 std::string Color=DOutputTypeColor[OutputType];
 
                 // Print log message
-                if (LogToFile) {
-                    fprintf(hFile,"%s\n",(TimeMsg+Sep+LevelMsg+Sep+LogMsg).c_str());
-                }
                 if (LogToStdout) {
                     printf("%s%s\n\r",(Color+TimeMsg+Sep+LevelMsg+Sep+LogMsg).c_str(),CL_DEFAULT.c_str());
                 }
+
                 if (Callback) {
                     DoCallback(LogMsg,LevelMsg,TimeMsg);
                 }
 
-                // Write imediatly
-                fflush(hFile);
+                if (LogToFile) {
+                    fprintf(hFile,"%s\n",(TimeMsg+Sep+LevelMsg+Sep+LogMsg).c_str());
+                    // Write imediatly
+                    fflush(hFile);
 
-                // Update file pos
-                CurrFPos=ftell(hFile);
-                CheckStorage();
+                    // Update file pos
+                    CurrFPos=ftell(hFile);
+                    CheckStorage();
+                }
+
             }
     };
 }

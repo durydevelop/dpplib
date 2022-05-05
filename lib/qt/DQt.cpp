@@ -106,23 +106,20 @@ namespace DWindow {
      * @return true on success, false if cannot store data into prefs
      */
      bool RestoreQWindowPosition(QMainWindow& qMainWindow, DTools::DPreferences *DestPrefs) {
-        //return(RestoreQWindowPosition((QWindow&)qMainWindow,DestPrefs));
         int X,Y,Width,Height;
         if (!DTools::DWindow::RestoreWindowPositionData(qMainWindow.objectName().toStdString(),X,Y,Width,Height,DestPrefs)) {
                 return false;
         }
-        //if (X != 0 && Y != 0) {
-        //    qMainWindow.move(X,Y);
-        //}
-        QScreen *screen = QGuiApplication::primaryScreen();
+
+        QRect ScreenRect = QGuiApplication::primaryScreen()->availableGeometry();
 
         if (Width > 0 && Height > 0) {
-            if (Width > screen->geometry().width()) {
-                Width=screen->geometry().width();
+            if (Width > ScreenRect.width()) {
+                Width=ScreenRect.width();
                 X=0;
             }
-            if (Height > screen->geometry().height()) {
-                Height=screen->geometry().height();
+            if (Height > ScreenRect.height()) {
+                Height=ScreenRect.height();
                 Y=0;
             }
             qMainWindow.resize(Width,Height);
