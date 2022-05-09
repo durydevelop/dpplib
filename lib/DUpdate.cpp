@@ -427,14 +427,14 @@ namespace DTools
         // Generate updater
         Log("Create updater from "+FromFilename.string());
         fs::path UpdaterFilename=CurrExeName.parent_path() / FILENAME_UPDATER_EXE;
-        Log("Updater executable "+UpdaterFilename.string());
+        Log("Updater executable is: "+UpdaterFilename.string());
         DTools::DPath::Copy_File(FromFilename,UpdaterFilename,true,true);
 
-        Log("Run updater "+UpdaterFilename.string());
+        Log("Run it");
         // Run updater and exit
         bool Ret=DShell::ExecuteDetached(UpdaterFilename.string().c_str(),"");
         if (Ret) {
-            Log("Done, exit");
+            Log("Updater seems to be started, exiting");
             exit(0);
         }
         else {
