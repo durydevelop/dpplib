@@ -73,11 +73,13 @@ namespace DShell
         }
     #endif
 
+#if defined _WIN32 || defined _WIN64
     //! For now only for compatibily with DQt.h
     bool ExecuteDetached(std::string Filename, std::string Args) {
         // TODO: start in new process
         return(Execute(Filename,Args));
     }
+#endif
 
     //! Start a shutdown procedure
     bool ShutDown(void)

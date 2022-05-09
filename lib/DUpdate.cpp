@@ -331,7 +331,7 @@ namespace DTools
                 // Use an alternative translator due to the dot in filename
                 std::string MainExecutable=UpdateData->ReadString(SECTION_UPGRADE_INFO,PARAM_MAIN_EXE,"",'/');
                 Log("Start main exe "+MainExecutable);
-                if (DShell::ExecuteDetached(MainExecutable.c_str(),"")) {
+                if (DShell::ExecuteDetached(MainExecutable.c_str())) {
                     Log("Done");
                 }
                 else {
@@ -432,7 +432,7 @@ namespace DTools
 
         Log("Run updater "+UpdaterFilename.string());
         // Run updater and exit
-        bool Ret=DShell::ExecuteDetached(UpdaterFilename.string().c_str(),"");
+        bool Ret=DShell::ExecuteDetached(UpdaterFilename.string().c_str());
         if (Ret) {
             Log("Done, exit");
             exit(0);

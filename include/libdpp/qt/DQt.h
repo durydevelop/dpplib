@@ -8,6 +8,7 @@
 #include <QMainWindow>
 #include <QString>
 #include <QSettings>
+#include <QStringList>
 #include "libdpp/DPreferences.h"
 #include "libdpp/DFilesystem.h"
 
