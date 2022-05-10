@@ -76,7 +76,7 @@ namespace DString
 	std::string FormatTimeT(time_t in_time_t, std::string format = "%Y%m%d %H%M%S");
 	std::string FormatTimeP(std::chrono::system_clock::time_point in_time_point, std::string format = "%Y%m%d %H%M%S");
 
-	// Covert
+	// Convert
 	std::string& ToUpper(std::string& str);
 	std::string ToUpperCopy(std::string str);
 	std::string& ToLower(std::string& str);

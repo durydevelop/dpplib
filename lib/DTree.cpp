@@ -181,6 +181,15 @@ namespace DTools
 		return(DTree(inValue.get()));
 	}
 
+	bool DTree::Exists(std::string SubTree, char Translator) {
+		// Find SubTree
+		auto inValue=RootNode.get_child_optional(pt::ptree::path_type(SubTree,Translator));
+		if (!inValue.is_initialized()) {
+			return false;
+		}
+		return true;
+	}
+
 	bool DTree::HasChildern(void) {
 		return(RootNode.size() > 0);
 	}

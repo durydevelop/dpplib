@@ -26,11 +26,11 @@ namespace DTools
 
 		if (!DTools::DPath::Exists(PrefFile)) {
 			if (CreateIfNotExists) {
-                LastStatus.append(PrefFile+" missing, try to create...\n");
+				LastStatus.append(PrefFile+" missing, try to create...");
 				Ready=Save();
 			}
 			else {
-                LastStatus.append(PrefFile+" missing, preferences not ready\n");
+				LastStatus.append(PrefFile+" missing, preferences not ready");
 				Ready=false;
 			}
 		}

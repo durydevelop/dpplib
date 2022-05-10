@@ -23,6 +23,7 @@ namespace DTools
 			bool ReadBool(std::string SubTree, std::string Item, bool Default, char Translator = DEFAULT_TRANSLATOR);
 			bool ReadBool(std::string Item, bool Default, char Translator = DEFAULT_TRANSLATOR);
 
+			bool Exists(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
 			bool HasChildern(void);
 			bool HasData(void);
 			bool HasChildren(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
