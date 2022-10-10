@@ -22,6 +22,9 @@ namespace DString
 			void Add(std::string Str) {
 				StringList.emplace_back(Str);
 			}
+			void AddVect(std::vector<std::string>&& List) {
+				StringList.insert(StringList.end(),List.begin(),List.end());
+			}
 			std::string Join(std::string Pattern) {
 				return(DVector::JoinToStr(StringList,Pattern));
 			}

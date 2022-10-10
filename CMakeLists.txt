@@ -7,7 +7,6 @@ project(DPPLIB
 )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-#set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find for qt exists
@@ -200,6 +199,8 @@ target_include_directories(
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # generate install directive only if stand-alone project
     message_c("Generate ${PROJECT_NAME} install directive")
+    # set Config.cmake.in source path
+    set(CONFIG_CMAKE_IN_PATH ${dcmake_SOURCE_DIR})
     include(DInstall)
     message_c("Done")
 endif()

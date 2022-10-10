@@ -1020,6 +1020,7 @@ namespace DPath
 										}
 									}
 									else {
+										// TODO: CmpNoCase
 										if (DTools::DString::ToUpperCopy(CurrName).find(DTools::DString::ToUpperCopy(NameContent)) == std::string::npos) {
 											Found=false;
 										}

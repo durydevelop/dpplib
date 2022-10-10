@@ -5,12 +5,23 @@
 
 #include <QDialog>
 #include <QPlainTextEdit>
+#include <QStringListModel>
+#include <QThread>
 #include "libdpp/DLog.h"
 #include "libdpp/DPreferences.h"
+#include "libdpp/qt/DSpinnerWidget.h"
 
 namespace Ui {
     class DFormLog;
 }
+
+struct DEmitStringList : QObject {
+   Q_SIGNAL void signal(const QStringList &);
+   void operator()(const QStringList &data) {
+       emit signal(data);
+   }
+   Q_OBJECT
+};
 
 class DFormLog : public QDialog
 {
@@ -32,10 +43,15 @@ class DFormLog : public QDialog
         bool ShowDateTime;
         bool ShowOutputLevel;
 
+        QStringListModel *ModelStringList;
+        DEmitStringList EmitStringList;
+
     signals:
         void SignalAdd(QString Msg, QString OutputLevel = "", QString Header = "");
+        void SignalWaitingSpinner(bool Enable);
 
     private slots:
+        void OnWaitingSpinner(bool Enable);
         void on_ButtonReload_clicked();
         void on_ButtonOpenFolder_clicked();
         void on_ButtonSendLogs_clicked();
@@ -48,6 +64,9 @@ class DFormLog : public QDialog
 
         Ui::DFormLog *ui;
         QString Separator;
+        DSpinnerWidget *WaitingSpinner;
+        QThread *Thread;
+        QTimer *Timer;
 };
 
 #endif

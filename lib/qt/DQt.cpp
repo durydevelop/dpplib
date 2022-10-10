@@ -295,6 +295,9 @@ namespace DShell
 {
     void ShowInFolder(const QString& path) {
         QFileInfo info(path);
+        if (!info.exists()) {
+            return;
+        }
         #if defined _WIN32 || defined _WIN64
             QStringList args;
             if (!info.isDir())
@@ -341,10 +344,17 @@ namespace DShell
         return true;
     }
 
+    /**
+     * @brief ExecuteDetached
+     * @param Filename
+     * @param Args
+     * @param Pid
+     * @return
+     */
     bool ExecuteDetached(const QString& Filename, const QStringList& Args, qint64 *Pid) {
         QFileInfo info(Filename);
         if (info.isDir()) return false;
-        return(QProcess::startDetached(Filename,Args,"",Pid));
+        return(QProcess::startDetached(Filename,Args,info.dir().absolutePath(),Pid));
     }
 }
 

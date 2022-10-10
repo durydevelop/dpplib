@@ -22,6 +22,20 @@ namespace DTools
 		return(Ret);
 	}
 
+	void DValue::GetVect(std::vector<std::string>& Dest) {
+		for (size_t ixV=0;ixV<Values.size();ixV++) {
+			Dest.emplace_back(Values.at(ixV));
+		}
+	}
+
+	std::vector<std::string> DValue::GetVect(void) {
+		std::vector<std::string> Dest;
+		for (size_t ixV=0;ixV<Values.size();ixV++) {
+			Dest.emplace_back(Values.at(ixV));
+		}
+		return(Dest);
+	}
+
 	size_t DValue::Count(void) {
 		return(Values.size());
 	}

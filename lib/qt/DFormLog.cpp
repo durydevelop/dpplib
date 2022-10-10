@@ -1,11 +1,12 @@
 #include "libdpp/qt/DFormLog.h"
 
 #ifdef QT_GUI_LIB
-
+#include <QtConcurrent/QtConcurrentRun>
 #include "libdpp/qt/ui_dformlog.h"
 #include "libdpp/qt/DQt.h"
-//#include <QtConcurrent/QtConcurrentRun>
+#include <QBuffer>
 #include <QFile>
+
 
 /**
  * Create autodelete form:
@@ -25,9 +26,11 @@
  *
  */
 
+using namespace DTools;
+
 #define DEFAULT_SEPARATOR " : "
 
-DFormLog::DFormLog(QWidget *parent, std::shared_ptr<DTools::DLog> dLog) :
+DFormLog::DFormLog(QWidget *parent, std::shared_ptr<DLog> dLog) :
     QDialog(parent),
     ui(new Ui::DFormLog)
 {
@@ -39,6 +42,14 @@ DFormLog::DFormLog(QWidget *parent, std::shared_ptr<DTools::DLog> dLog) :
         SetDLog(dLog);
     }
     setWindowTitle(dLog->GetFilename().c_str());
+    connect(this,&DFormLog::SignalWaitingSpinner,this,&DFormLog::OnWaitingSpinner);
+
+    ModelStringList = new QStringListModel();
+    connect(&EmitStringList, &DEmitStringList::signal, ModelStringList, &QStringListModel::setStringList);
+    ui->ListViewLog->setModel(ModelStringList);
+    ui->ListViewLog->setUniformItemSizes(true);
+
+    WaitingSpinner=new DSpinnerWidget(ui->ListViewLog,true,false);
 }
 
 DFormLog::~DFormLog()
@@ -58,31 +69,31 @@ void DFormLog::SetDeleteOnClose(bool Enabled)
 
 /**
  * @brief Save window position into Prefs.
- * @param Prefs ->  a DTools::DPreferences in which save window position.
+ * @param Prefs ->  a DPreferences in which save window position.
  */
-void DFormLog::SaveWindowPosition(DTools::DPreferences &Prefs)
+void DFormLog::SaveWindowPosition(DPreferences &Prefs)
 {
-    if (!DTools::DWindow::SaveQWindowPosition(*this,&Prefs)) {
+    if (!DWindow::SaveQWindowPosition(*this,&Prefs)) {
         DuryLog->e(tr("Failed to save log window position").toStdString());
     }
 }
 
 /**
  * @brief Restore window position into Prefs.
- * @param Prefs ->  a DTools::DPreferences from which read window position.
+ * @param Prefs ->  a DPreferences from which read window position.
  */
-void DFormLog::RestoreWindowPosition(DTools::DPreferences &Prefs)
+void DFormLog::RestoreWindowPosition(DPreferences &Prefs)
 {
-    if (!DTools::DWindow::RestoreQWindowPosition(*this,&Prefs)) {
+    if (!DWindow::RestoreQWindowPosition(*this,&Prefs)) {
         DuryLog->e(tr("Failed to save log window position").toStdString());
     }
 }
 
 /**
- * @brief Set DTools::DLog class instance from which read log to show.
- * @param dLog  ->  std::shared_prt to an already create DTools::DLog class.
+ * @brief Set DLog class instance from which read log to show.
+ * @param dLog  ->  std::shared_prt to an already create DLog class.
  */
-void DFormLog::SetDLog(std::shared_ptr<DTools::DLog> dLog)
+void DFormLog::SetDLog(std::shared_ptr<DLog> dLog)
 {
     DuryLog=dLog;
     if (DuryLog) {
@@ -93,28 +104,38 @@ void DFormLog::SetDLog(std::shared_ptr<DTools::DLog> dLog)
 }
 
 /**
- * @brief Loads and show entire content of DTools::DLog file.
+ * @brief Loads and show entire content of DLog file.
  * @return true on success, otherwise false.
  */
 bool DFormLog::LoadFile(void) {
-    ui->PlainTextEditLog->clear();
-    DuryLog->Read();
-/*
-    std::string Filename=DuryLog->GetFilename();
-    QFile LogFile(Filename.c_str());
-    LogFile.open(QIODevice::Text | QIODevice::ReadOnly);
-    if (!LogFile.isOpen()) {
-        ui->PlainTextEditLog->appendPlainText(tr("ERROR loading ")+LogFile.fileName());
-        return false;
-    }
 
-    ui->PlainTextEditLog->clear();
-    while(!LogFile.atEnd()) {
-        QString Line=LogFile.readLine();
-        ui->PlainTextEditLog->appendPlainText(Line+"\n");
-    }
-    LogFile.close();
-*/
+    emit SignalWaitingSpinner(true);
+    QCoreApplication::processEvents();
+    ModelStringList->setStringList(QStringList{});
+
+    QFuture<bool> LoadRunner=QtConcurrent::run([this]{
+        QFile File(DuryLog->GetFilename().c_str());
+        QStringList lines;
+        if (!File.open(QIODevice::ReadOnly)) {
+            return false;
+        }
+
+        QTextStream in(&File);
+        while (!in.atEnd()) {
+            QString line = in.readLine();
+            lines.append(line);
+        }
+        File.close();
+        EmitStringList(lines);
+
+        return true;
+    });
+
+    QTimer::singleShot(0,[this,LoadRunner](){
+        LoadRunner.result();
+        emit SignalWaitingSpinner(false);
+    });
+
     return true;
 }
 
@@ -138,7 +159,21 @@ void DFormLog::Add(QString Msg, QString OutputLevel, QString TimeStamp)
 
     LogString.append(Msg);
 
-    ui->PlainTextEditLog->appendPlainText(LogString);
+    if(ModelStringList->insertRow(ModelStringList->rowCount())) {
+        QModelIndex index = ModelStringList->index(ModelStringList->rowCount() - 1, 0);
+        ModelStringList->setData(index, LogString);
+        ui->ListViewLog->scrollToBottom();
+    }
+}
+
+void DFormLog::OnWaitingSpinner(bool Enable)
+{
+    if (Enable) {
+        WaitingSpinner->start();
+    }
+    else {
+        WaitingSpinner->stop();
+    }
 }
 
 void DFormLog::DLogCallback(std::string Msg, std::string OutputLevel, std::string Header) {
@@ -147,7 +182,7 @@ void DFormLog::DLogCallback(std::string Msg, std::string OutputLevel, std::strin
 
 void DFormLog::on_ButtonOpenFolder_clicked()
 {
-    DTools::DShell::ShowInFolder(DuryLog->GetFilename().c_str());
+    DShell::ShowInFolder(DuryLog->GetFilename().c_str());
 }
 
 void DFormLog::on_ButtonReload_clicked()
@@ -159,5 +194,46 @@ void DFormLog::on_ButtonSendLogs_clicked()
 {
 
 }
-#endif
 
+/* TODO:
+file = new QFile("file.txt");
+
+if (!file->open(QIODevice::ReadOnly)) {
+    qInfo() << "Error" << file->errorString();
+    return;
+}
+
+QTextDocument *doc = this->document();
+m_cursor = new QTextCursor(doc);
+
+this->moveCursor(QTextCursor::Start);
+
+auto *timer = new QTimer(this);
+timer->setInterval(300);
+timer->start();
+
+connect(timer, &QTimer::timeout, [this, timer]() {
+    if (is_adding) {
+        qInfo() << "Already adding" << c1;
+        return;
+    }
+    this->is_adding = true;
+    startAppend();
+    for (int i = 0; i < 1000; ++i) {
+        if (file->atEnd()) {
+            timer->stop();
+            file->close();
+            file->deleteLater();
+            qInfo() << "done all";
+            break;
+        } else {
+            c1++;
+            append(QString::number(c1) + " - " + file->readLine());
+        }
+    }
+    stopAppend();
+    c2++;
+    this->is_adding = false;
+});
+*/
+#endif

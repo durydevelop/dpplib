@@ -1,7 +1,7 @@
 #include "libdpp/DStringGrid.h"
 #include <istream>
-
 #include <fstream>
+#include "libdpp/DCsv.h"
 
 /**
 vector<vector<string> > Grid
@@ -193,6 +193,26 @@ namespace DTools {
 			}
 			FileStream << vLine.back();
 			FileStream << std::endl;
+		}
+
+		FileStream.close();
+
+		return true;
+	}
+
+	//! Load Grid content from File
+	bool DStringGrid::LoadFromCsvFile(std::string Filename, char StringSeparator)
+	{
+		std::ifstream FileStream(Filename);
+		if (!FileStream.is_open()) {
+			return false;
+		}
+
+		std::string Line;
+		while(std::getline(FileStream,Line)) {
+			std::vector<std::string> LineItems;
+			DCsv::ReadCSVRow(LineItems,Line,StringSeparator);
+			AddRow(LineItems);
 		}
 
 		FileStream.close();

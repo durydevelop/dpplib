@@ -15,11 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QPlainTextEdit" name="PlainTextEditLog">
-     <property name="textInteractionFlags">
-      <set>Qt::TextEditable|Qt::TextSelectableByMouse</set>
-     </property>
-    </widget>
+    <widget class="QListView" name="ListViewLog"/>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">

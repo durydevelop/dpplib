@@ -26,9 +26,10 @@ namespace DTools
 			unsigned int LastRowIx(void);
 
 			bool SaveToCsvFile(std::string Filename, char StringSeparator = ';');
+			bool LoadFromCsvFile(std::string Filename, char StringSeparator = ';');
 
-			std::vector<std::string> readCSVRow(std::string &row);
-			std::vector<std::vector<std::string> > readCSV(std::istream &in);
+			//std::vector<std::string> readCSVRow(std::string &row);
+			//std::vector<std::vector<std::string> > readCSV(std::istream &in);
 		protected:
 
 		private:

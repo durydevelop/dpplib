@@ -11,6 +11,8 @@ namespace DTools
 	    public:
 		    std::string Get(size_t Index = 0);
 		    std::string GetAll(std::string Separator = "\r\n");
+			void GetVect(std::vector<std::string>& Dest);
+			std::vector<std::string> GetVect(void);
 		    size_t Count(void);
 			bool Empty(void);
 		    void Add(std::string Value);

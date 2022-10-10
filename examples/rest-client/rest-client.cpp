@@ -68,17 +68,17 @@ int main(int argc, char** argv) {
     }
 
     boost::asio::io_context ioc;
-    auto RestClient=std::make_shared<DRESTClient>(ioc);
+    auto RestClient=std::make_shared<DRESTClient>();
 
     if (!RestClient->SetUrl(Url)) {
-        cerr << RestClient->GetLastStatus();
+        cerr << RestClient->GetLastError();
         return(EXIT_FAILURE);
     }
     RestClient->SetOnResponse(OnResponse);
     RestClient->SetOnLog(OnLog);
     RestClient->SetOnError(OnError);
     RestClient->SetHttpVersion(Version);
-    RestClient->SetContentType(ContentType);
+    RestClient->SetHttpReqContentType(ContentType);
     RestClient->SetBody(Body);
     RestClient->SendPOST();
     ioc.run();

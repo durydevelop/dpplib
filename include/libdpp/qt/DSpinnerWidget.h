@@ -2,6 +2,7 @@
    Modified 2014 by William Hallatt
    Modified 2015 by Jacob Dawid
    Modified 2021 by Fabio Durigon
+
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
 the Software without restriction, including without limitation the rights to
@@ -24,8 +25,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define DSpinnerWidgetH
 
 #ifdef QT_GUI_LIB
-
-//#pragma once
 
 // Qt includes
 #include <QWidget>
@@ -56,6 +55,10 @@ class DSpinnerWidget : public QWidget {
         * @param disableParentWhenSpinning
         */
         DSpinnerWidget(Qt::WindowModality modality, QWidget *parent = 0, bool centerOnParent = true, bool disableParentWhenSpinning = true);
+
+    signals:
+        void signalStart();
+        void signalStop();
 
     public slots:
         void start();
@@ -94,18 +97,17 @@ class DSpinnerWidget : public QWidget {
         void paintEvent(QPaintEvent *paintEvent);
 
     private:
-        static int lineCountDistanceFromPrimary(int current, int primary,
-                                                int totalNrOfLines);
-        static QColor currentLineColor(int distance, int totalNrOfLines,
-                                       qreal trailFadePerc, qreal minOpacity,
-                                       QColor color);
+        static int lineCountDistanceFromPrimary(int current, int primary, int totalNrOfLines);
+        static QColor currentLineColor(int distance, int totalNrOfLines, qreal trailFadePerc, qreal minOpacity, QColor color);
+
+        DSpinnerWidget(const DSpinnerWidget&);
+        DSpinnerWidget& operator=(const DSpinnerWidget&);
 
         void initialize();
         void updateSize();
         void updateTimer();
         void updatePosition();
 
-    private:
         QColor  _color;
         qreal   _roundness; // 0..100
         qreal   _minimumTrailOpacity;
@@ -115,11 +117,6 @@ class DSpinnerWidget : public QWidget {
         int     _lineLength;
         int     _lineWidth;
         int     _innerRadius;
-
-    private:
-        DSpinnerWidget(const DSpinnerWidget&);
-        DSpinnerWidget& operator=(const DSpinnerWidget&);
-
         QTimer *_timer;
         bool    _centerOnParent;
         QPoint  _position;

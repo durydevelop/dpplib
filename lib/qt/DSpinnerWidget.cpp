@@ -1,6 +1,7 @@
 /* Original Work Copyright (c) 2012-2014 Alexander Turkin
    Modified 2014 by William Hallatt
    Modified 2015 by Jacob Dawid
+   Modified 2021 by Fabio Durigon
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -74,6 +75,8 @@ void DSpinnerWidget::initialize()
     updateSize();
     updateTimer();
     hide();
+    connect(this,&DSpinnerWidget::signalStart,this,&DSpinnerWidget::start);
+    connect(this,&DSpinnerWidget::signalStop,this,&DSpinnerWidget::stop);
 }
 
 void DSpinnerWidget::paintEvent(QPaintEvent *)

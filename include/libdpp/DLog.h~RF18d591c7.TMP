@@ -151,7 +151,7 @@ namespace DTools
 
             //! Read content of log file and send it line by line to Callback.
             //bool ReadLines(std::string FromDate, std::string ToDate, DLogCallback Callback) {
-            bool ReadAll(std::string& Buffer) {
+            bool Read(void) {
                 std::ifstream fLog(Filename,std::ios::in);
                 if (!fLog.is_open()) {
                     Write(OUTPUT_ERROR,"Log file not opened for read request");
@@ -165,8 +165,7 @@ namespace DTools
 
                     size_t Pos=Line.find(Sep);
                     if (Pos == std::string::npos) {
-                        //DoCallback(Line,"","");
-                        Buffer.append(Line+"\n");
+                        DoCallback(Line,"","");
                         continue;
                     }
 
@@ -174,8 +173,7 @@ namespace DTools
                     int n=Line.size()-Header.size()-Sep.size();
                     std::string OutputType(Line.substr(Header.size()+Sep.size(),n>7 ? 7 : n));
                     std::string Msg(Line.substr(Header.size()+Sep.size()+OutputType.size()+Sep.size()));
-                    //DoCallback(Msg,OutputType,Header);
-                    Buffer.append(Line.substr(Pos+1)+"\n");
+                    DoCallback(Msg,OutputType,Header);
                 }
                 fLog.close();
                 return true;

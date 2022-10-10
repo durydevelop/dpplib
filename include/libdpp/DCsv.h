@@ -9,9 +9,11 @@ namespace DTools
 {
 namespace DCsv
 {
+    size_t ReadCSVRow(std::vector<std::string> &DestList, std::string Row, std::string Separators, size_t MaxFieldsCount = 0);
     size_t ReadCSVRow(std::vector<std::string> &DestList, std::string Row, char cSep, size_t MaxFieldsCount = 0);
-    std::vector<std::string> CsvToVector(std::string CsvString, char cSep);
+    size_t CsvToVector(std::vector<std::string>& DestVect, std::string CsvString, std::string Separators);
     size_t CsvToVector(std::vector<std::string>& DestVect, std::string CsvString, char cSep);
+    //std::vector<std::string> CsvToVector(std::string CsvString, char cSep);
     std::string ReadCSVField(std::string Row, char cSep, size_t FieldNr);
     std::string ReplaceCSVField_Copy(std::string Row, char cSep, size_t Index, std::string ReplaceStr);
 /* TODO
