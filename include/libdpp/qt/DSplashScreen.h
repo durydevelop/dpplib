@@ -1,11 +1,12 @@
 #ifndef SPLASHSCREEN_H
 #define SPLASHSCREEN_H
-
 #ifdef QT_GUI_LIB
 
 #include <QSplashScreen>
 #include <QApplication>
 
+namespace DTools
+{
 class DSplashScreen : public QSplashScreen
 {
     Q_OBJECT
@@ -34,6 +35,7 @@ class DSplashScreen : public QSplashScreen
 		DProgressPos ProgressPos;
 		QString ProgressText;
 };
+}
 
 #endif
 #endif

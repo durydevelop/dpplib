@@ -1,6 +1,5 @@
 #ifndef DFORMLOG_H
 #define DFORMLOG_H
-
 #ifdef QT_GUI_LIB
 
 #include <QDialog>
@@ -11,11 +10,13 @@
 #include "libdpp/DPreferences.h"
 #include "libdpp/qt/DSpinnerWidget.h"
 
-namespace Ui {
+namespace Ui
+{
     class DFormLog;
 }
 
-struct DEmitStringList : QObject {
+struct DEmitStringList : QObject
+{
    Q_SIGNAL void signal(const QStringList &);
    void operator()(const QStringList &data) {
        emit signal(data);
@@ -23,6 +24,8 @@ struct DEmitStringList : QObject {
    Q_OBJECT
 };
 
+namespace DTools
+{
 class DFormLog : public QDialog
 {
     Q_OBJECT
@@ -68,6 +71,6 @@ class DFormLog : public QDialog
         QThread *Thread;
         QTimer *Timer;
 };
-
+}
 #endif
 #endif // DFORMLOG_H

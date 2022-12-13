@@ -27,6 +27,8 @@ set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DFormLog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DProgressDelegate.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DQLabel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DQProcess.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DQShell.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DQt.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DSpinnerWidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DSplashScreen.h

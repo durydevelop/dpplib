@@ -14,6 +14,8 @@
 #include <QCheckBox>
 #include <QMouseEvent>
 
+namespace DTools
+{
 /**
  * @brief CheckBoxRect
  * @param viewItemStyleOptions
@@ -115,6 +117,7 @@ bool DCheckBoxDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, co
     else {
         return(QStyledItemDelegate::editorEvent(event, model, option, index));
     }
+}
 }
 
 /**

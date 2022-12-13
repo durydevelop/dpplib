@@ -23,7 +23,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #ifndef DSpinnerWidgetH
 #define DSpinnerWidgetH
-
 #ifdef QT_GUI_LIB
 
 // Qt includes
@@ -31,6 +30,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <QTimer>
 #include <QColor>
 
+namespace DTools
+{
 class DSpinnerWidget : public QWidget {
     Q_OBJECT
     public:
@@ -55,6 +56,8 @@ class DSpinnerWidget : public QWidget {
         * @param disableParentWhenSpinning
         */
         DSpinnerWidget(Qt::WindowModality modality, QWidget *parent = 0, bool centerOnParent = true, bool disableParentWhenSpinning = true);
+
+        ~DSpinnerWidget();
 
     signals:
         void signalStart();
@@ -117,13 +120,15 @@ class DSpinnerWidget : public QWidget {
         int     _lineLength;
         int     _lineWidth;
         int     _innerRadius;
-        QTimer *_timer;
+        //QTimer *_timer;
+        QTimer  Timer;
         bool    _centerOnParent;
         QPoint  _position;
         bool    _disableParentWhenSpinning;
         int     _currentCounter;
         bool    _isSpinning;
 };
+}
 
 #endif
 #endif

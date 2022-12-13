@@ -1,6 +1,5 @@
 #ifndef DCheckBoxDelegateH
 #define DCheckBoxDelegateH
-
 #ifdef QT_GUI_LIB
 
 #include <QStyledItemDelegate>
@@ -18,6 +17,9 @@ public:
     void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget) const override;
 };
 */
+
+namespace DTools
+{
 class DCheckBoxDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
@@ -43,5 +45,6 @@ class DCheckBoxDelegate : public QStyledItemDelegate
     private:
         int columnIndex;
 };
+}
 #endif
 #endif

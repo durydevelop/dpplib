@@ -4,6 +4,8 @@
 
 #include <QStyleOptionProgressBar>
 
+namespace DTools
+{
 DSplashScreen::DSplashScreen(QPixmap splashPixmap, bool showProgress) : DSplashScreen(nullptr,splashPixmap,showProgress)
 {
 }
@@ -97,6 +99,7 @@ void DSplashScreen::OnSetTitle(QString Title)
 {
 	// TODO: add QTextBox
 	setWindowTitle(Title);
+}
 }
 
 #endif
