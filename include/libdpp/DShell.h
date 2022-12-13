@@ -3,6 +3,10 @@
 
 #include <string>
 
+#ifdef QT_CORE_LIB
+    #include <libdpp/qt/DQShell.h>
+#endif
+
 namespace DTools
 {
 namespace DShell

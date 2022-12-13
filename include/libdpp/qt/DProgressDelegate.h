@@ -5,6 +5,8 @@
 
 #include <QItemDelegate>
 
+namespace DTools
+{
 class DProgressDelegate : public QItemDelegate
 {
     Q_OBJECT
@@ -15,5 +17,7 @@ class DProgressDelegate : public QItemDelegate
     private:
         int columnIndex;
 };
+}
+
 #endif
 #endif

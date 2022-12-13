@@ -4,6 +4,8 @@
 
 #include <QApplication>
 
+namespace DTools
+{
 DProgressDelegate::DProgressDelegate(QObject *parent) : QItemDelegate(parent)
 {
     columnIndex=-1;
@@ -43,4 +45,6 @@ void DProgressDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opt
     // Draw the progress bar onto the view.
     QApplication::style()->drawControl(QStyle::CE_ProgressBar,&progressBarOption,painter);
 }
+}
+
 #endif

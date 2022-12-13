@@ -4,9 +4,9 @@
 #include <QtConcurrent/QtConcurrentRun>
 #include "libdpp/qt/ui_dformlog.h"
 #include "libdpp/qt/DQt.h"
+#include "libdpp/qt/DQShell.h"
 #include <QBuffer>
 #include <QFile>
-
 
 /**
  * Create autodelete form:
@@ -26,10 +26,10 @@
  *
  */
 
-using namespace DTools;
-
 #define DEFAULT_SEPARATOR " : "
 
+namespace DTools
+{
 DFormLog::DFormLog(QWidget *parent, std::shared_ptr<DLog> dLog) :
     QDialog(parent),
     ui(new Ui::DFormLog)
@@ -193,6 +193,7 @@ void DFormLog::on_ButtonReload_clicked()
 void DFormLog::on_ButtonSendLogs_clicked()
 {
 
+}
 }
 
 /* TODO:

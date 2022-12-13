@@ -34,6 +34,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <QPainter>
 #include <QTimer>
 
+namespace DTools
+{
 DSpinnerWidget::DSpinnerWidget(QWidget *parent, bool centerOnParent, bool disableParentWhenSpinning)
     : QWidget(parent),
       _centerOnParent(centerOnParent),
@@ -56,6 +58,10 @@ DSpinnerWidget::DSpinnerWidget(Qt::WindowModality modality, QWidget *parent, boo
     setAttribute(Qt::WA_TranslucentBackground);
 }
 
+DSpinnerWidget::~DSpinnerWidget() {
+    //stop();
+}
+
 void DSpinnerWidget::initialize()
 {
     _color = Qt::black;
@@ -70,8 +76,8 @@ void DSpinnerWidget::initialize()
     _currentCounter = 0;
     _isSpinning = false;
 
-    _timer = new QTimer(this);
-    connect(_timer, SIGNAL(timeout()), this, SLOT(rotate()));
+    //_timer = new QTimer(this);
+    connect(&Timer, SIGNAL(timeout()), this, SLOT(rotate()));
     updateSize();
     updateTimer();
     hide();
@@ -123,8 +129,8 @@ void DSpinnerWidget::start()
         parentWidget()->setEnabled(false);
     }
 
-    if (!_timer->isActive()) {
-        _timer->start();
+    if (!Timer.isActive()) {
+        Timer.start();
         _currentCounter = 0;
     }
 }
@@ -138,8 +144,8 @@ void DSpinnerWidget::stop()
         parentWidget()->setEnabled(true);
     }
 
-    if (_timer->isActive()) {
-        _timer->stop();
+    if (Timer.isActive()) {
+        Timer.stop();
         _currentCounter = 0;
     }
 }
@@ -261,7 +267,7 @@ void DSpinnerWidget::updateSize()
 
 void DSpinnerWidget::updateTimer()
 {
-    _timer->setInterval(1000 / (_numberOfLines * _revolutionsPerSecond));
+    Timer.setInterval(1000 / (_numberOfLines * _revolutionsPerSecond));
 }
 
 void DSpinnerWidget::updatePosition()
@@ -317,5 +323,5 @@ QColor DSpinnerWidget::currentLineColor(int countDistance, int totalNrOfLines, q
     }
     return color;
 }
-
+}
 #endif

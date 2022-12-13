@@ -8,7 +8,7 @@
 #include <QMainWindow>
 #include <QString>
 #include <QSettings>
-#include <QStringList>
+//#include <QStringList>
 #include "libdpp/DPreferences.h"
 #include "libdpp/DFilesystem.h"
 
@@ -35,13 +35,6 @@ namespace DWindow
 namespace DApp
 {
     bool SetStyleSheetFromFile(fs::path QssFilename);
-}
-
-namespace DShell
-{
-    void ShowInFolder(const QString& path);
-    bool Execute(const QString& Filename, const QStringList& Args = QStringList(), int WaitMSecs = 30000, qint64 *Pid = nullptr);
-    bool ExecuteDetached(const QString& Filename, const QStringList& Args = QStringList(),qint64 *Pid = nullptr);
 }
 
 namespace DWidget {
