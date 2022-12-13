@@ -52,7 +52,8 @@ namespace DShell
     #elif __linux__
         bool Execute(std::string Filename, std::string Args) {
             // String to std::vector
-            std::vector<std::string> vArgs=DCsv::CsvToVector(Args,' ');
+            std::vector<std::string> vArgs;
+            DCsv::CsvToVector(vArgs,Args,' ');
             // Insert filename as firts arg
             vArgs.insert(vArgs.begin(),Filename);
             // std::vector to array of char*
