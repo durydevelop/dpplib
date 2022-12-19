@@ -36,6 +36,22 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace DTools
 {
+DSpinnerWidgetDelegate::DSpinnerWidgetDelegate(QObject *parent) : QItemDelegate(parent) {
+    SpinnerDelegate=new DSpinnerWidget((QWidget*)parent,true,false);
+    SpinnerDelegate->start();
+}
+
+void DSpinnerWidgetDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    //if (index.column() != columnIndex) {
+    //    QItemDelegate::paint(painter, option, index);
+    //    return;
+    //}
+
+    SpinnerDelegate->update();
+    QItemDelegate::paint(painter, option, index);
+}
+
 DSpinnerWidget::DSpinnerWidget(QWidget *parent, bool centerOnParent, bool disableParentWhenSpinning)
     : QWidget(parent),
       _centerOnParent(centerOnParent),

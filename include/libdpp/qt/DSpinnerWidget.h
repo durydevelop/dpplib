@@ -23,12 +23,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #ifndef DSpinnerWidgetH
 #define DSpinnerWidgetH
+
 #ifdef QT_GUI_LIB
 
 // Qt includes
 #include <QWidget>
 #include <QTimer>
 #include <QColor>
+#include <QItemDelegate>
 
 namespace DTools
 {
@@ -128,6 +130,17 @@ class DSpinnerWidget : public QWidget {
         int     _currentCounter;
         bool    _isSpinning;
 };
+
+class DSpinnerWidgetDelegate : public QItemDelegate {
+    Q_OBJECT
+    public:
+        DSpinnerWidgetDelegate(QObject *parent = nullptr);
+        void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+    private:
+        DSpinnerWidget *SpinnerDelegate;
+
+};
+
 }
 
 #endif

@@ -321,8 +321,10 @@ namespace DTools
                     }
                     std::string CurrName=itr->path().stem().string();
                     std::string CurrExt=itr->path().extension().string();
-                    // TODO cmp no case
-                    if (CurrExt == LogExt) {
+                    // Cmp no case
+                    std::transform(CurrExt.begin(),CurrExt.end(),CurrExt.begin(),::tolower);
+                    std::transform(LogExt.begin(),LogExt.end(),LogExt.begin(),::tolower);
+                    if (CurrExt.compare(LogExt) == 0) {
                         // ext match
                         if (CurrName.find(LogName) != std::string::npos) {
                             // name match
@@ -368,7 +370,7 @@ namespace DTools
                         // and make the difference as hours
                         std::chrono::hours diff=std::chrono::duration_cast<std::chrono::hours>(now - tptime);
 
-                        if (diff.count() > StorageModeParam*24) {
+                        if (diff.count() > long(StorageModeParam*24)) {
                             std::error_code ec;
                             fs::remove(File,ec);
                             if (ec) {
