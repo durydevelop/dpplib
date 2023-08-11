@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(DPPLIB
+project(dpptools
         VERSION 0.2.1.4
-        DESCRIPTION "DppLib is a Cpp extension library for boost, beast, asio"
+        DESCRIPTION "dpptools is a Cpp extension library for boost, beast, asio"
         LANGUAGES CXX
 )
 
@@ -62,7 +62,6 @@ get_filename_component(dcmake_SOURCE_DIR "../../helpers_cmake" ABSOLUTE)
 list(APPEND CMAKE_MODULE_PATH ${dcmake_SOURCE_DIR})
 list (REMOVE_DUPLICATES CMAKE_MODULE_PATH)
 include(DMainHelper)
-
 
 # Handle STATIC/SHARED/INTERFACE build option
 if (${PROJECT_NAME}_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
@@ -130,9 +129,6 @@ endif()
 # CMakeFiles.txt in ./lib and ./include dirs set SRC_FILES with source files list
 add_subdirectory(lib)
 add_subdirectory(include)
-if (${BUILD_EXAMPLES})
-    add_subdirectory(examples)
-endif()
 
 if (${BUILS_INTERFACE_LIBS})
     # Build as interfcae
@@ -164,11 +160,11 @@ get_filename_component(BOOST_ROOT "../boost" ABSOLUTE)
 include(DBoostFinder)
 #set(Boost_INCLUDE_DIR ${Boost_INCLUDE_DIR} PARENT_SCOPE)
 
+## Find TZ
+#https://github.com/HowardHinnant/date.git
+
 # Set make commad option Debug/Release
 include(DMakeOptions)
-
-# Download and install Google test library if needed
-include(DGoogleTestHelper)
 
 # Config Qt stuffs
 if(${BUILD_QT})
@@ -179,6 +175,16 @@ if(${BUILD_QT})
     if (NOT ${BUILD_INTERFACE_LIBS})
         target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Widgets)
     endif()
+endif()
+
+if (${BUILD_EXAMPLES})
+    add_subdirectory(examples)
+endif()
+
+# Download and install Google test library if needed
+if (BUILD_TESTS)
+    include(DGoogleTestHelper)
+    add_subdirectory(test)
 endif()
 
 # Includes

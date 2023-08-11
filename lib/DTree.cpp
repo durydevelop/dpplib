@@ -1,6 +1,6 @@
 //#define BOOST_BIND_GLOBAL_PLACEHOLDERS
-#include "libdpp/DTree.h"
-#include "libdpp/DFilesystem.h"
+#include <libdpp/DTree.h>
+#include <libdpp/DFilesystem.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/exception/all.hpp>
 
@@ -18,12 +18,12 @@ namespace DTools
 	 * @brief Contruct a DTree object from a ptree object.
 	 * @param RootTree	->	boost ptree object used as root node.
 	 */
-	DTree::DTree(boost::property_tree::ptree RootTree) {
+	DTree::DTree(boost::property_tree::iptree RootTree) {
 		RootNode=RootTree;
 
 	}
 
-	bool DTree::LoadJsonText(std::istream& JsonContent) {
+	bool DTree::LoadJsonContent(std::istream& JsonContent) {
 		try {
 			pt::json_parser::read_json(JsonContent,RootNode);
 		}catch (boost::exception& e) {
@@ -48,7 +48,7 @@ namespace DTools
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
 	int DTree::ReadInteger(std::string SubTree, std::string Item, int Default, char Translator) {
-		return(RootNode.get(pt::ptree::path_type(SubTree+Translator+Item,Translator),Default));
+		return(RootNode.get(pt::iptree::path_type(SubTree+Translator+Item,Translator),Default));
 	}
 
 	//! Retrive a string value from a sub-tree
@@ -60,7 +60,7 @@ namespace DTools
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
 	std::string DTree::ReadString(std::string SubTree, std::string Item, std::string Default, char Translator) {
-		return(RootNode.get<std::string>(pt::ptree::path_type(SubTree+Translator+Item,Translator),Default));
+		return(RootNode.get<std::string>(pt::iptree::path_type(SubTree+Translator+Item,Translator),Default));
 	}
 
 	//! Retrive a string value from root tree
@@ -71,7 +71,10 @@ namespace DTools
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
 	std::string DTree::ReadString(std::string Item, std::string Default, char Translator) {
-		return(RootNode.get<std::string>(pt::ptree::path_type(Item,Translator),Default));
+        if (Item.empty()) {
+            return(RootNode.get<std::string>("",Default));
+        }
+		return(RootNode.get<std::string>(pt::iptree::path_type(Item,Translator),Default));
 	}
 
 	//! Retrive a float value
@@ -83,7 +86,7 @@ namespace DTools
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
 	float DTree::ReadFloat(std::string SubTree, std::string Item, float Default, char Translator) {
-		return(RootNode.get<float>(pt::ptree::path_type(SubTree+Translator+Item,Translator),Default));
+		return(RootNode.get<float>(pt::iptree::path_type(SubTree+Translator+Item,Translator),Default));
 	}
 
 	//! Retrive a byte value
@@ -95,7 +98,7 @@ namespace DTools
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
 	uint8_t DTree::ReadByte(std::string SubTree, std::string Item, uint8_t Default, char Translator) {
-		return(RootNode.get<uint8_t>(pt::ptree::path_type(SubTree+Translator+Item,Translator),Default));
+		return(RootNode.get<uint8_t>(pt::iptree::path_type(SubTree+Translator+Item,Translator),Default));
 	}
 
 	//! Retrive a boolean value
@@ -107,7 +110,7 @@ namespace DTools
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
 	bool DTree::ReadBool(std::string SubTree, std::string Item, bool Default, char Translator) {
-		return(RootNode.get<bool>(pt::ptree::path_type(SubTree+Translator+Item,Translator),Default));
+		return(RootNode.get<bool>(pt::iptree::path_type(SubTree+Translator+Item,Translator),Default));
 	}
 
 	//! Retrive a boolean value
@@ -118,61 +121,102 @@ namespace DTools
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
 	bool DTree::ReadBool(std::string Item, bool Default, char Translator) {
-		return(RootNode.get<bool>(pt::ptree::path_type(Item,Translator),Default));
+		return(RootNode.get<bool>(pt::iptree::path_type(Item,Translator),Default));
 	}
 
-	//! Read all item names in (@link SubTree) node and put them in @ResultList
-	/**
-	* @param SubTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
-	* @param ResultList		->	reference to vector of strings to fill with results.
-	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+    /**
+     * @brief Read all item names of the root node and put them in @ResultList.
+     * N.B. @ResultList is cleared before.
+     * @param SubTree	->	Sub-node name, can be one or more section nodes separated by '.'.
+     * @param ResultList ->	reference to vector of strings to fill with results.
+     * @param Translator	->	Alternative json tree translator char other that '.' (which is default).
+     * @return numbers of items found
+     */
+    size_t DTree::ReadNames(std::vector<std::string>& ResultList) {
+        ResultList.clear();
+        for (auto& ItemName : RootNode) {
+            std::string s=ItemName.first.data();
+            ResultList.emplace_back(s);
+        }
+        return(ResultList.size());
+    }
+
+    /**
+     * @brief Read all item names of a node and put them in @ResultList.
+     * N.B. @ResultList is cleared before.
+    * @param SubTree	->	Sub-node name, can be one or more section nodes separated by '.'.
+    * @param ResultList ->	reference to vector of strings to fill with results.
+    * @param Translator	->	Alternative json tree translator char other that '.' (which is default).
 	* @return numbers of items found
 	**/
-	size_t DTree::ReadItemNames(std::string SubTree,std::vector<std::string>& ResultList, char Translator) {
+    size_t DTree::ReadNames(std::string SubItemName,std::vector<std::string>& ResultList, char Translator) {
 		ResultList.clear();
 		// Find SubTree
-		auto inValue=RootNode.get_child_optional(pt::ptree::path_type(SubTree,Translator));
+        auto inValue=RootNode.get_child_optional(pt::iptree::path_type(SubItemName,Translator));
 		if (!inValue.is_initialized()) {
 			return 0;
 		}
-		pt::ptree &Node=inValue.get();
+		pt::iptree &Node=inValue.get();
 
 		// Read all first items
 		for (auto& ItemName : Node) {
 			std::string s=ItemName.first.data();
-			ResultList.push_back(s);
+            ResultList.emplace_back(s);
 		}
 
 		return(ResultList.size());
 	}
-/*
-	DTree DTree::ReadChildren(std::string SubTree, char Translator) {
-		DTree dTree;
+
+    //! Read all names of the childern in a node.
+    /**
+    * @param SubTree	->	Can be one or more section nodes separated by '.'.
+    * @param Translator	->	Alternative json tree translator char other that '.' (which is default).
+    * @return a vector of string containing childern names.
+    **/
+    std::vector<std::string> DTree::ReadChildrenNames(std::string SubTree, char Translator) {
+        std::vector<std::string> Children;
+
 		// Find SubTree
-		auto inValue=RootNode.get_child_optional(pt::ptree::path_type(SubTree,Translator));
+		auto inValue=RootNode.get_child_optional(pt::iptree::path_type(SubTree,Translator));
 		if (!inValue.is_initialized()) {
-			return(dTree);
+            return Children;
 		}
-		pt::ptree &Node=inValue.get();
+        auto node=inValue.get();
 
 		// Read all first items
-		for (auto& Item : Node) {
-			DTree Tree(Item.second);
-			dTree.WriteTree("",Tree);
-			//std::string s=ItemName.first.data();
+        for (auto& item : node) {
+            std::string s=item.second.data();
+            Children.emplace_back(s);
 		}
-		return(dTree);
+
+        return(Children);
 	}
-*/
+
+    /**
+     * @brief Get node child as a new DTree by index.
+     * @param Index         ->  Index of the child to read (first node as index 0).
+     * @return If SubTree is found, returns a new DTree starting from here, otherwise return an empty DTree.
+     */
+    DTree DTree::GetTree(size_t SubTreeIndex) {
+        size_t ixC=0;
+        for (auto& Item : RootNode) {
+            if (ixC == SubTreeIndex) {
+                return (DTree(Item.second));
+            }
+            ixC++;
+        }
+        return(DTree());
+    }
+
 	/**
-	 * @brief Get node content as DTree.
-	 * @param SubTree		->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
+     * @brief Get node content as a new DTree.
+     * @param SubTree		->	Node name, can be one or more section nodes separated by '.'.
 	 * @param Translator	->	Alternative json tree translator char other that '.' (which is default).
-	 * @return If SubTree is found , return a new DTree starting from here, otherwise return an empty DTree.
+     * @return If SubTree is found, returns a new DTree starting from here, otherwise return an empty DTree.
 	 */
-	DTree DTree::ReadTree(std::string SubTree, char Translator) {
+    DTree DTree::GetTree(std::string SubTree, char Translator) {
 		// Find SubTree
-		auto inValue=RootNode.get_child_optional(pt::ptree::path_type(SubTree,Translator));
+		auto inValue=RootNode.get_child_optional(pt::iptree::path_type(SubTree,Translator));
 		if (!inValue.is_initialized()) {
 			return(DTree());
 		}
@@ -183,25 +227,27 @@ namespace DTools
 
 	bool DTree::Exists(std::string SubTree, char Translator) {
 		// Find SubTree
-		auto inValue=RootNode.get_child_optional(pt::ptree::path_type(SubTree,Translator));
+		auto inValue=RootNode.get_child_optional(pt::iptree::path_type(SubTree,Translator));
 		if (!inValue.is_initialized()) {
 			return false;
 		}
 		return true;
 	}
 
-	bool DTree::HasChildern(void) {
+	bool DTree::HasChildren(void) {
 		return(RootNode.size() > 0);
 	}
 
 	bool DTree::HasChildren(std::string SubTree, char Translator) {
 		// Find SubTree
-		auto inValue=RootNode.get_child_optional(pt::ptree::path_type(SubTree,Translator));
+		auto inValue=RootNode.get_child_optional(pt::iptree::path_type(SubTree,Translator));
 		if (!inValue.is_initialized()) {
 			return false;
 		}
 
-		return(inValue.get().size() > 0);
+		auto value=inValue.get();
+		auto n=value.size();
+		return(n > 0);
 	}
 
 	bool DTree::HasData(void) {
@@ -210,7 +256,7 @@ namespace DTools
 
 	bool DTree::HasData(std::string SubTree, char Translator) {
 		// Find SubTree
-		auto inValue=RootNode.get_child_optional(pt::ptree::path_type(SubTree,Translator));
+		auto inValue=RootNode.get_child_optional(pt::iptree::path_type(SubTree,Translator));
 		if (!inValue.is_initialized()) {
 			return false;
 		}
@@ -225,23 +271,34 @@ namespace DTools
 //		return(RootNode.data());
 //	}
 
-	size_t DTree::ChildrenCount(void) {
+    size_t DTree::GetItemsCount(void) {
 		return(RootNode.size());
 	}
 
-	size_t DTree::ChildrenCount(std::string SubTree, char Translator) {
+    size_t DTree::GetItemsCount(std::string SubItemName, char Translator) {
 		// Find SubTree
-		auto inValue=RootNode.get_child_optional(pt::ptree::path_type(SubTree,Translator));
+        auto inValue=RootNode.get_child_optional(pt::iptree::path_type(SubItemName,Translator));
 		if (!inValue.is_initialized()) {
 			return 0;
 		}
-		pt::ptree &Node=inValue.get();
+		pt::iptree &Node=inValue.get();
 		return(Node.size());
 	}
 
 	bool DTree::WriteTree(std::string SubTree, DTree NewTree, char Translator) {
 		try {
-			RootNode.add_child(pt::ptree::path_type(SubTree,Translator),NewTree.RootNode);
+			RootNode.add_child(pt::iptree::path_type(SubTree,Translator),NewTree.RootNode);
+		}
+		catch (boost::exception& e) {
+			LastStatus=boost::diagnostic_information(e);
+			return false;
+		}
+		return true;
+	}
+
+	bool DTree::WriteTree(DTree NewTree) {
+		try {
+			RootNode=NewTree.RootNode;
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -264,7 +321,7 @@ namespace DTools
 	bool DTree::WriteInteger(std::string SubTree, std::string Item, int Value, char Translator)
 	{
 		try {
-			RootNode.put(pt::ptree::path_type(SubTree+Translator+Item,Translator),Value);
+			RootNode.put(pt::iptree::path_type(SubTree+Translator+Item,Translator),Value);
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -289,7 +346,7 @@ namespace DTools
 	bool DTree::WriteString(std::string SubTree, std::string Item, std::string Value, char Translator)
 	{
 		try {
-			RootNode.put(pt::ptree::path_type(SubTree+Translator+Item,Translator),Value);
+			RootNode.put(pt::iptree::path_type(SubTree+Translator+Item,Translator),Value);
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -313,7 +370,7 @@ namespace DTools
 	bool DTree::WriteString(std::string Tree, std::string Value, char Translator)
 	{
 		try {
-			RootNode.put(pt::ptree::path_type(Tree,Translator),Value);
+			RootNode.put(pt::iptree::path_type(Tree,Translator),Value);
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -342,7 +399,7 @@ namespace DTools
 			// Convert to fs::path
 			fs::path p(Path);
 			// Write
-			RootNode.put(pt::ptree::path_type(SubTree+Translator+Item,Translator),p.string());
+			RootNode.put(pt::iptree::path_type(SubTree+Translator+Item,Translator),p.string());
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -366,7 +423,7 @@ namespace DTools
 	**/
 	bool DTree::WriteFloat(std::string SubTree, std::string Item, float Value, char Translator) {
 		try {
-			RootNode.put(pt::ptree::path_type(SubTree+Translator+Item,Translator),Value);
+			RootNode.put(pt::iptree::path_type(SubTree+Translator+Item,Translator),Value);
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -390,7 +447,7 @@ namespace DTools
 	**/
 	bool DTree::WriteByte(std::string SubTree, std::string Item, uint8_t Value, char Translator) {
 		try {
-			RootNode.put(pt::ptree::path_type(SubTree+Translator+Item,Translator),Value);
+			RootNode.put(pt::iptree::path_type(SubTree+Translator+Item,Translator),Value);
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -414,7 +471,7 @@ namespace DTools
 	**/
 	bool DTree::WriteBool(std::string SubTree, std::string Item, bool Value, char Translator)	{
 		try {
-			RootNode.put(pt::ptree::path_type(SubTree+Translator+Item,Translator),Value);
+			RootNode.put(pt::iptree::path_type(SubTree+Translator+Item,Translator),Value);
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -435,11 +492,11 @@ namespace DTools
 	*/
 	bool DTree::DeleteItem(std::string SubTree, std::string Item, char Translator) {
 		// Find SubTree
-		auto inValue=RootNode.get_child_optional(pt::ptree::path_type(SubTree,Translator));
+		auto inValue=RootNode.get_child_optional(pt::iptree::path_type(SubTree,Translator));
 		if (!inValue.is_initialized()) {
 			return true;
 		}
-		pt::ptree &Node=inValue.get();
+		pt::iptree &Node=inValue.get();
 		Node.erase(Item);
 		if (Node.empty()) {
 			return true;
@@ -457,12 +514,12 @@ namespace DTools
 	*/
 	bool DTree::DeleteContent(std::string SubTree, char Translator) {
 		// Find SubTree
-		auto inValue=RootNode.get_child_optional(pt::ptree::path_type(SubTree,Translator));
+		auto inValue=RootNode.get_child_optional(pt::iptree::path_type(SubTree,Translator));
 		if (!inValue.is_initialized()) {
 			LastStatus=SubTree + "Not found";
 			return true;
 		}
-		pt::ptree &Node=inValue.get();
+		pt::iptree &Node=inValue.get();
 		Node.clear();
 		if (Node.empty()) {
 			return true;
@@ -475,5 +532,33 @@ namespace DTools
 	//! @return last operation status message
 	std::string DTree::GetLastStatus(void) {
 		return(LastStatus);
-	}
+    }
+
+    std::string DTree::PrintTree(void) {
+        return PrintTree(this);
+    }
+
+    std::string DTree::PrintTree(DTree *Tree) {
+        std::string Ret="{\r\n";
+        std::vector<std::string> ItemsNames;
+        Tree->ReadNames(ItemsNames);
+
+        for (size_t ixI=0; ixI<ItemsNames.size(); ixI++) {
+            std::string Name=ItemsNames[ixI];
+            std::string Value;
+            DTree SubTree=Tree->GetTree(ixI);
+
+            std::vector<std::string> nn;
+            SubTree.ReadNames(nn);
+
+            if (SubTree.HasData()) {
+                Value=ReadString(Name,"");
+            }
+            else if (SubTree.HasChildren()) {
+                Value=SubTree.PrintTree();
+            }
+            Ret.append(Name+" : "+Value+"\r\n");
+        }
+        return (Ret+"}\r\n");
+    }
 }

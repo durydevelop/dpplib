@@ -1,4 +1,4 @@
-#include "libdpp/qt/DQLabel.h"
+#include <libdpp/qt/DQLabel.h>
 
 #ifdef QT_GUI_LIB
 

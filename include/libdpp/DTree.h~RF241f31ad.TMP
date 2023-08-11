@@ -6,14 +6,15 @@
 
 namespace DTools
 {
-	/**
-	 * @brief The DTree provide convenient methods to use boost::property_tree::iptree object.
-	 * N.B. iptree is case unsensistive.
-	 */
+	class DRootNode : public boost::property_tree::ptree {
+			boost::property_tree::ptree RootNodeCS;
+			boost::property_tree::iptree RootNodeCU;
+	};
+
 	class DTree {
 		public:
 			DTree();
-			DTree(boost::property_tree::iptree RootTree);
+			DTree(boost::property_tree::ptree RootTree);
 
 			bool LoadJsonContent(std::istream& JsonContent);
 
@@ -28,20 +29,15 @@ namespace DTools
 			bool ReadBool(std::string Item, bool Default, char Translator = DEFAULT_TRANSLATOR);
 
 			bool Exists(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
-			bool HasChildren(void);
+			bool HasChildern(void);
 			bool HasData(void);
 			bool HasChildren(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
 			bool HasData(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
-            size_t GetItemsCount();
-            size_t GetItemsCount(std::string SubItemName, char Translator = DEFAULT_TRANSLATOR);
-            size_t ReadNames(std::vector<std::string>& ResultList);
-            size_t ReadNames(std::string SubItemName,std::vector<std::string>& ResultList, char Translator = DEFAULT_TRANSLATOR);
-            std::vector<std::string> ReadChildrenNames(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
-            DTree GetTree(std::string SubTreeName, char Translator = DEFAULT_TRANSLATOR);
-            DTree GetTree(size_t SubTreeIndex);
+			size_t ChildrenCount();
+			size_t ChildrenCount(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
+			size_t ReadItemNames(std::string SubTree,std::vector<std::string>& ResultList, char Translator = DEFAULT_TRANSLATOR);
+			DTree ReadTree(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
 
-
-			bool WriteTree(DTree NewTree);
 			bool WriteTree(std::string SubTree, DTree NewTree, char Translator = DEFAULT_TRANSLATOR);
 			bool WriteInteger(std::string SubTree, std::string Item, int Value, char Translator = DEFAULT_TRANSLATOR);
 			bool WriteString(std::string SubTree, std::string Item, std::string Value, char Translator = DEFAULT_TRANSLATOR);
@@ -55,15 +51,13 @@ namespace DTools
 			bool DeleteContent(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
 
 			std::string GetLastStatus(void);
-            std::string PrintTree(void);
-            std::string PrintTree(DTree *Tree);
 
 		protected:
-			boost::property_tree::iptree RootNode;
-
+			//boost::property_tree::ptree RootNode;
+			DRootNode RootNode;
 			std::string LastStatus;
 
-        private:
+		private:
 			static const char DEFAULT_TRANSLATOR = '.';
 	};
 }

@@ -52,8 +52,8 @@ namespace DPath
 
 	fs::path GetExeFilename();
 	std::string GetExt(fs::path Path);
-	fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute);
-	fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute, err::error_code &ec);
+    fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute);
+    fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute, DError::DErrorCode &ErrorCode);
 	bool IsOlderThanHrs(const fs::path& Path, const int Hrs);
 	bool IsOlderThanMin(const fs::path& Path, const int Min);
 	DError::DErrorCode IsOlderThanHrs(const fs::path& Path, const int Hrs, bool &Result);
@@ -70,6 +70,7 @@ namespace DPath
 	//err::error_code MoveDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DGlobalCallback Callback);
 	DError::DErrorCode MoveDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DCallback Callback = nullptr);
 	bool DeleteDir(fs::path Dir);
+    bool DeleteDir(fs::path Dir, err::error_code& ec);
 	int ListDirs(std::shared_ptr<DPathList> Result, fs::path PathToScan, bool Recursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool& StopRequest);
 	int ListDirs(std::shared_ptr<DPathList> Result, fs::path PathToScan, bool Recursive, std::string NameContent, bool NameWholeWord, std::string ExtContent, bool ExtWholeWord, bool CaseSensitive, bool& StopRequest);
 	int CountDirs(fs::path PathToScan, bool Recursive, std::vector<std::string> *NameContentList, bool NameWholeWord, std::vector<std::string> *ExtContentList, bool ExtWholeWord, bool CaseSensitive, bool FindAll, bool& StopRequest);

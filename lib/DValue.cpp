@@ -48,6 +48,14 @@ namespace DTools
 		Values.push_back(Value);
 	}
 
+    bool DValue::Set(size_t Index, std::string Value) {
+        if (Index >= Values.size()) {
+            return false;
+        }
+        Values[Index]=Value;
+        return true;
+    }
+
 	void DValue::RemoveDuplicates(void) {
 		Values.erase(std::unique(Values.begin(),Values.end()),Values.end());
 	}

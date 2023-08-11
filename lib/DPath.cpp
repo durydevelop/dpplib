@@ -1,5 +1,5 @@
 ﻿#include "libdpp/DPath.h"
-#include "libdpp/DStringGrid.h"
+//#include "libdpp/DStringGrid.h"
 #include "libdpp/DString.h"
 #include "libdpp/DCsv.h"
 #include "libdpp/DChrono.h"
@@ -50,7 +50,7 @@ namespace DPath
     }
 
     /**
-     * @brief Extract path name extention without dot.
+     * @brief Extract path name extention (without dot).
      * @param Path  ->  Path name
      * @return Only extension string without dots.
      */
@@ -65,16 +65,26 @@ namespace DPath
      * @param NewExt    ->  New extension (with or without dot).
      * @param Execute   ->  If false only string new name is returned, if true also file/dir on disk is renamed.
      * @return new file/dir name or empty path if rename on disk fails.
+     * N.B. If new path exists, it will be overwitten.
      */
     fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute) {
         fs::path NewPath=Path.parent_path() / (Path.stem().string() + "." + DString::LTrim(NewExt,"."));
 
 		if (Execute) {
-			try {
-				fs::rename(Path,NewPath);
-			} catch (std::exception &e) {
-				return (fs::path());
-			}
+            if (Exists(NewPath)) {
+                // Use MoveFile with overwrite
+                if (MoveDir(Path,NewPath,false).IsSet()) {
+                    return (fs::path());
+                }
+            }
+            else {
+                try {
+                    fs::rename(Path,NewPath);
+                } catch (std::exception &e) {
+                    //std::string s=e.what();
+                    return (fs::path());
+                }
+            }
 		}
 		return (NewPath);
 	}
@@ -84,15 +94,21 @@ namespace DPath
      * @param Path      ->  Filename or directory.
      * @param NewExt    ->  New extension (with or without dot).
      * @param Execute   ->  If false only string new name is returned, if true also file/dir on disk is renamed.
-     * @param ec        ->  a pointer to std::error_code variable to fill with result (can be null).
-     * @return new file/dir name or empty path if rename on disk fails.
+     * @param ErrorCode ->  DError::DErrorCode to fill with error (if any).
+     * @return new file/dir name or empty path if rename on disk fails (can be checked in ErrorCode).
+     * N.B. If new path exists, it will be overwitten.
      */
-    fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute, err::error_code &ec) {
+    fs::path ChangeExt(fs::path Path, std::string NewExt, bool Execute, DError::DErrorCode &ErrorCode) {
         fs::path NewPath=Path.parent_path() / (Path.stem().string() + "." + DString::LTrim(NewExt,"."));
 
 		if (Execute) {
+            if (Exists(NewPath)) {
+                ErrorCode=MoveDir(Path,NewPath,false);
+            }
+            err::error_code ec;
 			fs::rename(Path,NewPath,ec);
 			if (ec) {
+                ErrorCode.SetError(ec.message());
 				return (fs::path());
 			}
 		}
@@ -320,13 +336,14 @@ namespace DPath
 		return space_info.available < required ? required - space_info.available : 0 ;
 	}
 
-	//! Copy a file.
-	/**
-	* @param From	->	Source File.
-	* @param To		->	Destination file.
-	*
-	* @return true on success otherwise false.
-	**/
+    /**
+     * @brief Copy a file with options.
+     * @param From
+     * @param To
+     * @param OverwriteExisting
+     * @param SafeMode
+     * @return
+     */
 	DError::DErrorCode Copy_File(const fs::path &From, const fs::path &To, bool OverwriteExisting, bool SafeMode) {
 		DError::DErrorCode ErrorCode;
 		if (From == To) {
@@ -470,6 +487,14 @@ namespace DPath
 			}
 		}
 
+		if (DestDir.has_parent_path()) {
+			if (!exists(DestDir.parent_path())) {
+				Callback(CALLBACK_SET_FILES,1);
+				ErrorCode.SetError(DestDir.parent_path().string()+" does not exist");
+				return(ErrorCode);
+			}
+		}
+
 		// N.B. !!!! Crea solo la DestDir copiando gli attributi dalla SourceDir !!!!
 		err::error_code ec;
 		#if __cplusplus > 201402L // C++17
@@ -477,7 +502,7 @@ namespace DPath
 		#else
 			fs::copy_directory(SourceDir,DestDir,ec);
 		#endif
-		if (ec) {
+		if (ec.value() > 0) {
 			Callback(CALLBACK_SET_FILES,1);
 			ErrorCode.SetError(ec.message());
 			return(ErrorCode);
@@ -511,10 +536,11 @@ namespace DPath
 					fs::copy_option options=fs::copy_option::overwrite_if_exists;
 				#endif
 
-				if (!fs::copy_file(iterator->path(),DestDir / iterator->path().filename(),options,ec)) {
-					ErrorCode.SetError(ec.message());
-					return(ErrorCode);
-				}
+                fs::copy(iterator->path(),DestDir / iterator->path().filename(),options,ec);
+                if (ec) {
+                    ErrorCode.SetError(ec.message());
+                    return(ErrorCode);
+                }
 			}
 		}
 
@@ -528,12 +554,12 @@ namespace DPath
 	* @param FailifExists	->	when false, destination is overwitten.
 	* @param Callback		->	Callback function to call on copy operation starts. Callback pass COUNT_DIR before directory copy and COUNT_FILE before file copy.
 	*
-	* @return true on success or false if any arrors occours.
-	* //TODO: DErrorCode
+    * @return an empty DError on success otherwise a DError with error set.
+    *
 	**/
 	DError::DErrorCode MoveDir(fs::path SourceDir, fs::path DestDir, bool FailIfExists, DCallback Callback) {
 		DError::DErrorCode ErrorCode;
-		if (Callback) {
+        if (Callback) {
 			// If You want callback, need to copy and delete...
 			ErrorCode=CopyDir(SourceDir,DestDir,FailIfExists,Callback);
 			if (ErrorCode.IsSet()) {
@@ -548,7 +574,19 @@ namespace DPath
 			}
 		}
 		else {
-			#if __cplusplus > 201402L // C++17
+            #if __cplusplus > 201402L // C++17
+                if (Exists(DestDir)) {
+                    if (FailIfExists) {
+                        ErrorCode.SetError("Destination exists");
+                        return(ErrorCode);
+                    }
+                    else {
+                        if (!DeleteDir(DestDir)) {
+                            ErrorCode.SetError("Unable to delete existing detination directory");
+                            return(ErrorCode);
+                        }
+                    }
+                }
 				// C++17 fast move
 				err::error_code ec;
 				fs::rename(SourceDir,DestDir,ec);
@@ -608,6 +646,23 @@ namespace DPath
 		}
 		return true;
 	}
+
+    /**
+     * @brief Delete a directory Recursively (error code version).
+     * @param Dir   ->	Directory to delete.
+     * @param ec    ->  a pointer to std::error_code variable to fill with result (can be null).
+     * @return
+     */
+    bool DeleteDir(fs::path Dir, err::error_code& ec) {
+        if (!Exists(Dir)) {
+            return false;
+        }
+        fs::remove_all(Dir,ec);
+        if (ec) {
+            return false;
+        }
+        return true;
+    }
 
 	//! Cerca tutte le cartelle all'interno di una cartella.
 	/**

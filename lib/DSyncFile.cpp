@@ -1,5 +1,6 @@
-#include "libdpp/DSyncFile.h"
-#include "libdpp/DString.h"
+#include <libdpp/DSyncFile.h>
+#include <libdpp/DString.h>
+#include <libdpp/DChrono.h>
 
 namespace DTools
 {
@@ -28,7 +29,7 @@ namespace DTools
 	DSyncFile::DSyncFile(fs::path SourceFilename, fs::path DestFilename, bool SyncNow, bool SafeCopyMode) {
 		Source=SourceFilename;
 		Dest=DestFilename;
-		if (DTools::DPath::Exists(Source)) {
+        if (DPath::Exists(Source)) {
 			Ready=true;
 		}
 		else {
@@ -47,7 +48,7 @@ namespace DTools
 
 	DSyncFile::DSyncStatus DSyncFile::DoSync(void) {
 try {
-		if (!DTools::DPath::Exists(Source)) {
+        if (!DPath::Exists(Source)) {
 			if (!Ready) {
 				// Already not ready
 				LastSyncStatus=SYNC_NOT_READY;
@@ -77,14 +78,14 @@ try {
 		Ready=true;
         LastStrStatus=Source.string()+" -> ";
 
-		if (!DTools::DPath::Exists(Dest)) {
+        if (!DPath::Exists(Dest)) {
 			LastStrStatus.append("not present, sync ");
 		}
 		else {
-			std::chrono::system_clock::time_point st=DTools::DPath::LastWriteTime(Source);
-			std::chrono::system_clock::time_point dt=DTools::DPath::LastWriteTime(Dest);
-			std::string s=DString::FormatTimeP(st);
-			std::string d=DString::FormatTimeP(dt);
+            std::chrono::system_clock::time_point st=DPath::LastWriteTime(Source);
+            std::chrono::system_clock::time_point dt=DPath::LastWriteTime(Dest);
+            std::string s=DChrono::FormatTimeP(st);
+            std::string d=DChrono::FormatTimeP(dt);
 			if (st > dt) {
 				LastStrStatus.append("sync ");
 			}
@@ -96,7 +97,7 @@ try {
 		}
 
 /*
-		else if (DTools::DPath::LastWriteTime(Source) > DTools::DPath::LastWriteTime(Dest)) {
+        else if (DPath::LastWriteTime(Source) > DPath::LastWriteTime(Dest)) {
 			LastStrStatus.append("sync ");
 		}
 		else {
@@ -106,7 +107,7 @@ try {
 		}
 */
 		try {
-			DError::DErrorCode ErrorCode=DTools::DPath::Copy_File(Source,Dest,true,SafeMode);
+            DError::DErrorCode ErrorCode=DPath::Copy_File(Source,Dest,true,SafeMode);
 			if (ErrorCode.IsSet()) {
 				LastStrStatus.append("error copying to "+Dest.string()+" : "+ErrorCode.Message());
 				LastSyncStatus=SYNC_ERR_COPY;
@@ -118,7 +119,7 @@ try {
 				ReturnSync=SYNC_RESTORED;
 			}
 			LastSyncStatus=SYNC_DONE;
-			LastSyncTime=DTools::DString::FormatNow();
+            LastSyncTime=DChrono::FormatNow();
 			return(ReturnSync);
 
 		} catch (fs::filesystem_error& e) {

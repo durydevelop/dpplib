@@ -3,8 +3,8 @@
 #ifdef QT_GUI_LIB
 #include <QtConcurrent/QtConcurrentRun>
 #include "libdpp/qt/ui_dformlog.h"
-#include "libdpp/qt/DQt.h"
 #include "libdpp/qt/DQShell.h"
+#include "libdpp/qt/DQWindow.h"
 #include <QBuffer>
 #include <QFile>
 
@@ -43,13 +43,20 @@ DFormLog::DFormLog(QWidget *parent, std::shared_ptr<DLog> dLog) :
     }
     setWindowTitle(dLog->GetFilename().c_str());
     connect(this,&DFormLog::SignalWaitingSpinner,this,&DFormLog::OnWaitingSpinner);
+    connect(this,&DFormLog::SignalScrollToBottom,this,&DFormLog::OnScrollToBottom);
 
     ModelStringList = new QStringListModel();
     connect(&EmitStringList, &DEmitStringList::signal, ModelStringList, &QStringListModel::setStringList);
     ui->ListViewLog->setModel(ModelStringList);
     ui->ListViewLog->setUniformItemSizes(true);
+    //connect(ui->ListViewLog->model(),&QStringListModel::rowsInserted,ui->ListViewLog,&QListView::scrollToBottom);
+    connect(ui->ListViewLog->model(),&QStringListModel::rowsInserted,this,&DFormLog::rowsInserted);
 
     WaitingSpinner=new DSpinnerWidget(ui->ListViewLog,true,false);
+}
+
+void DFormLog::rowsInserted() {
+    qDebug("fired");
 }
 
 DFormLog::~DFormLog()
@@ -131,9 +138,10 @@ bool DFormLog::LoadFile(void) {
         return true;
     });
 
-    QTimer::singleShot(0,[this,LoadRunner](){
+    QTimer::singleShot(0,this,[this,LoadRunner](){
         LoadRunner.result();
         emit SignalWaitingSpinner(false);
+        emit SignalScrollToBottom();
     });
 
     return true;
@@ -159,7 +167,7 @@ void DFormLog::Add(QString Msg, QString OutputLevel, QString TimeStamp)
 
     LogString.append(Msg);
 
-    if(ModelStringList->insertRow(ModelStringList->rowCount())) {
+    if (ModelStringList->insertRow(ModelStringList->rowCount())) {
         QModelIndex index = ModelStringList->index(ModelStringList->rowCount() - 1, 0);
         ModelStringList->setData(index, LogString);
         ui->ListViewLog->scrollToBottom();
@@ -174,6 +182,10 @@ void DFormLog::OnWaitingSpinner(bool Enable)
     else {
         WaitingSpinner->stop();
     }
+}
+
+void DFormLog::OnScrollToBottom(void) {
+    ui->ListViewLog->scrollToBottom();
 }
 
 void DFormLog::DLogCallback(std::string Msg, std::string OutputLevel, std::string Header) {
