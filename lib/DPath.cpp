@@ -102,15 +102,18 @@ namespace DPath
         fs::path NewPath=Path.parent_path() / (Path.stem().string() + "." + DString::LTrim(NewExt,"."));
 
 		if (Execute) {
-            if (Exists(NewPath)) {
+            if (IsDirectory(NewPath)) {
                 ErrorCode=MoveDir(Path,NewPath,false);
+                return (fs::path());
             }
-            err::error_code ec;
-			fs::rename(Path,NewPath,ec);
-			if (ec) {
-                ErrorCode.SetError(ec.message());
-				return (fs::path());
-			}
+            else {
+                err::error_code ec;
+                fs::rename(Path,NewPath,ec);
+                if (ec) {
+                    ErrorCode.SetError(ec.message());
+                    return (fs::path());
+                }
+            }
 		}
 		return (NewPath);
 	}
