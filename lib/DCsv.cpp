@@ -76,14 +76,14 @@ namespace DCsv
         return(DestVect.size());
     }
 
-	//! Extract a field from a csv string
 	/**
+	* @brief Extract a field from a csv string.
 	* @param Row    	->  reference to string to extract from
 	* @param cSep   	->  separator char
 	* @param FieldNr	->  number of field to extract starting from 1. Value of 0 return the last field
 	*
-	* @return the extacted string if FieldNr is found otherwise an empty string. If FieldNr is 1 or 0 and no separator found same string as Row will be returned
-	**/
+	* @return the extacted string if FieldNr is found otherwise an empty string. If FieldNr is 1 or 0 and no separator found, Row will be returned
+	 */
 	std::string ReadCSVField(std::string Row, char cSep, size_t FieldNr) {
 		size_t SepCount=0;	// Separators found
 		size_t ixStart=0;   // Index of first char in current field

@@ -6,9 +6,9 @@
 #include <QPlainTextEdit>
 #include <QStringListModel>
 #include <QThread>
-#include "libdpp/DLog.h"
-#include "libdpp/DPreferences.h"
-#include "libdpp/qt/DSpinnerWidget.h"
+#include <libdpp/DLog.h>
+#include <libdpp/DPreferences.h>
+#include <libdpp/qt/DSpinnerWidget.h>
 
 namespace Ui
 {
@@ -52,15 +52,18 @@ class DFormLog : public QDialog
     signals:
         void SignalAdd(QString Msg, QString OutputLevel = "", QString Header = "");
         void SignalWaitingSpinner(bool Enable);
+        void SignalScrollToBottom(void);
 
     private slots:
         void OnWaitingSpinner(bool Enable);
+        void OnScrollToBottom(void);
         void on_ButtonReload_clicked();
         void on_ButtonOpenFolder_clicked();
         void on_ButtonSendLogs_clicked();
 
     public slots:
         void Add(QString Msg, QString OutputLevel = "", QString Header = "");
+        void rowsInserted();
 
     private:
         void DLogCallback(std::string Msg, std::string OutputLevel, std::string Header);

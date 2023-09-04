@@ -2,7 +2,6 @@
 #include <libdpp/DString.h>
 #include <libdpp/DPath.h>
 #include <libdpp/DShell.h>
-#include <libdpp/qt/DQt.h>
 #include <fstream>
 
 namespace fs=DTools::fs;
@@ -408,7 +407,7 @@ namespace DTools
         std::string MainExe=UpdateData->ReadString(SECTION_UPGRADE_INFO,PARAM_MAIN_EXE,"",'/');
         std::vector<std::string> Files;
         std::string FilesNodeName=SECTION_FILES "/" SECTION_REPLACE;
-        UpdateData->ReadItemNames(FilesNodeName,Files,'/');
+        UpdateData->ReadNames(FilesNodeName,Files,'/');
         for (std::string& Source : Files) {
             std::string Dest=UpdateData->ReadString(FilesNodeName,Source,"",'/');
             bool IsMainExe=false;
@@ -535,7 +534,7 @@ namespace DTools
             // Read "replace files" list
             std::vector<std::string> Files;
             std::string NodeName=SECTION_FILES "/" SECTION_REPLACE;
-            UpdateData->ReadItemNames(NodeName,Files,'/');
+            UpdateData->ReadNames(NodeName,Files,'/');
             for (std::string& Source : Files) {
                 // Make filenames
                 fs::path SourceFilename=fs::path(dRepository.MainUri) / dRepository.SubUri / Source;
@@ -585,7 +584,7 @@ namespace DTools
         Log("Begin replacing files");
         // Read files list
         std::string NodeName=SECTION_FILES "/" SECTION_REPLACE;
-        UpdateData->ReadItemNames(NodeName,Files,'/');
+        UpdateData->ReadNames(NodeName,Files,'/');
         for (std::string& Source : Files) {
             Log(Source);
             // Dest file name (real name)
@@ -646,7 +645,7 @@ namespace DTools
         // Read files list
         // Use '/' translator because in tree there is dot in filename
         NodeName=SECTION_FILES "/" SECTION_MODIFY;
-        UpdateData->ReadItemNames(NodeName,Files,'/');
+        UpdateData->ReadNames(NodeName,Files,'/');
         for (std::string& Name : Files) {
             fs::path Filename=fs::current_path() / Name;
             if (!DTools::DPath::Exists(Filename)) {
@@ -661,7 +660,7 @@ namespace DTools
             if (Action == VALUE_REPLACE_TEXT) {
                 std::vector<std::string> TextList;
                 bool CaseSensistive=UpdateData->ReadBool(NodeName+"/"+Name,PARAM_CASE_SENSITIVE,false,'/');
-                UpdateData->ReadItemNames(NodeName+"/"+Name+"/"+SECTION_LIST,TextList,'/');
+                UpdateData->ReadNames(NodeName+"/"+Name+"/"+SECTION_LIST,TextList,'/');
                 std::map<std::string,std::string> ReplaceList;
                 for (std::string& TextToReplace : TextList) {
                     std::string ReplacedText=UpdateData->ReadString(NodeName+"/"+Name+"/"+SECTION_LIST,TextToReplace,"",'/');
@@ -677,7 +676,7 @@ namespace DTools
                 }
                 std::vector<std::string> DottedKeyList;
                 std::string ListNodeName=NodeName+"/"+Name+"/"+SECTION_LIST;
-                UpdateData->ReadItemNames(ListNodeName,DottedKeyList,'/');
+                UpdateData->ReadNames(ListNodeName,DottedKeyList,'/');
                 // Each key in List section is in dot separated format
                 // like "Settings.General.Path"
                 for (std::string& DottedKey : DottedKeyList) {

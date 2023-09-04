@@ -1,8 +1,12 @@
 #ifndef DWindowH
 #define DWindowH
 
-#include "libdpp/DPreferences.h"
+#include <libdpp/DPreferences.h>
 #include <string>
+
+#ifdef QT_GUI_LIB
+    #include <libdpp/qt/DQWindow.h>
+#endif
 
 namespace DTools
 {

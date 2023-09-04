@@ -20,19 +20,21 @@ set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/DWindow.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DNetwork.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DRESTClient.h
+
     #${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DTcpServer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DUdpServer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/network/DUri.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DQApp.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DCheckBoxDelegate.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DFormLog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DProgressDelegate.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DQLabel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DQProcess.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DQShell.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DQt.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DQWidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DQWindow.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DSpinnerWidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/DSplashScreen.h
-    #${CMAKE_CURRENT_SOURCE_DIR}/libdpp/qt/ui_dformlog.h
 )
 
 # Propagate sources to parent scope

@@ -60,21 +60,75 @@ namespace DString
 		return RemoveCharsIfNot(str, allowed);
 	}
 
+    /**
+     * @brief Remove first occurrence of a string from an other.
+     * @param SourceStr     ->  Given string.
+     * @param StrToRemove   ->  STring to remove.
+     * @return a reference to given (modificated) string.
+     */
+    std::string& RemoveLStr(std::string& SourceStr, const std::string& StrToRemove) {
+        size_t pos=SourceStr.find(StrToRemove);
+        if (pos != std::string::npos) {
+            SourceStr.erase(pos,StrToRemove.size());
+        }
+        return SourceStr;
+    }
+
+    /**
+     * @brief Remove last occurrence of a string from an other.
+     * @param SourceStr     ->  Given string.
+     * @param StrToRemove   ->  STring to remove.
+     * @return a reference to given (modificated) string.
+     */
+    std::string& RemoveRStr(std::string& SourceStr, const std::string& StrToRemove) {
+        size_t pos=SourceStr.rfind(StrToRemove);
+        if (pos != std::string::npos) {
+            SourceStr.erase(pos,StrToRemove.size());
+        }
+        return SourceStr;
+    }
+
+    /**
+     * @brief Remove all occurrences of a string from an other.
+     * @param SourceStr     ->  Given string.
+     * @param StrToRemove   ->  STring to remove.
+     * @return a reference to given (modificated) string.
+     */
+    std::string& RemoveAllStr(std::string& SourceStr, const std::string& StrToRemove) {
+        size_t len=StrToRemove.size();
+        for (auto i=SourceStr.find(StrToRemove); i!=std::string::npos; i=SourceStr.find(StrToRemove)) {
+            SourceStr.erase(i,len);
+        }
+        return SourceStr;
+    }
+
 	std::string& CutR(std::string& str, size_t count) {
-		str=str.substr(0,str.size()-count);
+        if (str.empty()) {
+			return(str);
+        }
+        str=str.substr(0,str.size()-count);
 		return(str);
 	}
 
 	std::string CutRCopy(std::string str, size_t count) {
+		if (str.empty()) {
+			return(str);
+		}
 		return(str=str.substr(0,str.size()-count));
 	}
 
 	std::string& CutL(std::string& str, size_t count) {
+		if (str.empty()) {
+			return(str);
+		}
 		str=str.substr(count,str.size()-count);
 		return(str);
 	}
 
 	std::string CutLCopy(std::string str, size_t count) {
+		if (str.empty()) {
+			return(str);
+		}
 		return(str=str.substr(count,str.size()-count));
 	}
 
@@ -101,40 +155,6 @@ namespace DString
 	//! return true if str is an unsigned double number
 	bool IsUnsignedDouble(const std::string& str) {
 	  return std::regex_match(str,std::regex("[+]?[0-9]+[.]?[0-9]+"));
-	}
-
-	//! Create now date/time string according to format specify by https://en.cppreference.com/w/cpp/io/manip/put_time
-	/**
-	* @param format	->	Format string (default "%Y%m%d %H%M%S")
-	**/
-	std::string FormatNow(std::string format) {
-		auto now_time_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-		std::stringstream ss;
-		ss << std::put_time(localtime(&now_time_t),format.c_str());
-		return(ss.str());
-	}
-
-	//! Create a date/time string from a time_t type according to format specify by https://en.cppreference.com/w/cpp/io/manip/put_time
-	/**
-	* @param in_time_t	->	time_t time to format
-	* @param format		->	Format string (default "%Y%m%d %H%M%S")
-	**/
-	std::string FormatTimeT(time_t in_time_t, std::string format) {
-		std::stringstream ss;
-		ss << std::put_time(localtime(&in_time_t),format.c_str());
-		return(ss.str());
-	}
-
-	//! Create a date/time string from a time_pont type according to format specify by https://en.cppreference.com/w/cpp/io/manip/put_time
-	/**
-	* @param in_time_t	->	time_point time to format
-	* @param format		->	Format string (default "%Y%m%d %H%M%S")
-	**/
-	std::string FormatTimeP(std::chrono::system_clock::time_point in_time_point, std::string format) {
-		auto in_time_t=std::chrono::system_clock::to_time_t(in_time_point);
-		std::stringstream ss;
-		ss << std::put_time(localtime(&in_time_t),format.c_str());
-		return(ss.str());
 	}
 
 	//! Convert string to uppercase
@@ -191,19 +211,39 @@ namespace DString
     }
 
     /**
-     * @brief Check str contains pattern.
+     * @brief Check if str contains pattern.
      * @param str       ->  Source string.
      * @param pattern   ->  Pattern string to search for.
      * @param CaseSensitive ->  Set to false to check case-unsensitive.
      * @return true if pattern is contained in str (also if theay are equals).
      */
     bool Contains(std::string str, std::string pattern, bool CaseSensitive) {
-        if (CaseSensitive) {
+        if (!CaseSensitive) {
             std::transform(str.begin(),str.end(),str.begin(),::tolower);
             std::transform(pattern.begin(),pattern.end(),pattern.begin(),::tolower);
         }
 
         if (str.find(pattern) != std::string::npos) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @brief Check if #str start with #pattern.
+     * @param str       ->  Source string.
+     * @param pattern   ->  Pattern string to search for.
+     * @param CaseSensitive ->  Set to false to check case-unsensitive.
+     * @return true if #str starts with #pattern (also if theay are equals).
+     */
+    bool StartsWith(std::string str, std::string pattern, bool CaseSensitive) {
+        if (!CaseSensitive) {
+            std::transform(str.begin(),str.end(),str.begin(),::tolower);
+            std::transform(pattern.begin(),pattern.end(),pattern.begin(),::tolower);
+        }
+
+        size_t pos=str.find(pattern);
+        if (pos == 0) {
             return true;
         }
         return false;

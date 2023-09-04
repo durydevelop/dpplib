@@ -1,7 +1,7 @@
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS
-#include "libdpp/DPreferences.h"
-#include "libdpp/DFilesystem.h"
-#include "libdpp/DPath.h"
+#include <libdpp/DPreferences.h>
+#include <libdpp/DFilesystem.h>
+#include <libdpp/DPath.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <sstream>
 #include <boost/exception/all.hpp>

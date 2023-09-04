@@ -48,7 +48,10 @@ namespace DString
 	std::string& RemoveNotDigit(std::string& str);
 	std::string RemoveNotDigitCopy(std::string str);
 	std::string& RemoveCharsIfNot(std::string& str, const std::string& allowed);
-	std::string RemoveCharsIfNot_Copy(std::string str, const std::string& allowed);
+    std::string RemoveCharsIfNotCopy(std::string str, const std::string& allowed);
+    std::string& RemoveLStr(std::string& SourceStr, const std::string& StrToRemove);
+    std::string& RemoveRStr(std::string& SourceStr, const std::string& StrToRemove);
+    std::string& RemoveAllStr(std::string& SourceStr, const std::string& StrToRemove);
 	std::string& CutR(std::string& str, size_t count);
 	std::string CutRCopy(std::string str, size_t count);
 	std::string& CutL(std::string& str, size_t count);
@@ -67,7 +70,7 @@ namespace DString
 		return(Num);
 	}
 
-	// Strings Format
+    // Strings Formatting
 	template<typename ... Args>
 	std::string FormatString(const std::string& format,Args ... args) {
 		size_t len = snprintf(nullptr,0,format.c_str(),args ...)+1; // Extra space for '\0'
@@ -75,9 +78,6 @@ namespace DString
 		snprintf(buf.get(),len, format.c_str(),args ...);
 		return std::string(buf.get(),buf.get()+len-1); // We don't want the '\0' inside
 	};
-	std::string FormatNow(std::string format = "%Y%m%d %H%M%S");
-	std::string FormatTimeT(time_t in_time_t, std::string format = "%Y%m%d %H%M%S");
-	std::string FormatTimeP(std::chrono::system_clock::time_point in_time_point, std::string format = "%Y%m%d %H%M%S");
 
 	// Convert
 	std::string& ToUpper(std::string& str);
@@ -90,6 +90,7 @@ namespace DString
 	// Compare
 	bool CmpNoCase(std::string str1, std::string str2);
 	bool Contains(std::string str, std::string pattern, bool CaseSensitive = false);
+    bool StartsWith(std::string str, std::string pattern, bool CaseSensitive = false);
 
 	//std::string& RemoveAll(std::string& str, std::string& Search);
 } // DString
