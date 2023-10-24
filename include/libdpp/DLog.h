@@ -12,8 +12,23 @@
 #include <set>
 #include <regex>
 
+// Filesystem library include
+#if __cplusplus > 201402L // C++17
+    #include <filesystem>
+#else
+    #include <boost/filesystem.hpp>
+#endif
+
 namespace DTools
 {
+    // Filesystem library namespace
+    #if __cplusplus > 201402L // C++17
+        namespace fs = std::filesystem;
+        namespace err = std;
+    #else
+        namespace fs=boost::filesystem;
+        namespace err = boost::system;
+    #endif
     /**
     * @class DLog
     *
@@ -47,7 +62,7 @@ namespace DTools
     * _Read(FromWhen,SinceWhen);
     **/
 
-    namespace fs=std::filesystem;
+    //namespace fs=std::filesystem;
 
     class DLog {
             // ******************************  Callback stuffs ***************************************
@@ -131,7 +146,7 @@ namespace DTools
                 if (!Filename.empty()) {
                     // Create parent dir if not exists
                     fs::path LogDir=fs::path(Filename).parent_path();
-                    std::error_code ec;
+                    err::error_code ec;
                     fs::file_status Status=fs::status(LogDir,ec);
                     if (!fs::exists(Status)) {
                         fs::create_directories(LogDir,ec);
@@ -346,7 +361,7 @@ namespace DTools
                     for (auto itr=FilesList.rbegin(); itr != FilesList.rend(); itr++) {
                         TotSize+=fs::file_size(*itr);
                         if (TotSize > StorageModeParam) {
-                            std::error_code ec;
+                            err::error_code ec;
                             fs::remove(*itr,ec);
                             if (ec) {
                                 std::string Err="DLogFile error deleting <"+(*itr).string()+"> "+ec.message();
@@ -361,7 +376,8 @@ namespace DTools
                         // get now as time_point
                         std::chrono::system_clock::time_point now=std::chrono::system_clock::now();
                         // get file_time of file
-                        fs::file_time_type fttime=fs::last_write_time(File);
+                        //fs::file_time_type fttime=fs::last_write_time(File);
+                        auto fttime=fs::last_write_time(File);
                         // convert to time_t
                         auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(fttime - fs::file_time_type::clock::now() + std::chrono::system_clock::now());
                         time_t ftimet=std::chrono::system_clock::to_time_t(sctp);
@@ -371,7 +387,7 @@ namespace DTools
                         std::chrono::hours diff=std::chrono::duration_cast<std::chrono::hours>(now - tptime);
 
                         if (diff.count() > long(StorageModeParam*24)) {
-                            std::error_code ec;
+                            err::error_code ec;
                             fs::remove(File,ec);
                             if (ec) {
                                 std::string Err="DLogFile error deleting <"+File.string()+"> "+ec.message();
@@ -446,7 +462,7 @@ namespace DTools
                 ss << std::put_time(localtime(&now_time_t),"_%Y_%m_%d_%H_%M_%S");
                 // create new name
                 fs::path NewName=LogDir / (LogName+ss.str()+LogExt);
-                std::error_code ec;
+                err::error_code ec;
                 // rename it
                 fs::rename(Filename,NewName,ec);
                 if (ec) {
