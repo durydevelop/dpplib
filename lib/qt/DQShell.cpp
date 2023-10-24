@@ -1,10 +1,12 @@
 #include <libdpp/qt/DQShell.h>
 
+#ifdef QT_GUI_LIB
+
 #include <QFileInfo>
 #include <QProcess>
 #include <QDir>
-
-#ifdef QT_GUI_LIB
+#include <QDesktopServices>
+#include <QUrl>
 
 namespace DTools
 {
