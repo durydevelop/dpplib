@@ -184,8 +184,10 @@ main()
     time_t PtimeToTimeT (const boost::posix_time::ptime& pt) {
         using namespace boost::posix_time;
         using namespace boost::local_time;
-
-        _tzset (); // This is needed if the time zone changes after the program starts.
+        
+        // This is needed if the time zone changes after the program starts.
+        // _tzset();
+        tzset ();
 
         // Grab copies of the current time in local and UTC form.
         auto p_time = microsec_clock::universal_time (); // UTC.
