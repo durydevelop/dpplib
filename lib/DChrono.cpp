@@ -185,7 +185,7 @@ main()
         using namespace boost::posix_time;
         using namespace boost::local_time;
 
-        _tzset (); // This is needed if the time zone changes after the program starts.
+        tzset (); // This is needed if the time zone changes after the program starts.
 
         // Grab copies of the current time in local and UTC form.
         auto p_time = microsec_clock::universal_time (); // UTC.

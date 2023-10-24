@@ -79,7 +79,11 @@ namespace DPath
             }
             else {
                 try {
-                    fs::rename(Path,NewPath);
+                    err::error_code ec;
+                    fs::rename(Path,NewPath,ec);
+                    if (ec) {
+                        return(fs::path());
+                    }
                 } catch (std::exception &e) {
                     //std::string s=e.what();
                     return (fs::path());
@@ -577,6 +581,7 @@ namespace DPath
 			}
 		}
 		else {
+/*
             #if __cplusplus > 201402L // C++17
                 if (Exists(DestDir)) {
                     if (FailIfExists) {
@@ -591,6 +596,7 @@ namespace DPath
                     }
                 }
 				// C++17 fast move
+// Stocazzo!! non funziona e ritorna sempre access denied
 				err::error_code ec;
 				fs::rename(SourceDir,DestDir,ec);
 				if (ec) {
@@ -598,36 +604,48 @@ namespace DPath
 					return(ErrorCode);
 				}
 			#else
+*/
 				#ifdef WIN32
-					// windows fast move
+                    // Try windows fast move
 					if (SourceDir.string().substr(0,2) == DestDir.string().substr(0,2) && DestDir.string().substr(0,2) != "\\\\") {
-						// use windows api for c++ < 17
-						if (!MoveFileEx(SourceDir,DestDir,MOVEFILE_REPLACE_EXISTING)) {
-							return false;
-						}
+                        // use windows api for c++ < 17
+                    #if __cplusplus <= 201703L // <= C++17
+                        if (!MoveFileExA(SourceDir.string().c_str(),DestDir.string().c_str(),MOVEFILE_REPLACE_EXISTING)) {
+                    #else
+                        if (!MoveFileEx(SourceDir.string().c_str(),DestDir.string().c_str(),MOVEFILE_REPLACE_EXISTING)) {
+                    #endif
+                            // TODO: GetLastErrorString
+                            ErrorCode.SetError(ErrorCode.GetLastErrorText());
+                            return(ErrorCode);
+                        }
 					}
-					else {
-						// use c++ copy and delete
-						if (!CopyDir(SourceDir,DestDir,FailIfExists,Callback,MemberCallbackClassObj)) {
-							return false;
-						}
+                    else {
+                        ErrorCode=CopyDir(SourceDir,DestDir,FailIfExists);
+                        if (ErrorCode.IsSet()) {
+                            return(ErrorCode);
+                        }
 
-						if (!fs::remove_all(SourceDir,ec))
-						return false;
+                        err::error_code ec;
+                        fs::remove_all(SourceDir,ec);
+                        if (ec) {
+                            ErrorCode.SetError(ec.message());
+                            return(ErrorCode);
+                        }
 					}
-				#else
-					if (!CopyDir(SourceDir,DestDir,FailIfExists,Callback)) {
-						return false;
-					}
+                #else
+                    ErrorCode=CopyDir(SourceDir,DestDir,FailIfExists);
+                    if (ErrorCode.IsSet()) {
+                        return(ErrorCode);
+                    }
 
-					err::error_code ec;
-					fs::remove_all(SourceDir,ec);
-					if (ec) {
-						ErrorCode.SetError(ec.message());
-						return(ErrorCode);
-					}
+                    err::error_code ec;
+                    fs::remove_all(SourceDir,ec);
+                    if (ec) {
+                        ErrorCode.SetError(ec.message());
+                        return(ErrorCode);
+                    }
 				#endif
-			#endif
+//			#endif
 		}
 		return(ErrorCode);
 	}

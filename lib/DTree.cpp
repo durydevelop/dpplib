@@ -552,7 +552,7 @@ namespace DTools
             SubTree.ReadNames(nn);
 
             if (SubTree.HasData()) {
-                Value=ReadString(Name,"");
+                Value=SubTree.ReadString(Name,"");
             }
             else if (SubTree.HasChildren()) {
                 Value=SubTree.PrintTree();

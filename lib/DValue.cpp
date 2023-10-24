@@ -4,6 +4,12 @@
 
 namespace DTools
 {
+    DValue::DValue(size_t InitCount) {
+        if (InitCount > 0) {
+            Values.resize(InitCount,"");
+        }
+    }
+
 	std::string DValue::Get(size_t Index) {
 		if (Values.empty() || Index > Values.size()-1) {
 			return(std::string());

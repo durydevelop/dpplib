@@ -8,7 +8,8 @@
 namespace DTools
 {
 	class DValue {
-	    public:
+        public:
+            DValue(size_t InitCount = 0);
 		    std::string Get(size_t Index = 0);
 		    std::string GetAll(std::string Separator = "\r\n");
 			void GetVect(std::vector<std::string>& Dest);

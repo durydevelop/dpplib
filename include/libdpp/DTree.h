@@ -56,7 +56,7 @@ namespace DTools
 
 			std::string GetLastStatus(void);
             std::string PrintTree(void);
-            std::string PrintTree(DTree *Tree);
+            static std::string PrintTree(DTree *Tree);
 
 		protected:
 			boost::property_tree::iptree RootNode;
