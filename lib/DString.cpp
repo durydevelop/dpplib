@@ -230,7 +230,7 @@ namespace DString
     }
 
     /**
-     * @brief Check if #str start with #pattern.
+     * @brief Check if #str starts with #pattern.
      * @param str       ->  Source string.
      * @param pattern   ->  Pattern string to search for.
      * @param CaseSensitive ->  Set to false to check case-unsensitive.
@@ -244,6 +244,26 @@ namespace DString
 
         size_t pos=str.find(pattern);
         if (pos == 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @brief Check if #str ends with #pattern.
+     * @param str       ->  Source string.
+     * @param pattern   ->  Pattern string to search for.
+     * @param CaseSensitive ->  Set to false to check case-unsensitive.
+     * @return true if #str ends with #pattern (also if theay are equals).
+     */
+    bool EndsWith(std::string str, std::string pattern, bool CaseSensitive) {
+        if (!CaseSensitive) {
+            std::transform(str.begin(),str.end(),str.begin(),::tolower);
+            std::transform(pattern.begin(),pattern.end(),pattern.begin(),::tolower);
+        }
+
+        size_t pos=str.rfind(pattern);
+        if (pos == str.size()-pattern.size()) {
             return true;
         }
         return false;

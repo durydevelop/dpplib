@@ -10,11 +10,31 @@ class DQProcess : public QObject
 {
     Q_OBJECT
     public:
-        DQProcess();
-        QProcess Process;
+        enum DOutputChannel { DSTD_OUT, DSTD_ERR };
+        enum DExitStatus    { DEXIT_NORMAL, DEXIT_CRASH };
+        typedef std::function<void (DOutputChannel OutputChannel, std::string Line)> DOnStdOutErrCallback;
+        typedef std::function<void (int ExitCode, DExitStatus ExitStatus)> DOnFinishedCallback;
+
+        DQProcess(std::string Filename, std::string WorkingDir);
+
+        void SetOnStdOutErrCallback(DOnStdOutErrCallback Callback);
+        void SetOnFinishedCallback(DOnFinishedCallback Callback);
+
+        std::string GetFilename(void);
+        QProcess::ProcessState GetState(void);
+
+        void Exec(void);
+
+        bool AllowMultipleInstances;
+
+    private:
         void OnProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
         void OnProcessReadyReadStandardOutput();
         void OnProcessReadyReadStandardError();
+
+        QProcess Process;
+        DOnStdOutErrCallback OnStdOutErrCallback;
+        DOnFinishedCallback OnFinishedCallback;
 };
 }
 

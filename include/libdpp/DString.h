@@ -91,6 +91,7 @@ namespace DString
 	bool CmpNoCase(std::string str1, std::string str2);
 	bool Contains(std::string str, std::string pattern, bool CaseSensitive = false);
     bool StartsWith(std::string str, std::string pattern, bool CaseSensitive = false);
+    bool EndsWith(std::string str, std::string pattern, bool CaseSensitive = false);
 
 	//std::string& RemoveAll(std::string& str, std::string& Search);
 } // DString
