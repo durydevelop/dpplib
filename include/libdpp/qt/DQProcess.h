@@ -20,10 +20,12 @@ class DQProcess : public QObject
         void SetOnStdOutErrCallback(DOnStdOutErrCallback Callback);
         void SetOnFinishedCallback(DOnFinishedCallback Callback);
 
+        DOnFinishedCallback GetOnFinishedCallback(void);
+        DOnStdOutErrCallback GetOnStdOutErrCallback(void);
         std::string GetFilename(void);
         QProcess::ProcessState GetState(void);
 
-        void Exec(void);
+        bool Exec(size_t TimeoutMs);
 
         bool AllowMultipleInstances;
 

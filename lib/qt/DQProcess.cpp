@@ -29,6 +29,14 @@ namespace DTools
         OnFinishedCallback=Callback;
     }
 
+    DQProcess::DOnStdOutErrCallback DQProcess::GetOnStdOutErrCallback(void) {
+        return OnStdOutErrCallback;
+    }
+
+    DQProcess::DOnFinishedCallback DQProcess::GetOnFinishedCallback(void) {
+        return OnFinishedCallback;
+    }
+
 
     void DQProcess::OnProcessFinished(int ExitCode, QProcess::ExitStatus ExitStatus) {
         if (OnFinishedCallback) {
@@ -72,7 +80,7 @@ namespace DTools
         return (Process.state());
     }
 
-    void DQProcess::Exec(void) {
+    bool DQProcess::Exec(size_t TimeOutMs) {
 
         if (AllowMultipleInstances) {
             // Start and return
@@ -86,11 +94,19 @@ namespace DTools
         }
 
         Process.start();
-        if (Process.waitForStarted(5000)) {
-            OnStdOutErrCallback(DSTD_OUT,"Started");
+        if (TimeOutMs >= 0) {
+            if (Process.waitForStarted(5000)) {
+                OnStdOutErrCallback(DSTD_OUT,"Started");
+                return true;
+            }
+            else {
+                OnStdOutErrCallback(DSTD_ERR,"Not started: "+Process.errorString().toStdString());
+                return false;
+            }
         }
         else {
-            OnStdOutErrCallback(DSTD_ERR,"Not started: "+Process.errorString().toStdString());
+            OnStdOutErrCallback(DSTD_OUT,"Executed (no wait for started)");
+            return true;
         }
     }
 }
