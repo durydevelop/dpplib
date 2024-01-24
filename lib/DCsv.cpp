@@ -11,11 +11,22 @@ namespace DCsv
 	* @param Separators		->	list of separators to check for.
 	* @param MaxFieldsCount	->  number of fields to collect, 0 for all.
 	* @return numbers of strings found.
-	* TODO:
-	* size_t ReadCSVRow(std::vector<std::string> &DestList, std::string Row, std::string Separators, size_t MaxFieldsCount)
-	* e deprecare questa
 	**/
 	size_t ReadCSVRow(std::vector<std::string> &DestList, std::string Row, std::string Separators, size_t MaxFieldsCount) {
+/* TODO:
+        std::vector<std::vector<std::string>> csvRows;
+
+        for (std::string line; std::getline(pwdFile, line);) {
+            std::istringstream ss(std::move(line));
+            std::vector<std::string> row;
+            // std::getline can split on other characters, here we use ','
+            for (std::string value; std::getline(ss, value, ':');) {
+                DLog::debug("value=%s",value.c_str());
+                row.emplace_back(std::move(value));
+            }
+            csvRows.emplace_back(std::move(row));
+        }
+*/
 		size_t SepCount=0;	// Separators found
 		size_t ixStart=0;   // Index of first char in current field
 		size_t ixR=0;       // Index of current char in Row

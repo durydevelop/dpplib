@@ -82,17 +82,12 @@ namespace DTools
 
     bool DQProcess::Exec(size_t TimeOutMs) {
 
-        if (AllowMultipleInstances) {
-            // Start and return
-            OnStdOutErrCallback(DSTD_OUT,"Start detached");
-        }
-        else {
-            if (Process.state() != QProcess::NotRunning) {
+        if (AllowMultipleInstances && Process.state() != QProcess::NotRunning) {
                 OnStdOutErrCallback(DSTD_ERR,"Process is running cannot start");
-            }
-            OnStdOutErrCallback(DSTD_OUT,"Start under control");
+                return false;
         }
 
+        OnStdOutErrCallback(DSTD_OUT,"Starting...");
         Process.start();
         if (TimeOutMs >= 0) {
             if (Process.waitForStarted(5000)) {

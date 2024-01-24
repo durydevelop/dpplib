@@ -19,7 +19,7 @@ namespace DTools
 	 * @param RootTree	->	boost ptree object used as root node.
 	 */
 	DTree::DTree(boost::property_tree::iptree RootTree) {
-		RootNode=RootTree;
+        RootNode=RootTree;
 
 	}
 
@@ -65,7 +65,7 @@ namespace DTools
 
 	//! Retrive a string value from root tree
 	/**
-	* Try to get the string value of @ref Item inside @ref SubTree
+    * Try to get the string value of Item inside RootNode
 	* @param Item			->	the item name to retrive.
 	* @param Default		->	default value to return if @ref Item is empty or missing
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
@@ -74,8 +74,18 @@ namespace DTools
         if (Item.empty()) {
             return(RootNode.get<std::string>("",Default));
         }
-		return(RootNode.get<std::string>(pt::iptree::path_type(Item,Translator),Default));
+        return(RootNode.get<std::string>(pt::iptree::path_type(Item,Translator),Default));
 	}
+
+    //! Retrive the string data value of the root tree
+    /**
+    * Try to get the string value of the RootNode
+    * @param Default		->	default value to return if @ref Item is empty or missing
+    * @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+    **/
+    std::string DTree::ReadString(std::string Default, char Translator) {
+        return(RootNode.get<std::string>("",Default));
+    }
 
 	//! Retrive a float value
 	/**
@@ -539,7 +549,7 @@ namespace DTools
     }
 
     std::string DTree::PrintTree(DTree *Tree) {
-        std::string Ret="{\r\n";
+        std::string Ret="{\n";
         std::vector<std::string> ItemsNames;
         Tree->ReadNames(ItemsNames);
 
@@ -548,17 +558,17 @@ namespace DTools
             std::string Value;
             DTree SubTree=Tree->GetTree(ixI);
 
-            std::vector<std::string> nn;
-            SubTree.ReadNames(nn);
+            //std::vector<std::string> nn;
+            //SubTree.ReadNames(nn);
 
             if (SubTree.HasData()) {
-                Value=SubTree.ReadString(Name,"");
+                Value=SubTree.ReadString("");
             }
             else if (SubTree.HasChildren()) {
                 Value=SubTree.PrintTree();
             }
-            Ret.append(Name+" : "+Value+"\r\n");
+            Ret.append(Name+" : "+Value+"\n");
         }
-        return (Ret+"}\r\n");
+        return (Ret+"}");
     }
 }

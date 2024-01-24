@@ -168,6 +168,7 @@ namespace DWindow
          }
 
          QRect ScreenRect = QGuiApplication::primaryScreen()->availableGeometry();
+         qMainWindow.hide();
 
          if (Width > 0 && Height > 0) {
              if (Width > ScreenRect.width()) {
@@ -182,6 +183,7 @@ namespace DWindow
          }
 
          qMainWindow.move(X,Y);
+         qMainWindow.show();
 
          return true;
      }

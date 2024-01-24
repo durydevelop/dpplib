@@ -1,7 +1,6 @@
 #ifndef DStringH
 #define DStringH
 
-#include <chrono>
 #include <sstream>
 #include <memory>
 #include <libdpp/DVector.h>
@@ -61,6 +60,7 @@ namespace DString
 	bool IsUnsignedInteger(const std::string& str);
 	bool IsDouble(const std::string& str);
 	bool IsUnsignedDouble(const std::string& str);
+    int ToInt(const std::string& str);
 
 	template<class T>
 	T ToNumber(const std::string& str) {

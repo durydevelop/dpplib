@@ -22,6 +22,7 @@ namespace DTools
 			int ReadInteger(std::string SubTree, std::string Item, int Default, char Translator = DEFAULT_TRANSLATOR);
 			std::string ReadString(std::string SubTree, std::string Item, std::string Default, char Translator = DEFAULT_TRANSLATOR);
 			std::string ReadString(std::string Item, std::string Default, char Translator = DEFAULT_TRANSLATOR);
+            std::string ReadString(std::string Default, char Translator = DEFAULT_TRANSLATOR);
 			float ReadFloat(std::string SubTree, std::string Item, float Default, char Translator = DEFAULT_TRANSLATOR);
 			uint8_t ReadByte(std::string SubTree, std::string Item, uint8_t Default, char Translator = DEFAULT_TRANSLATOR);
 			bool ReadBool(std::string SubTree, std::string Item, bool Default, char Translator = DEFAULT_TRANSLATOR);

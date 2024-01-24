@@ -1,5 +1,4 @@
 #include "libdpp/DWindow.h"
-#include "libdpp/DFilesystem.h"
 #include "libdpp/DPath.h"
 
 namespace DTools
@@ -34,13 +33,13 @@ namespace DWindow
         Prefs->WriteInteger("Windows."+Name,"Y",Y);
         Prefs->WriteInteger("Windows."+Name,"Width",Width);
         Prefs->WriteInteger("Windows."+Name,"Height",Height);
-        Prefs->Save();
+        bool ret=Prefs->Save();
 
         if (DestPrefs == nullptr && Prefs != nullptr) {
             delete Prefs;
         }
 
-        return true;
+        return ret;
     }
 
     /**

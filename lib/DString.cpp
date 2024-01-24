@@ -157,6 +157,25 @@ namespace DString
 	  return std::regex_match(str,std::regex("[+]?[0-9]+[.]?[0-9]+"));
 	}
 
+    //! Fastest naive conversion to int
+    int ToInt(const std::string& str) {
+        const char *p=str.c_str();
+        int x = 0;
+        bool neg = false;
+        if (*p == '-') {
+            neg = true;
+            ++p;
+        }
+        while (*p >= '0' && *p <= '9') {
+            x = (x*10) + (*p - '0');
+            ++p;
+        }
+        if (neg) {
+            x = -x;
+        }
+        return x;
+    }
+
 	//! Convert string to uppercase
 	/**
 	* @param str    ->  string to convert
