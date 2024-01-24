@@ -22,6 +22,7 @@ option(${PROJECT_NAME}_BUILD_SHARED_LIBS "Build as shared library" OFF)
 option(${PROJECT_NAME}_BUILD_INTERFACE_LIBS "Build as interface lib" OFF)
 option(${PROJECT_NAME}_BUILD_EXAMPLES "Build examples" OFF)
 option(${PROJECT_NAME}_BUILD_TESTS "Build tests" OFF)
+option(${PROJECT_NAME}_BUILD_NET "Build networking support" ON)
 option(CMAKE_BUILD_TYPE "Debug" "Debug")
 if (DEFINED QT_VERSION_MAJOR)
     # default ON if qt is already found
@@ -125,6 +126,17 @@ else()
     set(BUILD_QT OFF)
 endif()
 
+# Handle building network support
+if (${PROJECT_NAME}_BUILD_NET OR BUILD_NET)
+    set(${PROJECT_NAME}_BUILD_NET ON)
+    set(BUILD_NET ON)
+    set(CMAKE_AUTOUIC ON)
+    set(CMAKE_AUTOMOC ON)
+else()
+    set(${PROJECT_NAME}_BUILD_NET OFF)
+    set(BUILD_NET OFF)
+endif()
+
 #############################################################################
 # Create Target
 # CMakeFiles.txt in ./lib and ./include dirs set SRC_FILES with source files list
@@ -157,12 +169,9 @@ endif()
 
 ## Find boost
 # Uncomment this line to force BOOST_ROOT folder
-get_filename_component(BOOST_ROOT "../boost" ABSOLUTE)
-include(DBoostFinder)
+#get_filename_component(BOOST_ROOT "../boost" ABSOLUTE)
+#include(DBoostFinder)
 #set(Boost_INCLUDE_DIR ${Boost_INCLUDE_DIR} PARENT_SCOPE)
-
-## Find TZ
-#https://github.com/HowardHinnant/date.git
 
 # Set make commad option Debug/Release
 include(DMakeOptions)
@@ -217,3 +226,4 @@ message_c(${BOLD_CYAN} "Build as: ${LIB_TYPE} LIB")
 message_c(${BOLD_CYAN} "Build examples: ${BUILD_EXAMPLES}")
 message_c(${BOLD_CYAN} "Build tests: ${BUILD_TESTS}")
 message_c(${BOLD_CYAN} "Build Qt extension: ${BUILD_QT}")
+message_c(${BOLD_CYAN} "Build networking support: ${BUILD_NET}")

@@ -2,8 +2,8 @@
 
 #include <string>
 #include <regex>
-//#include <sstream>
-//#include <iostream>
+#include <sstream>
+#include <iostream>
 
 namespace DTools {
 namespace DNetwork {
