@@ -2,9 +2,9 @@
 #define DUpdateH
 
 #include <string>
-#include <future>
-#include "libdpp/DFilesystem.h"
-#include "libdpp/DPreferences.h"
+//#include <future>
+#include <libdpp/DFilesystem.h>
+#include <libdpp/DPreferences.h>
 
 namespace DTools
 {
