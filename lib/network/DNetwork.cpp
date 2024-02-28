@@ -1,21 +1,17 @@
 #include "libdpp/network/DNetwork.h"
-
-#if __cplusplus > 201402L // C++17
-    #include <boost/asio.hpp>
-    namespace asio=boost::asio;
-
-#else
-    #include <boost/asio.hpp>
-#endif
+#include <boost/asio.hpp>
+namespace asio=boost::asio;
 
 namespace DTools
 {
 	namespace DNetwork {
 		//! @return Host Name corrente
+
 		std::string GetHostName(void) {
 			auto host_name = asio::ip::host_name();
 			return(host_name);
 		}
+
 /*
 		std::string EnumarateIP() {
 			asio::io_service io_service;
