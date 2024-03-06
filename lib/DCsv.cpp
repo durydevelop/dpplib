@@ -4,14 +4,17 @@ namespace DTools
 {
 namespace DCsv
 {
-	//! Read all csv fields in a string.
 	/**
-	* @param DestList		->  pointer to a vector of strings for found fields.
-	* @param Row			->  string to scan.
-	* @param Separators		->	list of separators to check for.
-	* @param MaxFieldsCount	->  number of fields to collect, 0 for all.
-	* @return numbers of strings found.
-	**/
+	 * @brief Read all csv fields in a string.
+     * N.B.
+     * '\r' or '\n' means end of line (also they are in the middle).
+     * 
+	 * @param DestList		    ->  pointer to a vector of strings for found fields.
+	 * @param Row			    ->  string to scan.
+	 * @param Separators		->	list of separators to check for.
+	 * @param MaxFieldsCount	->  number of fields to collect, 0 for all.
+	 * @return numbers of items found.
+	 **/
 	size_t ReadCSVRow(std::vector<std::string> &DestList, std::string Row, std::string Separators, size_t MaxFieldsCount) {
 /* TODO:
         std::vector<std::vector<std::string>> csvRows;
@@ -44,16 +47,17 @@ namespace DCsv
 					ixStart=ixR+1;
 				}
 				else if (c == '\r' || c == '\n') {
+                    // Last Item
+                    std::string Item=Row.substr(ixStart,ixR-ixStart);
+                    if (!Item.empty()) {
+                        DestList.push_back(Item);
+                    }
 					break;
 				}
 			}
 			ixR++;
 		}
-		// Last Item
-		std::string Item=Row.substr(ixStart,ixR-ixStart);
-		if (!Item.empty()) {
-			DestList.push_back(Item);
-		}
+		
 		return(DestList.size());
 	}
 
@@ -75,13 +79,13 @@ namespace DCsv
     }
     */
 
-    //! Extract all csv fields from string to a vector using more separators
+    // Extract all csv fields from string to a vector using more separators
     size_t CsvToVector(std::vector<std::string>& DestVect, std::string CsvString, std::string Separators) {
         ReadCSVRow(DestVect,CsvString,Separators);
         return(DestVect.size());
     }
 
-    //! Extract all csv fields from string to a vector using only one separtor
+    // Extract all csv fields from string to a vector using only one separtor
     size_t CsvToVector(std::vector<std::string>& DestVect, std::string CsvString, char cSep) {
         ReadCSVRow(DestVect,CsvString,std::string(1,cSep));
         return(DestVect.size());

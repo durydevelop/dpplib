@@ -20,6 +20,7 @@ namespace DTools
 			bool IsEmpty(void);
 
 			int ReadInteger(std::string SubTree, std::string Item, int Default, char Translator = DEFAULT_TRANSLATOR);
+            int ReadInteger(std::string Item, int Default, char Translator = DEFAULT_TRANSLATOR);
 			std::string ReadString(std::string SubTree, std::string Item, std::string Default, char Translator = DEFAULT_TRANSLATOR);
 			std::string ReadString(std::string Item, std::string Default, char Translator = DEFAULT_TRANSLATOR);
             std::string ReadString(std::string Default, char Translator = DEFAULT_TRANSLATOR);
@@ -38,9 +39,9 @@ namespace DTools
             size_t ReadNames(std::vector<std::string>& ResultList);
             size_t ReadNames(std::string SubItemName,std::vector<std::string>& ResultList, char Translator = DEFAULT_TRANSLATOR);
             std::vector<std::string> ReadChildrenNames(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
-            DTree GetTree(std::string SubTreeName, char Translator = DEFAULT_TRANSLATOR);
+            DTree GetTree(std::string SubTreeName = std::string(), char Translator = DEFAULT_TRANSLATOR);
             DTree GetTree(size_t SubTreeIndex);
-
+            DTree& GetRootTree(void);
 
 			bool WriteTree(DTree NewTree);
 			bool WriteTree(std::string SubTree, DTree NewTree, char Translator = DEFAULT_TRANSLATOR);
@@ -55,9 +56,16 @@ namespace DTools
 			bool DeleteItem(std::string SubTree, std::string Item, char Translator = DEFAULT_TRANSLATOR);
 			bool DeleteContent(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
 
+            // Auto inferred read method
+            template <class T>
+            T Read(const std::string ItemTree, T Default, char Translator = DEFAULT_TRANSLATOR) {
+                return(RootNode.get<T>(boost::property_tree::iptree::path_type(ItemTree,Translator),Default));
+            }
+
 			std::string GetLastStatus(void);
-            std::string PrintTree(void);
-            static std::string PrintTree(DTree *Tree);
+            std::string ToString(void);
+            static std::string ToString(DTree *Tree);
+            static const char DEFAULT_TRANSLATOR = '.';
 
 		protected:
 			boost::property_tree::iptree RootNode;
@@ -65,7 +73,7 @@ namespace DTools
 			std::string LastStatus;
 
         private:
-			static const char DEFAULT_TRANSLATOR = '.';
+			
 	};
 }
 #endif

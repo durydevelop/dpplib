@@ -113,4 +113,10 @@ namespace DTools
 	std::string DPreferences::GetFilename(void)	{
 		return(PrefFile);
 	}
+
+    std::string DPreferences::ToString(void) {
+        std::stringstream ss;
+        pt::json_parser::write_json(ss,RootNode);
+        return ss.str();
+    }
 }

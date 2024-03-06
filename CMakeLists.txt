@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(dpptools
+project(dpplib
         VERSION 0.2.1.4
-        DESCRIPTION "dpptools is a Cpp extension library for boost, beast, asio"
+        DESCRIPTION "dpplib is a Cpp library with a lot of helper class and tools"
         LANGUAGES CXX
 )
 
@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_AUTOUIC ON)
 #set(CMAKE_AUTOMOC ON)
 #set(CMAKE_AUTORCC ON)
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets)
+#find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets)
 
 ######
 # Options
@@ -121,6 +121,7 @@ if (${PROJECT_NAME}_BUILD_QT OR BUILD_QT)
     set(BUILD_QT ON)
     set(CMAKE_AUTOUIC ON)
     set(CMAKE_AUTOMOC ON)
+    find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets)
 else()
     set(${PROJECT_NAME}_BUILD_QT OFF)
     set(BUILD_QT OFF)

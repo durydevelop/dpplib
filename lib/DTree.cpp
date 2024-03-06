@@ -39,7 +39,7 @@ namespace DTools
         return(RootNode.empty());
     }
 
-	//! Retrive an integer value
+	//! Retrive an integer value 
 	/**
 	* Try to get the integer value of @ref Item inside @ref SubTree
 	* @param SubTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
@@ -48,7 +48,24 @@ namespace DTools
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
 	int DTree::ReadInteger(std::string SubTree, std::string Item, int Default, char Translator) {
+        if (SubTree.empty()) {
+            return(ReadInteger(Item,Default,Translator));
+        }
 		return(RootNode.get(pt::iptree::path_type(SubTree+Translator+Item,Translator),Default));
+	}
+
+    //! Retrive an value from root tree
+	/**
+    * Try to get the string value of Item inside RootNode
+	* @param Item			->	the item name to retrive.
+	* @param Default		->	default value to return if @ref Item is empty or missing
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+	**/
+	int DTree::ReadInteger(std::string Item, int Default, char Translator) {
+        if (Item.empty()) {
+            return(RootNode.get("",Default));
+        }
+        return(RootNode.get(pt::iptree::path_type(Item,Translator),Default));
 	}
 
 	//! Retrive a string value from a sub-tree
@@ -60,6 +77,9 @@ namespace DTools
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
 	std::string DTree::ReadString(std::string SubTree, std::string Item, std::string Default, char Translator) {
+        if (SubTree.empty()) {
+            return(ReadString(Item,Default,Translator));
+        }
 		return(RootNode.get<std::string>(pt::iptree::path_type(SubTree+Translator+Item,Translator),Default));
 	}
 
@@ -202,6 +222,10 @@ namespace DTools
         return(Children);
 	}
 
+    DTree& DTree::GetRootTree(void) {
+        return (std::ref(*this));
+    }
+
     /**
      * @brief Get node child as a new DTree by index.
      * @param Index         ->  Index of the child to read (first node as index 0).
@@ -225,6 +249,9 @@ namespace DTools
      * @return If SubTree is found, returns a new DTree starting from here, otherwise return an empty DTree.
 	 */
     DTree DTree::GetTree(std::string SubTree, char Translator) {
+        if (SubTree.empty()) {
+            return (*this);
+        }
 		// Find SubTree
 		auto inValue=RootNode.get_child_optional(pt::iptree::path_type(SubTree,Translator));
 		if (!inValue.is_initialized()) {
@@ -544,11 +571,11 @@ namespace DTools
 		return(LastStatus);
     }
 
-    std::string DTree::PrintTree(void) {
-        return PrintTree(this);
+    std::string DTree::ToString(void) {
+        return ToString(this);
     }
 
-    std::string DTree::PrintTree(DTree *Tree) {
+    std::string DTree::ToString(DTree *Tree) {
         std::string Ret="{\n";
         std::vector<std::string> ItemsNames;
         Tree->ReadNames(ItemsNames);
@@ -558,14 +585,11 @@ namespace DTools
             std::string Value;
             DTree SubTree=Tree->GetTree(ixI);
 
-            //std::vector<std::string> nn;
-            //SubTree.ReadNames(nn);
-
             if (SubTree.HasData()) {
                 Value=SubTree.ReadString("");
             }
             else if (SubTree.HasChildren()) {
-                Value=SubTree.PrintTree();
+                Value=SubTree.ToString();
             }
             Ret.append(Name+" : "+Value+"\n");
         }

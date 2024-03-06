@@ -15,6 +15,7 @@ namespace DTools
 			bool Save(bool BackupBefore = false);
 			bool IsReady(void);
 			std::string GetFilename(void);
+            std::string ToString(void);
 
 		private:
 			std::string PrefFile;
