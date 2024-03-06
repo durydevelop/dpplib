@@ -83,7 +83,8 @@ namespace pt=boost::property_tree;
         },
         "Files": {
             "Replace": {
-                "DuryFinder.agg": "DuryFinder.exe"
+                "file-source": "file-dest"
+                "folder-source": "folder-dest"
             },
             "Modify": {
                 "test.txt": {
@@ -417,8 +418,12 @@ namespace DTools
                 IsMainExe=MainExe == Dest;
             #endif
             if (IsMainExe) {
-                // MainExe has been downloed, use it for making DuryUpdater
+                // New MainExe has been downloed, use it for making DuryUpdater
                 FromFilename=UpdateTempDir / Source;
+                if (!DPath::Exists(FromFilename)) {
+                    Log(FromFilename.string()+" does not exists, cannot continue");
+                    return;
+                }
                 break;
             }
         }
@@ -578,14 +583,14 @@ namespace DTools
      */
     bool DUpdate::ApplyUpdate(bool CleanAfter) {
         if (!Ready) return false;
-        std::vector<std::string> Files;
+        std::vector<std::string> ReplaceItemList;
 
         // **** "Replace" section ****
         Log("Begin replacing files");
         // Read files list
         std::string NodeName=SECTION_FILES "/" SECTION_REPLACE;
-        UpdateData->ReadNames(NodeName,Files,'/');
-        for (std::string& Source : Files) {
+        UpdateData->ReadNames(NodeName,ReplaceItemList,'/');
+        for (std::string& Source : ReplaceItemList) {
             Log(Source);
             // Dest file name (real name)
             std::string RealName=UpdateData->ReadString(NodeName,Source,"",'/');
@@ -621,7 +626,7 @@ namespace DTools
             }
 
             // Replace with new one
-            LogMsg="installing file "+SourceFilename.string()+" to "+DestFilename.string();
+            LogMsg="installing "+SourceFilename.string()+" to "+DestFilename.string();
             //err::error_code ec=DTools::DPath::Copy_File(UpdFilename,DestFilename,true);
             err::error_code ec;
             fs::rename(SourceFilename,DestFilename,ec);
@@ -633,11 +638,11 @@ namespace DTools
             Log("Done "+LogMsg);
         }
 
-        if (Files.empty()) {
-            Log("No files to replace");
+        if (ReplaceItemList.empty()) {
+            Log("Nothing to replace");
         }
         else {
-            Log(std::to_string(Files.size())+" file/s replaced");
+            Log(std::to_string(ReplaceItemList.size())+" replaced");
         }
 
         // **** "Modify" section ****
@@ -645,28 +650,32 @@ namespace DTools
         // Read files list
         // Use '/' translator because in tree there is dot in filename
         NodeName=SECTION_FILES "/" SECTION_MODIFY;
-        UpdateData->ReadNames(NodeName,Files,'/');
-        for (std::string& Name : Files) {
+        std::vector<std::string> ModifyItemList;
+        UpdateData->ReadNames(NodeName,ModifyItemList,'/');
+        for (std::string& Name : ModifyItemList) {
             fs::path Filename=fs::current_path() / Name;
             if (!DTools::DPath::Exists(Filename)) {
                 Log("Error: "+Filename.string()+" does not exists");
                 return false;
             }
+            if (DTools::DPath::IsDirectory(Filename)) {
+                Log("Error: "+Filename.string()+" is a folder");
+                return false;
+            }
             Log("Processing "+Name);
-            // Replace dots in file name
-            //std::replace(Name.begin(),Name.end(),'.','_');
             // Get Action
             std::string Action=UpdateData->ReadString(NodeName+"/"+Name,PARAM_ACTION,"",'/');
             if (Action == VALUE_REPLACE_TEXT) {
                 std::vector<std::string> TextList;
                 bool CaseSensistive=UpdateData->ReadBool(NodeName+"/"+Name,PARAM_CASE_SENSITIVE,false,'/');
                 UpdateData->ReadNames(NodeName+"/"+Name+"/"+SECTION_LIST,TextList,'/');
-                std::map<std::string,std::string> ReplaceList;
+                std::map<std::string,std::string> ReplaceText;
                 for (std::string& TextToReplace : TextList) {
                     std::string ReplacedText=UpdateData->ReadString(NodeName+"/"+Name+"/"+SECTION_LIST,TextToReplace,"",'/');
-                    ReplaceList.emplace(std::make_pair(TextToReplace,ReplacedText));
+                    ReplaceText.emplace(std::make_pair(TextToReplace,ReplacedText));
                 }
-                // Replace text in file
+                // TODO: Replace text in file
+
             }
             else if (Action == VALUE_SET_JSON_VALUE) {
                 DTools::DPreferences Json(Filename.string());
@@ -706,11 +715,11 @@ namespace DTools
             Log("Done");
         }
 
-        if (Files.empty()) {
+        if (ModifyItemList.empty()) {
             Log("No files to modify");
         }
         else {
-            Log(std::to_string(Files.size())+" file/s modified");
+            Log(std::to_string(ModifyItemList.size())+" file/s modified");
         }
 
         if (CleanAfter) {

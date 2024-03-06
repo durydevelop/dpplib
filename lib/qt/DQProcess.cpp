@@ -81,7 +81,6 @@ namespace DTools
     }
 
     bool DQProcess::Exec(size_t TimeOutMs) {
-
         if (AllowMultipleInstances && Process.state() != QProcess::NotRunning) {
                 OnStdOutErrCallback(DSTD_ERR,"Process is running cannot start");
                 return false;
