@@ -61,7 +61,7 @@ namespace DTools
 	* @param Default		->	default value to return if @ref Item is empty or missing
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
-	std::string DTree::ReadString(std::string Item, std::string Default, char Translator) {
+	std::string DTree::ReadString(const std::string& Item, std::string Default, char Translator) {
         if (Item.empty()) {
             return(RootNode.get<std::string>("",Default));
         }
