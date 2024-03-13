@@ -46,16 +46,16 @@ namespace DCsv
 					// Update start field pos
 					ixStart=ixR+1;
 				}
-				else if (c == '\r' || c == '\n') {
+                else if (c == '\r' || c == '\n' || ixR+1 >= Row.size()) {
                     // Last Item
-                    std::string Item=Row.substr(ixStart,ixR-ixStart);
+                    std::string Item=Row.substr(ixStart,Row.size()-ixStart);
                     if (!Item.empty()) {
                         DestList.push_back(Item);
                     }
 					break;
 				}
 			}
-			ixR++;
+            ixR++;
 		}
 		
 		return(DestList.size());
