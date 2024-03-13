@@ -63,7 +63,7 @@ namespace DTools
 	**/
 	std::string DTree::ReadString(const std::string& Item, std::string Default, char Translator) {
         if (Item.empty()) {
-            return(RootNode.get<std::string>("",Default));
+            return(RootNode.get<std::string>(pt::iptree::path_type("",Translator),Default));
         }
         return(RootNode.get<std::string>(pt::iptree::path_type(Item,Translator),Default));
 	}
@@ -75,7 +75,7 @@ namespace DTools
     * @param Translator		->	Alternative json tree translator char other that '.' (which is default).
     **/
     std::string DTree::ReadString(std::string Default, char Translator) {
-        return(RootNode.get<std::string>("",Default));
+        return(RootNode.get<std::string>(pt::iptree::path_type("",Translator),Default));
     }
 
     //! Retrive an integer value 
@@ -102,7 +102,7 @@ namespace DTools
 	**/
 	int DTree::ReadInteger(std::string Item, int Default, char Translator) {
         if (Item.empty()) {
-            return(RootNode.get("",Default));
+            return(RootNode.get(pt::iptree::path_type("",Translator),Default));
         }
         return(RootNode.get(pt::iptree::path_type(Item,Translator),Default));
 	}
@@ -113,8 +113,8 @@ namespace DTools
     * @param Default		->	default value to return if @ref Item is empty or missing
     * @param Translator		->	Alternative json tree translator char other that '.' (which is default).
     **/
-    std::string DTree::Read( Default, char Translator) {
-        return(RootNode.get<>("",Default));
+    int DTree::ReadInteger(int Default, char Translator) {
+        return(RootNode.get(pt::iptree::path_type("",Translator),Default));
     }
 
 	//! Retrive a float value
@@ -139,9 +139,9 @@ namespace DTools
 	* @param Default		->	default value to return if @ref Item is empty or missing
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
-	int DTree::Readfloat(std::string Item, float Default, char Translator) {
+    float DTree::ReadFloat(std::string Item, float Default, char Translator) {
         if (Item.empty()) {
-            return(RootNode.get<float>("",Default));
+            return(RootNode.get<float>(pt::iptree::path_type("",Translator),Default));
         }
         return(RootNode.get<float>(pt::iptree::path_type(Item,Translator),Default));
 	}
@@ -152,8 +152,8 @@ namespace DTools
     * @param Default		->	default value to return if @ref Item is empty or missing
     * @param Translator		->	Alternative json tree translator char other that '.' (which is default).
     **/
-    std::string DTree::Read( Default, char Translator) {
-        return(RootNode.get<>("",Default));
+    float DTree::ReadFloat(float Default, char Translator) {
+        return(RootNode.get<float>(pt::iptree::path_type("",Translator),Default));
     }
 
 	//! Retrive a byte value
@@ -178,9 +178,9 @@ namespace DTools
 	* @param Default		->	default value to return if @ref Item is empty or missing
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
-	int DTree::ReadByte(std::string Item, uint8_t Default, char Translator) {
+    uint8_t DTree::ReadByte(std::string Item, uint8_t Default, char Translator) {
         if (Item.empty()) {
-            return(RootNode.get<uint8_t>("",Default));
+            return(RootNode.get<uint8_t>(pt::iptree::path_type("",Translator),Default));
         }
         return(RootNode.get<uint8_t>(pt::iptree::path_type(Item,Translator),Default));
 	}
@@ -191,8 +191,8 @@ namespace DTools
     * @param Default		->	default value to return if @ref Item is empty or missing
     * @param Translator		->	Alternative json tree translator char other that '.' (which is default).
     **/
-    std::string DTree::Read( Default, char Translator) {
-        return(RootNode.get<>("",Default));
+    uint8_t DTree::ReadByte(uint8_t Default, char Translator) {
+        return(RootNode.get<uint8_t>(pt::iptree::path_type("",Translator),Default));
     }
 
 	//! Retrive a boolean value
@@ -230,8 +230,8 @@ namespace DTools
     * @param Default		->	default value to return if @ref Item is empty or missing
     * @param Translator		->	Alternative json tree translator char other that '.' (which is default).
     **/
-    std::string DTree::Read( Default, char Translator) {
-        return(RootNode.get<>("",Default));
+    bool DTree::ReadBool(bool Default, char Translator) {
+        return(RootNode.get<bool>(pt::iptree::path_type("",Translator),Default));
     }
 
     /**
