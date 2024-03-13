@@ -39,35 +39,6 @@ namespace DTools
         return(RootNode.empty());
     }
 
-	//! Retrive an integer value 
-	/**
-	* Try to get the integer value of @ref Item inside @ref SubTree
-	* @param SubTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
-	* @param Item			->	the item name to retrive.
-	* @param Default		->	default value to return if @ref Item is empty or missing
-	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
-	**/
-	int DTree::ReadInteger(std::string SubTree, std::string Item, int Default, char Translator) {
-        if (SubTree.empty()) {
-            return(ReadInteger(Item,Default,Translator));
-        }
-		return(RootNode.get(pt::iptree::path_type(SubTree+Translator+Item,Translator),Default));
-	}
-
-    //! Retrive an value from root tree
-	/**
-    * Try to get the string value of Item inside RootNode
-	* @param Item			->	the item name to retrive.
-	* @param Default		->	default value to return if @ref Item is empty or missing
-	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
-	**/
-	int DTree::ReadInteger(std::string Item, int Default, char Translator) {
-        if (Item.empty()) {
-            return(RootNode.get("",Default));
-        }
-        return(RootNode.get(pt::iptree::path_type(Item,Translator),Default));
-	}
-
 	//! Retrive a string value from a sub-tree
 	/**
 	* Try to get the string value of @ref Item inside @ref SubTree
@@ -107,6 +78,45 @@ namespace DTools
         return(RootNode.get<std::string>("",Default));
     }
 
+    //! Retrive an integer value 
+	/**
+	* Try to get the integer value of @ref Item inside @ref SubTree
+	* @param SubTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
+	* @param Item			->	the item name to retrive.
+	* @param Default		->	default value to return if @ref Item is empty or missing
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+	**/
+	int DTree::ReadInteger(std::string SubTree, std::string Item, int Default, char Translator) {
+        if (SubTree.empty()) {
+            return(ReadInteger(Item,Default,Translator));
+        }
+		return(RootNode.get(pt::iptree::path_type(SubTree+Translator+Item,Translator),Default));
+	}
+
+    //! Retrive an integer value from root tree.
+	/**
+    * Try to get the integer value of Item inside RootNode
+	* @param Item			->	the item name to retrive.
+	* @param Default		->	default value to return if @ref Item is empty or missing
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+	**/
+	int DTree::ReadInteger(std::string Item, int Default, char Translator) {
+        if (Item.empty()) {
+            return(RootNode.get("",Default));
+        }
+        return(RootNode.get(pt::iptree::path_type(Item,Translator),Default));
+	}
+
+    //! Retrive an data value of the root tree
+    /**
+    * Try to get the  value of the RootNode
+    * @param Default		->	default value to return if @ref Item is empty or missing
+    * @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+    **/
+    std::string DTree::Read( Default, char Translator) {
+        return(RootNode.get<>("",Default));
+    }
+
 	//! Retrive a float value
 	/**
 	* Try to get the float value of @ref Item inside @ref SubTree
@@ -116,8 +126,35 @@ namespace DTools
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
 	float DTree::ReadFloat(std::string SubTree, std::string Item, float Default, char Translator) {
+        if (SubTree.empty()) {
+            return(ReadFloat(Item,Default,Translator));
+        }
 		return(RootNode.get<float>(pt::iptree::path_type(SubTree+Translator+Item,Translator),Default));
 	}
+
+    //! Retrive a float value from root tree
+	/**
+    * Try to get the float value of Item inside RootNode
+	* @param Item			->	the item name to retrive.
+	* @param Default		->	default value to return if @ref Item is empty or missing
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+	**/
+	int DTree::Readfloat(std::string Item, float Default, char Translator) {
+        if (Item.empty()) {
+            return(RootNode.get<float>("",Default));
+        }
+        return(RootNode.get<float>(pt::iptree::path_type(Item,Translator),Default));
+	}
+
+    //! Retrive an data value of the root tree
+    /**
+    * Try to get the  value of the RootNode
+    * @param Default		->	default value to return if @ref Item is empty or missing
+    * @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+    **/
+    std::string DTree::Read( Default, char Translator) {
+        return(RootNode.get<>("",Default));
+    }
 
 	//! Retrive a byte value
 	/**
@@ -128,8 +165,35 @@ namespace DTools
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
 	uint8_t DTree::ReadByte(std::string SubTree, std::string Item, uint8_t Default, char Translator) {
+        if (SubTree.empty()) {
+            return(ReadByte(Item,Default,Translator));
+        }
 		return(RootNode.get<uint8_t>(pt::iptree::path_type(SubTree+Translator+Item,Translator),Default));
 	}
+
+    //! Retrive a byte value from root tree
+	/**
+    * Try to get the byte value of Item inside RootNode
+	* @param Item			->	the item name to retrive.
+	* @param Default		->	default value to return if @ref Item is empty or missing
+	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+	**/
+	int DTree::ReadByte(std::string Item, uint8_t Default, char Translator) {
+        if (Item.empty()) {
+            return(RootNode.get<uint8_t>("",Default));
+        }
+        return(RootNode.get<uint8_t>(pt::iptree::path_type(Item,Translator),Default));
+	}
+
+    //! Retrive an data value of the root tree
+    /**
+    * Try to get the  value of the RootNode
+    * @param Default		->	default value to return if @ref Item is empty or missing
+    * @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+    **/
+    std::string DTree::Read( Default, char Translator) {
+        return(RootNode.get<>("",Default));
+    }
 
 	//! Retrive a boolean value
 	/**
@@ -140,6 +204,9 @@ namespace DTools
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
 	bool DTree::ReadBool(std::string SubTree, std::string Item, bool Default, char Translator) {
+        if (SubTree.empty()) {
+            return(ReadBool(Item,Default,Translator));
+        }
 		return(RootNode.get<bool>(pt::iptree::path_type(SubTree+Translator+Item,Translator),Default));
 	}
 
@@ -151,8 +218,21 @@ namespace DTools
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
 	bool DTree::ReadBool(std::string Item, bool Default, char Translator) {
+        if (Item.empty()) {
+            return(RootNode.get<bool>("",Default));
+        }
 		return(RootNode.get<bool>(pt::iptree::path_type(Item,Translator),Default));
 	}
+
+    //! Retrive an data value of the root tree
+    /**
+    * Try to get the  value of the RootNode
+    * @param Default		->	default value to return if @ref Item is empty or missing
+    * @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+    **/
+    std::string DTree::Read( Default, char Translator) {
+        return(RootNode.get<>("",Default));
+    }
 
     /**
      * @brief Read all item names of the root node and put them in @ResultList.
