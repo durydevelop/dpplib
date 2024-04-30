@@ -61,7 +61,7 @@ namespace DTools
 	* @param Default		->	default value to return if @ref Item is empty or missing
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
 	**/
-	std::string DTree::ReadString(std::string Item, std::string Default, char Translator) {
+	std::string DTree::ReadString(const std::string& Item, std::string Default, char Translator) {
         if (Item.empty()) {
             return(RootNode.get<std::string>(pt::iptree::path_type("",Translator),Default));
         }
@@ -74,7 +74,7 @@ namespace DTools
     * @param Default		->	default value to return if @ref Item is empty or missing
     * @param Translator		->	Alternative json tree translator char other that '.' (which is default).
     **/
-    std::string DTree::ReadString(std::string Default, char Translator) {
+    std::string DTree::ReadString(const std::string& Default, char Translator) {
         return(RootNode.get<std::string>(pt::iptree::path_type("",Translator),Default));
     }
 
@@ -254,11 +254,20 @@ namespace DTools
     /**
      * @brief Read all item names of a node and put them in @ResultList.
      * N.B. @ResultList is cleared before.
-    * @param SubTree	->	Sub-node name, can be one or more section nodes separated by '.'.
-    * @param ResultList ->	reference to vector of strings to fill with results.
-    * @param Translator	->	Alternative json tree translator char other that '.' (which is default).
-	* @return numbers of items found
-	**/
+     * @param SubTree	->	Sub-node name, can be one or more section nodes separated by '.'.
+     * @param ResultList ->	reference to vector of strings to fill with results.
+     * @param Translator	->	Alternative json tree translator char other that '.' (which is default).
+	 * @return numbers of items found
+     * 
+     *  "Names": {
+            "Name1": {
+                ...
+            },
+            "Name2": {
+                ...
+            }
+        }
+	 */
     size_t DTree::ReadNames(std::string SubItemName,std::vector<std::string>& ResultList, char Translator) {
 		ResultList.clear();
 		// Find SubTree
@@ -277,13 +286,19 @@ namespace DTools
 		return(ResultList.size());
 	}
 
-    //! Read all names of the childern in a node.
+    //! Read all names of the children in a node.
     /**
     * @param SubTree	->	Can be one or more section nodes separated by '.'.
     * @param Translator	->	Alternative json tree translator char other that '.' (which is default).
     * @return a vector of string containing childern names.
+        "Items": [
+            "Item1",
+            "Item2",
+            "Item3",
+            "Item4"
+        ]
     **/
-    std::vector<std::string> DTree::ReadChildrenNames(std::string SubTree, char Translator) {
+    std::vector<std::string> DTree::ReadArrayNames(std::string SubTree, char Translator) {
         std::vector<std::string> Children;
 
 		// Find SubTree
@@ -293,13 +308,31 @@ namespace DTools
 		}
         auto node=inValue.get();
 
-		// Read all first items
+		// Read all second items
         for (auto& item : node) {
             std::string s=item.second.data();
             Children.emplace_back(s);
 		}
 
         return(Children);
+	}
+
+    std::vector<DTree> DTree::ReadArrayTrees(std::string SubTree, char Translator) {
+        std::vector<DTree> Children;
+
+		// Find SubTree
+		auto inValue=RootNode.get_child_optional(pt::iptree::path_type(SubTree,Translator));
+		if (!inValue.is_initialized()) {
+            return std::move(Children);
+		}
+        auto node=inValue.get();
+
+		// Read all first items
+        for (auto [name, tree] : node) {
+            Children.emplace_back(std::move(DTree(tree)));
+		}
+
+        return std::move(Children);
 	}
 
     DTree& DTree::GetRootTree(void) {

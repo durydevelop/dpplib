@@ -20,8 +20,8 @@ namespace DTools
 			bool IsEmpty(void);
 
 			std::string ReadString(std::string SubTree, std::string Item, std::string Default, char Translator = DEFAULT_TRANSLATOR);
-			std::string ReadString(std::string Item, std::string Default, char Translator = DEFAULT_TRANSLATOR);
-            std::string ReadString(std::string Default, char Translator = DEFAULT_TRANSLATOR);
+			std::string ReadString(const std::string& Item, std::string Default, char Translator = DEFAULT_TRANSLATOR);
+            std::string ReadString(const std::string& Default, char Translator = DEFAULT_TRANSLATOR);
             int ReadInteger(std::string SubTree, std::string Item, int Default, char Translator = DEFAULT_TRANSLATOR);
             int ReadInteger(std::string Item, int Default, char Translator = DEFAULT_TRANSLATOR);
             int ReadInteger(int Default, char Translator = DEFAULT_TRANSLATOR);
@@ -44,7 +44,8 @@ namespace DTools
             size_t GetItemsCount(std::string SubItemName, char Translator = DEFAULT_TRANSLATOR);
             size_t ReadNames(std::vector<std::string>& ResultList);
             size_t ReadNames(std::string SubItemName,std::vector<std::string>& ResultList, char Translator = DEFAULT_TRANSLATOR);
-            std::vector<std::string> ReadChildrenNames(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
+            std::vector<std::string> ReadArrayNames(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
+            std::vector<DTree> ReadArrayTrees(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
             DTree GetTree(std::string SubTreeName = std::string(), char Translator = DEFAULT_TRANSLATOR);
             DTree GetTree(size_t SubTreeIndex);
             DTree& GetRootTree(void);
