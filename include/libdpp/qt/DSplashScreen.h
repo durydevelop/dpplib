@@ -15,6 +15,7 @@ class DSplashScreen : public QSplashScreen
 		explicit DSplashScreen(QPixmap splashPixmap, bool showProgress);
 		explicit DSplashScreen(QScreen *screen, QPixmap splashPixmap, bool showProgress);
 		void SetProgressPos(DSplashScreen::DProgressPos progressPos, QRect customProgressRect);
+        void SetDeleteOnClose(bool Enabled);
 
 	signals:
 		void SetProgress(size_t value, QString text);

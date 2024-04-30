@@ -1,5 +1,5 @@
-#ifndef DProgressDelegateH
-#define DProgressDelegateH
+#ifndef DQProgressBarDelegateH
+#define DQProgressBarDelegateH
 
 #ifdef QT_GUI_LIB
 
@@ -7,11 +7,11 @@
 
 namespace DTools
 {
-class DProgressDelegate : public QItemDelegate
+class DQProgressBarDelegate : public QItemDelegate
 {
     Q_OBJECT
     public:
-        DProgressDelegate(QObject *parent = nullptr);
+        DQProgressBarDelegate(QObject *parent = nullptr);
         void setColumnIndex(int index);
         void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
     private:

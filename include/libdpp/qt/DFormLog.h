@@ -8,7 +8,7 @@
 #include <QThread>
 #include <libdpp/DLog.h>
 #include <libdpp/DPreferences.h>
-#include <libdpp/qt/DSpinnerWidget.h>
+#include <libdpp/qt/DQSpinnerWidget.h>
 
 namespace Ui
 {
@@ -70,7 +70,7 @@ class DFormLog : public QDialog
 
         Ui::DFormLog *ui;
         QString Separator;
-        DSpinnerWidget *WaitingSpinner;
+        DQSpinnerWidget *WaitingSpinner;
         QThread *Thread;
         QTimer *Timer;
 };

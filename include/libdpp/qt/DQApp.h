@@ -3,7 +3,7 @@
 
 #ifdef QT_GUI_LIB
 
-#include "libdpp/DFilesystem.h"
+#include <libdpp/DFilesystem.h>
 
 namespace DTools
 {

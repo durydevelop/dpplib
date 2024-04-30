@@ -1,5 +1,5 @@
-#ifndef DCheckBoxDelegateH
-#define DCheckBoxDelegateH
+#ifndef DQCheckBoxDelegateH
+#define DQCheckBoxDelegateH
 #ifdef QT_GUI_LIB
 
 #include <QStyledItemDelegate>
@@ -20,12 +20,12 @@ public:
 
 namespace DTools
 {
-class DCheckBoxDelegate : public QStyledItemDelegate
+class DQCheckBoxDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
     public:
         enum DRoles {ROLE_ENABLE=Qt::UserRole, ROLE_VISIBLE};
-        DCheckBoxDelegate(QObject *parent = nullptr);
+        DQCheckBoxDelegate(QObject *parent = nullptr);
         void setColumnIndex(int Index);
 
     signals:

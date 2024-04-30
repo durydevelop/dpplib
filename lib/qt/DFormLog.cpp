@@ -52,7 +52,7 @@ DFormLog::DFormLog(QWidget *parent, std::shared_ptr<DLog> dLog) :
     //connect(ui->ListViewLog->model(),&QStringListModel::rowsInserted,ui->ListViewLog,&QListView::scrollToBottom);
     connect(ui->ListViewLog->model(),&QStringListModel::rowsInserted,this,&DFormLog::rowsInserted);
 
-    WaitingSpinner=new DSpinnerWidget(ui->ListViewLog,true,false);
+    WaitingSpinner=new DQSpinnerWidget(ui->ListViewLog,true,false);
 }
 
 void DFormLog::rowsInserted() {

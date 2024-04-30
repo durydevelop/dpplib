@@ -20,16 +20,18 @@ set(FILES
 if (${BUILD_QT})
 	set(FILES ${FILES}
 		${CMAKE_CURRENT_SOURCE_DIR}/qt/DQApp.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/qt/DCheckBoxDelegate.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/qt/DQCheckBoxDelegate.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/qt/DFormLog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/qt/dformlog.ui
-		${CMAKE_CURRENT_SOURCE_DIR}/qt/DProgressDelegate.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/qt/DQProgressBar.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/qt/DQProgressBarDelegate.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/qt/DQLabel.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/qt/DQProcess.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/qt/DQShell.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/qt/DQWidget.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/qt/DQWindow.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/qt/DSpinnerWidget.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/qt/DQSpinnerWidgetDelegate.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/qt/DQSpinnerWidget.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/qt/DSplashScreen.cpp
 	)
 endif()

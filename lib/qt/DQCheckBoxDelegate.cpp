@@ -1,12 +1,12 @@
-#include "libdpp/qt/DCheckBoxDelegate.h"
+#include "libdpp/qt/DQCheckBoxDelegate.h"
 
 #ifdef QT_GUI_LIB
 
 /**
  @code
-    CheckBoxDelegate=new DCheckBoxDelegate(this);
+    CheckBoxDelegate=new DQCheckBoxDelegate(this);
     CheckBoxDelegate->setColumnIndex(QUEUE_COLUMN_ENABLE);
-    connect(CheckBoxDelegate,&DCheckBoxDelegate::statusChanged,this,&MainWindow::OnCheckBoxDelegateChange);
+    connect(CheckBoxDelegate,&DQCheckBoxDelegate::statusChanged,this,&MainWindow::OnCheckBoxDelegateChange);
     ui->TreeWidgetQueues->setItemDelegateForColumn(QUEUE_COLUMN_ENABLE,CheckBoxDelegate);
  @code
 */
@@ -30,17 +30,17 @@ static QRect CheckBoxRect(const QStyleOptionViewItem &viewItemStyleOptions)
     return(QRect(checkBoxPoint,checkBoxRect.size()));
 }
 
-DCheckBoxDelegate::DCheckBoxDelegate(QObject *parent) : QStyledItemDelegate(parent)
+DQCheckBoxDelegate::DQCheckBoxDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
     columnIndex=-1;
 }
 
-void DCheckBoxDelegate::setColumnIndex(int index)
+void DQCheckBoxDelegate::setColumnIndex(int index)
 {
     columnIndex=index;
 }
 
-void DCheckBoxDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,const QModelIndex& index)const
+void DQCheckBoxDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,const QModelIndex& index)const
 {
     if(index.column() == columnIndex){
         QStyleOptionButton checkBoxStyleOption;
@@ -88,7 +88,7 @@ void DCheckBoxDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opt
     }
 }
 
-bool DCheckBoxDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index)
+bool DQCheckBoxDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index)
 {
     if(index.column() == columnIndex) {
         if((event->type() == QEvent::MouseButtonRelease) || (event->type() == QEvent::MouseButtonDblClick)) {
@@ -174,7 +174,7 @@ void CustomStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *op
 */
 
 /*
-QWidget *DCheckBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+QWidget *DQCheckBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     Q_UNUSED(option);
     Q_UNUSED(index);
@@ -182,14 +182,14 @@ QWidget *DCheckBoxDelegate::createEditor(QWidget *parent, const QStyleOptionView
     return editor;
 }
 
-void DCheckBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
+void DQCheckBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
     //set if checked or not
     QCheckBox *cb = qobject_cast<QCheckBox *>(editor);
     cb->setChecked(index.data().toBool());
 }
 
-void DCheckBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+void DQCheckBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
     QCheckBox *cb = static_cast<QCheckBox *>(editor);
     int value = (cb->checkState()==Qt::Checked) ? 1 : 0;
