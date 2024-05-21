@@ -38,32 +38,11 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     set(BOOST_ROOT "" CACHE STRING "Boost root dir")
 endif()
 
-#[[
-######
-# CMake helper scripts from git
-include(FetchContent)
-set(FETCHCONTENT_QUIET OFF)
-set(FETCHCONTENT_UPDATES_DISCONNECTED OFF)
-set(FETCHCONTENT_BASE_DIR deps)
-FetchContent_Declare(
-    dcmake
-    GIT_REPOSITORY git@gitlab.com:durydevelop/cpp/helpers_cmake.git
-    #GIT_PROGRESS TRUE
-)
-# Check if population has already been performed
-FetchContent_GetProperties(dcmake)
-if(NOT helpers_cmake_POPULATED)
-    FetchContent_Populate(dcmake)
-endif()
-FetchContent_MakeAvailable(dcmake)
-#]]
-## Temporaneo per testare le modifiche
-get_filename_component(dcmake_SOURCE_DIR "../../helpers_cmake" ABSOLUTE)
-
 # Now set CMAKE_MODULE_PATH
-list(APPEND CMAKE_MODULE_PATH ${dcmake_SOURCE_DIR})
-list (REMOVE_DUPLICATES CMAKE_MODULE_PATH)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+#list (REMOVE_DUPLICATES CMAKE_MODULE_PATH)
 include(DMainHelper)
+include(DPrintHelpers)
 
 # Handle STATIC/SHARED/INTERFACE build option
 if (${PROJECT_NAME}_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
