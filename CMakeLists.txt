@@ -18,8 +18,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ######
 # Options
-option(${PROJECT_NAME}_BUILD_SHARED_LIBS "Build as shared library" OFF)
-option(${PROJECT_NAME}_BUILD_INTERFACE_LIBS "Build as interface lib" OFF)
 option(${PROJECT_NAME}_BUILD_EXAMPLES "Build examples" OFF)
 option(${PROJECT_NAME}_BUILD_TESTS "Build tests" OFF)
 option(${PROJECT_NAME}_BUILD_NET "Build networking support" ON)
@@ -42,39 +40,6 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 #list (REMOVE_DUPLICATES CMAKE_MODULE_PATH)
 include(DMainHelper)
-include(DPrintHelpers)
-
-# Handle STATIC/SHARED/INTERFACE build option
-if (${PROJECT_NAME}_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
-    # BUILD_SHARED_LIBS has prececence
-    set(LIB_TYPE "SHARED")
-    #message_c(${BOLD_CYAN} "Build as: SHARED LIB")
-    # Set SHARED ON
-    set(${PROJECT_NAME}_BUILD_SHARED_LIBS ON)
-    set(BUILD_SHARED_LIBS ON)
-    # Set INTERFACE OFF
-    set(${PROJECT_NAME}_BUILD_INTERFACE_LIBS OFF)
-    set(BUILD_INTERFACE_LIBS OFF)
-elseif(${PROJECT_NAME}_BUILD_INTERFACE_LIBS OR BUILD_INTERFACE_LIBS)
-    set(LIB_TYPE "INTERFACE")
-    #message_c(${BOLD_CYAN} "Build as: INTERFACE LIB")
-    # Set INTERFACE ON
-    set(${PROJECT_NAME}_BUILD_INTERFACE_LIBS ON)
-    set(BUILD_INTERFACE_LIBS ON)
-    # Set SHARED OFF
-    set(${PROJECT_NAME}_BUILD_SHARED_LIBS OFF)
-    set(BUILD_SHARED_LIBS OFF)
-else()
-    # STATIC (default)
-    set(LIB_TYPE "STATIC")
-    #message_c(${BOLD_CYAN} "Build as: STATIC LIB")
-    # Set SHARED OFF
-    set(${PROJECT_NAME}_BUILD_SHARED_LIBS OFF)
-    set(BUILD_SHARED_LIBS OFF)
-    # Set INTERFACE OFF
-    set(${PROJECT_NAME}_BUILD_INTERFACE_LIBS OFF)
-    set(BUILD_INTERFACE_LIBS OFF)
-endif()
 
 # Handle builing examples option
 if (${PROJECT_NAME}_BUILD_EXAMPLES OR BUILD_EXAMPLES)
@@ -110,31 +75,48 @@ endif()
 if (${PROJECT_NAME}_BUILD_NET OR BUILD_NET)
     set(${PROJECT_NAME}_BUILD_NET ON)
     set(BUILD_NET ON)
-    set(CMAKE_AUTOUIC ON)
-    set(CMAKE_AUTOMOC ON)
+    #set(CMAKE_AUTOUIC ON)
+    #set(CMAKE_AUTOMOC ON)
 else()
     set(${PROJECT_NAME}_BUILD_NET OFF)
     set(BUILD_NET OFF)
 endif()
 
 #############################################################################
-# Create Target
+# Setup Target
 # CMakeFiles.txt in ./lib and ./include dirs set SRC_FILES with source files list
 add_subdirectory(lib)
 add_subdirectory(include)
 
-if (${BUILS_INTERFACE_LIBS}) #TODO: BUIL(D)_INTERFACE_LIBS
-    # Build as interfcae
+## Setup Target
+# Handle STATIC/SHARED/INTERFACE build option (default SHARED)
+#set(${PROJECT_NAME}_LIBRARY_TYPE SHARED)
+include(DLibraryType)
+print_var(${PROJECT_NAME}_)
+
+if (${PROJECT_NAME}_BUILD_INTERFACE_LIBS)
+    # Build as interface
+    message_c("Target as INTERFACE")
     add_library(${PROJECT_NAME} INTERFACE)
-else()
-    # Build controlled by BUILD_SHARED_LIBS prop
-    add_library(${PROJECT_NAME}
+elseif(${PROJECT_NAME}_BUILD_SHARED_LIBS)
+    # Building shared library
+    message_c("Target as SHARED")
+    if(MSVC)
+        # Workaround for some projects
+        set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    endif()
+    add_library(${PROJECT_NAME} SHARED
         ${SRC_FILES}
         ${CMAKE_CURRENT_SOURCE_DIR}/README.md
         ${CMAKE_CURRENT_SOURCE_DIR}/TODO.md
     )
+else()
+    # Static library
+    message_c("Target as STATIC")
+    add_library(${PROJECT_NAME} ${SRC_FILES})
+    target_include_directories(${PROJECT_NAME} PUBLIC ${SRC_DIRS})
 endif()
-
+#[[
 if (NOT ${BUILD_INTERFACE_LIBS})
     message_c("Linking filesystem lib for " ${PROJECT_NAME})
     target_link_libraries(${PROJECT_NAME} stdc++fs pthread)
@@ -144,7 +126,7 @@ if (NOT ${BUILD_INTERFACE_LIBS})
         target_link_libraries(${PROJECT_NAME} ws2_32 wsock32)
     endif()
 endif()
-
+]]#
 #set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC TRUE)
 
 ## Find boost
@@ -190,20 +172,20 @@ target_include_directories(
 )
 #set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 #set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
-
+#[[
 # Install directives
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # generate install directive only if stand-alone project
     message_c("Generate ${PROJECT_NAME} install directive")
     # set Config.cmake.in source path
-    set(CONFIG_CMAKE_IN_PATH ${dcmake_SOURCE_DIR})
+    #set(CONFIG_CMAKE_IN_PATH ${dcmake_SOURCE_DIR})
     include(DInstall)
     message_c("Done")
 endif()
-
+]]#
 message_c(${BOLD_CYAN} "Summary:")
-message_c(${BOLD_CYAN} "Build as: ${LIB_TYPE} LIB")
-message_c(${BOLD_CYAN} "Build examples: ${BUILD_EXAMPLES}")
-message_c(${BOLD_CYAN} "Build tests: ${BUILD_TESTS}")
-message_c(${BOLD_CYAN} "Build Qt extension: ${BUILD_QT}")
+message_c(${BOLD_CYAN} "Build as:                 ${${PROJECT_NAME}_LIBRARY_TYPE} LIB")
+message_c(${BOLD_CYAN} "Build examples:           ${BUILD_EXAMPLES}")
+message_c(${BOLD_CYAN} "Build tests:              ${BUILD_TESTS}")
+message_c(${BOLD_CYAN} "Build Qt extension:       ${BUILD_QT}")
 message_c(${BOLD_CYAN} "Build networking support: ${BUILD_NET}")

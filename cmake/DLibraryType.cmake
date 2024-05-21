@@ -52,7 +52,7 @@ Set current library as interface:
 
 if (NOT ${PROJECT_NAME}_LIBRARY_TYPE)
     ## default
-    set(${PROJECT_NAME}_LIBRARY_TYPE INTERFACE)
+    set(${PROJECT_NAME}_LIBRARY_TYPE SHARED)
 endif()
 
 if (${PROJECT_NAME}_LIBRARY_TYPE MATCHES INTERFACE)
