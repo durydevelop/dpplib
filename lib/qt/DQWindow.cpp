@@ -46,7 +46,7 @@ namespace DWindow
      */
     bool SaveQWindowPosition(QMainWindow& qMainWindow, DTools::DPreferences *DestPrefs) {
         QWidget& qWidget=(QWidget&) qMainWindow;
-        return(DTools::DWindow::SaveWindowPositionData(qWidget.objectName().toStdString(),qWidget.x(),qWidget.y(),qWidget.width(),qWidget.height(),DestPrefs));
+        return(DTools::DWindow::SaveWindowPositionData(qWidget.objectName().toStdString(),qWidget.frameGeometry().x(),qWidget.frameGeometry().y(),qWidget.frameGeometry().width(),qWidget.frameGeometry().height(),DestPrefs));
     }
 
     /**
@@ -59,7 +59,7 @@ namespace DWindow
      */
     bool SaveQWindowPosition(QMainWindow& qMainWindow, QString WindowName, DTools::DPreferences *DestPrefs) {
         QWidget& qWidget=(QWidget&) qMainWindow;
-        return(DTools::DWindow::SaveWindowPositionData(WindowName.toStdString(),qWidget.x(),qWidget.y(),qWidget.width(),qWidget.height(),DestPrefs));
+        return(DTools::DWindow::SaveWindowPositionData(WindowName.toStdString(),qWidget.frameGeometry().x(),qWidget.frameGeometry().y(),qWidget.frameGeometry().width(),qWidget.frameGeometry().height(),DestPrefs));
     }
 
     /**
@@ -71,7 +71,7 @@ namespace DWindow
      */
     bool SaveQWindowPosition(QDialog& qDialog, DTools::DPreferences *DestPrefs) {
         QWidget& qWidget=(QWidget&) qDialog;
-        return(DTools::DWindow::SaveWindowPositionData(qWidget.objectName().toStdString(),qWidget.x(),qWidget.y(),qWidget.width(),qWidget.height(),DestPrefs));
+        return(DTools::DWindow::SaveWindowPositionData(qWidget.objectName().toStdString(),qWidget.frameGeometry().x(),qWidget.frameGeometry().y(),qWidget.frameGeometry().width(),qWidget.frameGeometry().height(),DestPrefs));
     }
 
     /**
@@ -84,7 +84,7 @@ namespace DWindow
      */
     bool SaveQWindowPosition(QDialog& qDialog, QString WindowName, DTools::DPreferences *DestPrefs) {
         QWidget& qWidget=(QWidget&) qDialog;
-        return(DTools::DWindow::SaveWindowPositionData(WindowName.toStdString(),qWidget.x(),qWidget.y(),qWidget.width(),qWidget.height(),DestPrefs));
+        return(DTools::DWindow::SaveWindowPositionData(WindowName.toStdString(),qWidget.frameGeometry().x(),qWidget.frameGeometry().y(),qWidget.frameGeometry().width(),qWidget.frameGeometry().height(),DestPrefs));
     }
 
     /**
@@ -145,7 +145,9 @@ namespace DWindow
                 Height=ScreenRect.height();
                 Y=0;
             }
-            qMainWindow.resize(Width,Height);
+            auto fg=qMainWindow.frameGeometry();
+            fg.setSize(QSize(Width,Height));
+            qMainWindow.setGeometry(fg);
         }
 
         qMainWindow.move(X,Y);
