@@ -144,7 +144,7 @@ endif()
 add_subdirectory(lib)
 add_subdirectory(include)
 
-if (${BUILS_INTERFACE_LIBS})
+if (${BUILS_INTERFACE_LIBS}) #TODO: BUIL(D)_INTERFACE_LIBS
     # Build as interfcae
     add_library(${PROJECT_NAME} INTERFACE)
 else()
