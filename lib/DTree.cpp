@@ -8,30 +8,30 @@ namespace pt=boost::property_tree;
 
 namespace DTools
 {
-	/**
-	 * @brief Construct an emptry DTree object.
-	 */
-	DTree::DTree()	{
-	}
+    /**
+     * @brief Construct an emptry DTree object.
+     */
+    DTree::DTree()	{
+    }
 
-	/**
-	 * @brief Contruct a DTree object from a ptree object.
-	 * @param RootTree	->	boost ptree object used as root node.
-	 */
-	DTree::DTree(boost::property_tree::iptree RootTree) {
+    /**
+     * @brief Contruct a DTree object from a ptree object.
+     * @param RootTree	->	boost ptree object used as root node.
+     */
+    DTree::DTree(boost::property_tree::iptree RootTree) {
         RootNode=RootTree;
 
-	}
+    }
 
-	bool DTree::LoadJsonContent(std::istream& JsonContent) {
-		try {
-			pt::json_parser::read_json(JsonContent,RootNode);
-		}catch (boost::exception& e) {
-			LastStatus=boost::diagnostic_information(e);
-			return false;
-		}
-		LastStatus="Json content loaded";
-		return true;
+    bool DTree::LoadJsonContent(std::istream& JsonContent) {
+        try {
+            pt::json_parser::read_json(JsonContent,RootNode);
+        }catch (boost::exception& e) {
+            LastStatus=boost::diagnostic_information(e);
+            return false;
+        }
+        LastStatus="Json content loaded";
+        return true;
 	}
 
     //! @return true if no sections extsts
@@ -286,7 +286,7 @@ namespace DTools
 		return(ResultList.size());
 	}
 
-    //! Read all names of the children in a node.
+    //! Read all names of the children in the array node.
     /**
     * @param SubTree	->	Can be one or more section nodes separated by '.'.
     * @param Translator	->	Alternative json tree translator char other that '.' (which is default).
@@ -322,17 +322,17 @@ namespace DTools
 
 		// Find SubTree
 		auto inValue=RootNode.get_child_optional(pt::iptree::path_type(SubTree,Translator));
-		if (!inValue.is_initialized()) {
-            return std::move(Children);
-		}
+        if (!inValue.is_initialized()) {
+            return Children;
+        }
         auto node=inValue.get();
 
 		// Read all first items
-        for (auto [name, tree] : node) {
-            Children.emplace_back(std::move(DTree(tree)));
+        for (auto &[name, tree] : node) {
+            Children.emplace_back(DTree(tree));
 		}
 
-        return std::move(Children);
+        return Children;
 	}
 
     DTree& DTree::GetRootTree(void) {
