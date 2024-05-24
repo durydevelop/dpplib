@@ -7,7 +7,7 @@ project(dpplib
 )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find for qt exists
@@ -41,7 +41,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 #list (REMOVE_DUPLICATES CMAKE_MODULE_PATH)
 include(DMainHelper)
 
-# Handle builing examples option
+# Handle building examples option
 if (${PROJECT_NAME}_BUILD_EXAMPLES OR BUILD_EXAMPLES)
     set(${PROJECT_NAME}_BUILD_EXAMPLES ON)
     set(BUILD_EXAMPLES ON)
@@ -85,15 +85,20 @@ endif()
 #############################################################################
 # Setup Target
 # CMakeFiles.txt in ./lib and ./include dirs set SRC_FILES with source files list
-add_subdirectory(lib)
-add_subdirectory(include)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/include)
+message_c("dpplib CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+add_library(${PROJECT_NAME} INTERFACE
+    ${SRC_FILES}
+    ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+    ${CMAKE_CURRENT_SOURCE_DIR}/TODO.md
+)
 
 ## Setup Target
 # Handle STATIC/SHARED/INTERFACE build option (default SHARED)
 #set(${PROJECT_NAME}_LIBRARY_TYPE SHARED)
-include(DLibraryType)
-print_var(${PROJECT_NAME}_)
-
+#include(DLibraryType)
+#[[
 if (${PROJECT_NAME}_BUILD_INTERFACE_LIBS)
     # Build as interface
     message_c("Target as INTERFACE")
@@ -116,7 +121,8 @@ else()
     add_library(${PROJECT_NAME} ${SRC_FILES})
     target_include_directories(${PROJECT_NAME} PUBLIC ${SRC_DIRS})
 endif()
-#[[
+]]#
+
 if (NOT ${BUILD_INTERFACE_LIBS})
     message_c("Linking filesystem lib for " ${PROJECT_NAME})
     target_link_libraries(${PROJECT_NAME} stdc++fs pthread)
@@ -126,7 +132,7 @@ if (NOT ${BUILD_INTERFACE_LIBS})
         target_link_libraries(${PROJECT_NAME} ws2_32 wsock32)
     endif()
 endif()
-]]#
+
 #set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC TRUE)
 
 ## Find boost
@@ -136,7 +142,7 @@ endif()
 #set(Boost_INCLUDE_DIR ${Boost_INCLUDE_DIR} PARENT_SCOPE)
 
 # Set make commad option Debug/Release
-include(DMakeOptions)
+#include(DMakeOptions)
 
 # Config Qt stuffs
 if(${BUILD_QT})
@@ -159,17 +165,20 @@ if (BUILD_TESTS)
     add_subdirectory(test)
 endif()
 
+
+
 # Includes
 target_include_directories(
-    ${PROJECT_NAME} PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/lib>"
+    ${PROJECT_NAME} INTERFACE
+#    "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/lib>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
-    "$<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>"
+#    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
+#    "$<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>"
 
-    #"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
+#    "$<INSTALL_INTERFACE:include>"
 )
+
+
 #set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 #set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
 #[[
@@ -184,7 +193,8 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 endif()
 ]]#
 message_c(${BOLD_CYAN} "Summary:")
-message_c(${BOLD_CYAN} "Build as:                 ${${PROJECT_NAME}_LIBRARY_TYPE} LIB")
+message_c(${BOLD_CYAN} "Project name:             ${PROJECT_NAME} - Version: ${PROJECT_VERSION}")
+message_c(${BOLD_CYAN} "Build as:                 SHARED LIB")
 message_c(${BOLD_CYAN} "Build examples:           ${BUILD_EXAMPLES}")
 message_c(${BOLD_CYAN} "Build tests:              ${BUILD_TESTS}")
 message_c(${BOLD_CYAN} "Build Qt extension:       ${BUILD_QT}")
