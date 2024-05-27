@@ -1,0 +1,234 @@
+cmake_minimum_required(VERSION 3.13)
+
+project(dpplib
+        VERSION 0.2.1.4
+        DESCRIPTION "dpplib is a Cpp library with a lot of helper class and tools"
+        LANGUAGES CXX
+)
+#[[
+## C++ language configuration boilerplate
+if (NOT DEFINED CMAKE_CXX_VISIBILITY_PRESET AND NOT DEFINED CMAKE_VISIBILITY_INLINES_HIDDEN)
+  set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+  set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
+endif ()
+]]#
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+## Cmake modules helper
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+include(DCMakeHelper)
+
+if (DEFINED ${PROJECT_NAME}_SHARED_LIBS)
+    set(BUILD_SHARED_LIBS "${${PROJECT_NAME}_SHARED_LIBS}")
+endif ()
+
+## Handle options
+option(${PROJECT_NAME}_BUILD_EXAMPLES "Build examples" OFF)
+option(${PROJECT_NAME}_BUILD_TESTS "Build tests" OFF)
+option(${PROJECT_NAME}_BUILD_NET "Build networking support" ON)
+option(CMAKE_BUILD_TYPE "Debug" "Debug")
+if (DEFINED QT_VERSION_MAJOR)
+    # default ON if qt is already found
+    option(${PROJECT_NAME}_BUILD_QT "Build Qt extension lib" ON)
+else()
+    # default OFF if qt is not found
+    # set QT_DIR to force cmake find qt in
+    option(${PROJECT_NAME}_BUILD_QT "Build Qt extension lib" OFF)
+endif()
+
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    # only if stand-alone project
+    set(BOOST_ROOT "" CACHE STRING "Boost root dir")
+endif()
+
+# Building examples
+if (${PROJECT_NAME}_BUILD_EXAMPLES OR BUILD_EXAMPLES)
+    set(${PROJECT_NAME}_BUILD_EXAMPLES ON)
+    set(BUILD_EXAMPLES ON)
+else()
+    set(${PROJECT_NAME}_BUILD_EXAMPLES OFF)
+    set(BUILD_EXAMPLES OFF)
+endif()
+
+# Building tests
+if (${PROJECT_NAME}_BUILD_TESTS OR BUILD_TESTS)
+    set(${PROJECT_NAME}_BUILD_TESTS ON)
+    set(BUILD_TESTS ON)
+else()
+    set(${PROJECT_NAME}_BUILD_TESTES OFF)
+    set(BUILD_TESTS OFF)
+endif()
+
+# Building Qt extension lib
+if (${PROJECT_NAME}_BUILD_QT OR BUILD_QT)
+    set(${PROJECT_NAME}_BUILD_QT ON)
+    set(BUILD_QT ON)
+    set(CMAKE_AUTOUIC ON)
+    set(CMAKE_AUTOMOC ON)
+    find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets)
+else()
+    set(${PROJECT_NAME}_BUILD_QT OFF)
+    set(BUILD_QT OFF)
+endif()
+
+# Building network support
+if (${PROJECT_NAME}_BUILD_NET OR BUILD_NET)
+    set(${PROJECT_NAME}_BUILD_NET ON)
+    set(BUILD_NET ON)
+else()
+    set(${PROJECT_NAME}_BUILD_NET OFF)
+    set(BUILD_NET OFF)
+endif()
+
+## Add modules
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/include)
+list(APPEND ${SRC_FILES}
+    ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+    ${CMAKE_CURRENT_SOURCE_DIR}/TODO.md
+)
+if (${BUILD_EXAMPLES})
+    add_subdirectory(examples)
+endif()
+
+# Download and install Google test library if needed
+if (BUILD_TESTS)
+    include(DGoogleTestHelper)
+    add_subdirectory(test)
+endif()
+
+## Setup Target
+add_library(${PROJECT_NAME} ${SRC_FILES})
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+set_target_properties(${PROJECT_NAME} PROPERTIES
+                      VERSION ${${PROJECT_NAME}_VERSION}
+                      SOVERSION ${${PROJECT_NAME}_VERSION_MAJOR})
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+)
+
+include(DInstall)
+
+#[[
+include(GenerateExportHeader)
+generate_export_header(${PROJECT_NAME} EXPORT_FILE_NAME include/${PROJECT_NAME}/export.h)
+target_compile_definitions(${PROJECT_NAME}
+    PUBLIC
+    "$<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:${PROJECT_NAME}_STATIC_DEFINE>"
+)
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
+)
+
+## Include the install rules if the user wanted them (included by default when top-level)
+string(COMPARE EQUAL "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}" is_top_level)
+option(${PROJECT_NAME}_INCLUDE_PACKAGING "Include packaging rules for ${PROJECT_NAME}" "${is_top_level}")
+if (${PROJECT_NAME}_INCLUDE_PACKAGING)
+    add_subdirectory(packaging)
+endif ()
+]]#
+#target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
+#[[
+if (${PROJECT_NAME}_BUILD_INTERFACE_LIBS)
+    # Build as interface
+    message_c("Target as INTERFACE")
+    set(LIBRARY_TYPE INTERFACE)
+    add_library(${PROJECT_NAME} INTERFACE ${SRC_FILES})
+elseif(${PROJECT_NAME}_BUILD_SHARED_LIBS)
+    # Building shared library
+    message_c("Target as SHARED")
+    set(LIBRARY_TYPE SHARED)
+    if(MSVC)
+        # Workaround for some projects
+        set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    endif()
+    add_library(${PROJECT_NAME} SHARED ${SRC_FILES})
+else()
+    # Static library
+    message_c("Target as STATIC")
+    set(LIBRARY_TYPE STATIC)
+    add_library(${PROJECT_NAME} ${SRC_FILES})
+    target_include_directories(${PROJECT_NAME} PUBLIC ${SRC_DIRS})
+endif()
+]]#
+#[[
+if (NOT ${BUILD_INTERFACE_LIBS})
+    message_c("Linking filesystem lib for " ${PROJECT_NAME})
+    target_link_libraries(${PROJECT_NAME} stdc++fs pthread)
+    # winsock
+    if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        message_c("Linking Winsock2 for " ${PROJECT_NAME})
+        target_link_libraries(${PROJECT_NAME} ws2_32 wsock32)
+    endif()
+endif()
+]]#
+#set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC TRUE)
+
+## Find boost
+# Uncomment this line to force BOOST_ROOT folder
+#get_filename_component(BOOST_ROOT "../boost" ABSOLUTE)
+#include(DBoostFinder)
+#set(Boost_INCLUDE_DIR ${Boost_INCLUDE_DIR} PARENT_SCOPE)
+
+# Set make commad option Debug/Release
+#include(DMakeOptions)
+
+# Config Qt stuffs
+if(${BUILD_QT})
+    message_c("Project <${PROJECT_NAME}> is configuring Qt libraries...")
+    find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
+    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
+    message_c("\tFound Qt${QT_VERSION_MAJOR}")
+    if (NOT ${BUILD_INTERFACE_LIBS})
+        target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Widgets)
+    endif()
+endif()
+#[[
+# Includes
+target_include_directories(
+    ${PROJECT_NAME} PUBLIC
+    ${SRC_DIRS}
+#    "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/lib>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
+#    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
+#    "$<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>"
+
+#    "$<INSTALL_INTERFACE:include>"
+)
+]]#
+
+#set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
+#set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
+#[[
+# Install directives
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    # generate install directive only if stand-alone project
+    message_c("Generate ${PROJECT_NAME} install directive")
+    # set Config.cmake.in source path
+    #set(CONFIG_CMAKE_IN_PATH ${dcmake_SOURCE_DIR})
+    include(DInstall)
+    message_c("Done")
+endif()
+]]#
+
+## C++ Pre-processor variables
+# dpplib_VERSION
+add_compile_definitions(${PROJECT_NAME}_VERSION="${PROJECT_VERSION}")
+# DPPLIB_VERSION
+string(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UPPER)
+add_compile_definitions(${PROJECT_NAME_UPPER}_VERSION="${PROJECT_VERSION}")
+
+## Print summary
+message_c(${BOLD_CYAN} "Summary:")
+message_c(${BOLD_CYAN} "Project name:             ${PROJECT_NAME} - Version: ${PROJECT_VERSION}")
+message_c(${BOLD_CYAN} "BUILD_SHARED_LIBS:        ${BUILD_SHARED_LIBS}")
+message_c(${BOLD_CYAN} "${PROJECT_NAME}_SHARED_LIBS:        ${${PROJECT_NAME}_SHARED_LIBS}")
+message_c(${BOLD_CYAN} "Build as:                 ${LIBRARY_TYPE} LIB")
+message_c(${BOLD_CYAN} "Build examples:           ${BUILD_EXAMPLES}")
+message_c(${BOLD_CYAN} "Build tests:              ${BUILD_TESTS}")
+message_c(${BOLD_CYAN} "Build Qt extension:       ${BUILD_QT}")
+message_c(${BOLD_CYAN} "Build networking support: ${BUILD_NET}")

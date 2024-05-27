@@ -1,8 +1,8 @@
 #ifndef DPathWatcherH
 #define DPathWatcherH
 
-#include "libdpp/DFilesystem.h"
-#include "libdpp/DPath.h"
+#include "dpplib/DFilesystem.h"
+#include "dpplib/DPath.h"
 #include <chrono>
 #include <future>
 

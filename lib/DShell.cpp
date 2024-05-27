@@ -1,7 +1,7 @@
-#include "libdpp/DShell.h"
+#include "dpplib/DShell.h"
 
-#include "libdpp/DCsv.h"
-#include "libdpp/DString.h"
+#include "dpplib/DCsv.h"
+#include "dpplib/DString.h"
 
 #ifdef __linux__
     #include <spawn.h>
@@ -58,6 +58,12 @@ namespace DShell
             // Insert filename as firts arg
             vArgs.insert(vArgs.begin(),Filename);
             // std::vector to array of char*
+            /// #todo provare
+            std::vector<const char *> pArgs;
+            for(size_t ixA=1;ixA<vArgs.size();ixA++) {
+                pArgs.push_back(vArgs[ixA].c_str());
+            }
+            /* deprecated
             char *pArgs[vArgs.size()];
             for(size_t ixA=1;ixA<vArgs.size();ixA++) {
                 size_t len=vArgs[ixA].size();
@@ -65,9 +71,10 @@ namespace DShell
                 strncpy(pArgs[ixA],vArgs[ixA].c_str(),len);
                 *pArgs[len]='\0';
             }
+            */
             // Spawn process
             pid_t pid=0;
-            if (posix_spawn(&pid,Filename.c_str(),NULL,NULL,pArgs,NULL) != 0) {
+            if (posix_spawn(&pid,Filename.c_str(),NULL,NULL,(char* const*)pArgs.data(),NULL) != 0) {
                 return false;
             }
             // TODO wait

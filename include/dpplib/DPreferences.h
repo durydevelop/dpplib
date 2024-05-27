@@ -2,7 +2,7 @@
 #define DPreferencesH
 
 #include <vector>
-#include "libdpp/DTree.h"
+#include "dpplib/DTree.h"
 
 namespace DTools
 {

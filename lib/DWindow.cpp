@@ -1,5 +1,5 @@
-#include "libdpp/DWindow.h"
-#include "libdpp/DPath.h"
+#include "dpplib/DWindow.h"
+#include "dpplib/DPath.h"
 
 namespace DTools
 {

@@ -1,6 +1,6 @@
 //#define BOOST_BIND_GLOBAL_PLACEHOLDERS
-#include <libdpp/DTree.h>
-#include <libdpp/DFilesystem.h>
+#include <dpplib/DTree.h>
+#include <dpplib/DFilesystem.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/exception/all.hpp>
 

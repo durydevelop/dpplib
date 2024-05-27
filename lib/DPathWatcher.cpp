@@ -1,5 +1,5 @@
-#include "libdpp/DPathWatcher.h"
-#include "libdpp/DChrono.h"
+#include "dpplib/DPathWatcher.h"
+#include "dpplib/DChrono.h"
 #include <thread>
 #include <chrono>
 using namespace std::chrono_literals;

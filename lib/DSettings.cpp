@@ -1,5 +1,5 @@
-#include "libdpp/DSettings.h"
-#include "libdpp/DPath.h"
+#include "dpplib/DSettings.h"
+#include "dpplib/DPath.h"
 
 // Common settings items
 #define ITEM_SETTINGS           "settings"

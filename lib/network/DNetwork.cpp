@@ -1,4 +1,4 @@
-#include "libdpp/network/DNetwork.h"
+#include "dpplib/network/DNetwork.h"
 #include <boost/asio.hpp>
 namespace asio=boost::asio;
 

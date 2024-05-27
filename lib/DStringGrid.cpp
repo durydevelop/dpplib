@@ -1,7 +1,7 @@
-#include "libdpp/DStringGrid.h"
+#include "dpplib/DStringGrid.h"
 #include <istream>
 #include <fstream>
-#include "libdpp/DCsv.h"
+#include "dpplib/DCsv.h"
 
 /**
 vector<vector<string> > Grid

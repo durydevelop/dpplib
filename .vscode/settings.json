@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "regex": "cpp",
+        "fstream": "cpp",
+        "chrono": "cpp",
+        "functional": "cpp"
+    }
+}

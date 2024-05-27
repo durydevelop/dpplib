@@ -45,16 +45,4 @@ if (${BUILD_NET})
 	)
 endif()
 
-#add_library(${TARGET_NAME} ${TARGET_SRC_FILES})
-#target_link_libraries(dpp)
-#list(APPEND TARGETS ${TARGET_NAME})
-#propagate sources to parent scope for one-lib-build
-#set(${TARGET_NAME}_SRC_FILES ${TARGET_SRC_FILES} PARENT_SCOPE)
-#set(TARGETS ${TARGETS} ${TARGET_NAME} PARENT_SCOPE)
-set(SRC_FILES ${SRC_FILES} ${FILES} PARENT_SCOPE)
-
-#install(
-#  TARGETS lib-dpp
-#  ARCHIVE DESTINATION lib
-#  LIBRARY DESTINATION lib
-#)
+set(${PROJECT_NAME}_SOURCES ${${PROJECT_NAME}_SOURCES} ${FILES} PARENT_SCOPE)

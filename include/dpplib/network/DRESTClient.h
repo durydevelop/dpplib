@@ -5,7 +5,7 @@
 #include <boost/beast/core/flat_buffer.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/asio/ip/tcp.hpp>
-#include "libdpp/network/DUri.h"
+#include "dpplib/network/DUri.h"
 #include <map>
 
 /*

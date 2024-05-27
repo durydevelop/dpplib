@@ -5,8 +5,8 @@
 //#include "DCallback.hpp"
 #include <chrono>
 #include <functional>
-#include "libdpp/DFilesystem.h"
-#include "libdpp/DError.h"
+#include "dpplib/DFilesystem.h"
+#include "dpplib/DError.h"
 
 #ifdef _WIN32
     #include <windows.h>    //GetModuleFileNameW

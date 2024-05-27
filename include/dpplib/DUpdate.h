@@ -3,8 +3,8 @@
 
 #include <string>
 //#include <future>
-#include <libdpp/DFilesystem.h>
-#include <libdpp/DPreferences.h>
+#include <dpplib/DFilesystem.h>
+#include <dpplib/DPreferences.h>
 
 namespace DTools
 {
