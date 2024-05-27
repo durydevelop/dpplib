@@ -7,7 +7,7 @@
 cmake_minimum_required(VERSION 3.13)
 
 project(dpplib
-        VERSION 0.2.1.4
+        VERSION 0.5.0.0
         DESCRIPTION "dpplib is a Cpp library with a lot of helper class and tools"
         LANGUAGES CXX
 )
