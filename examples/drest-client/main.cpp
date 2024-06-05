@@ -3,8 +3,7 @@
 #include <memory>
 #include <string>
 #include <boost/beast/core.hpp>
-#include "../../DRESTClient.h"
-
+#include <dpplib/network/DRESTClient.h>
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -37,7 +36,7 @@ int main(int argc, char** argv) {
     RestClient->SetOnError(OnError);
     std::cout << RestClient->GetUri().PrintUriParts() << std::endl;
 
-    RestClient->SetContentType(DRESTClient::CONTENT_TYPE_URL_ENCODED);
+//    RestClient->SetContentType(DRESTClient::CONTENT_TYPE_URL_ENCODED);
     //RestClient->SetEncodeType(DRESTClient::ENCODE_FRAGMENT);
     RestClient->AddReqBodyParam("customer","99961");
     RestClient->AddReqBodyParam("customer","99961");

@@ -1,5 +1,5 @@
 # Main lib
-set(FILES
+set(HDR
     ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/DChrono.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/DCsv.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/DError.h
@@ -23,7 +23,7 @@ set(FILES
 
 # Qt support
 if (${BUILD_QT})
-    set(FILES ${FILES}
+    set(HDR ${HDR}
         ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/qt/DQApp.h
         ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/qt/DQCheckBoxDelegate.h
         ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/qt/DFormLog.h
@@ -38,12 +38,11 @@ if (${BUILD_QT})
         ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/qt/DQSpinnerWidget.h
         ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/qt/DSplashScreen.h
     )
-	
 endif()
 
 # Network support
 if (${BUILD_NET})
-    set(FILES ${FILES}
+    set(HDR ${HDR}
         ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/network/DNetwork.h
         ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/network/DRESTClient.h
         ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/network/DUdpServer.h
@@ -51,5 +50,4 @@ if (${BUILD_NET})
     )
 endif()
 
-# Propagate sources to parent scope
-set(${PROJECT_NAME}_HEADERS ${${PROJECT_NAME}_HEADERS} ${FILES} PARENT_SCOPE)
+set(${PROJECT_NAME}_HDR ${${PROJECT_NAME}_HDR} ${HDR} PARENT_SCOPE)

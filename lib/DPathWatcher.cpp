@@ -108,7 +108,7 @@ namespace DTools
                         LastChangeTime=std::chrono::system_clock::now();
                     }
                 }
-            } catch (std::exception e) {
+            } catch (std::exception &e) {
                 LastErrorString=std::string("DPathWath check for update exception: ")+e.what();
                 LastChangeStatus=CHANGE_STATUS_ERROR;
             }

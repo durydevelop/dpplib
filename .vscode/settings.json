@@ -3,6 +3,7 @@
         "regex": "cpp",
         "fstream": "cpp",
         "chrono": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "cstdarg": "cpp"
     }
 }

@@ -1,27 +1,37 @@
-###################################################
-# make install use:
-# find_package(dpplib)
-# target_link_libraries(${PROJECT_NAME} dpplib)
-###################################################
-
+######################################################################################################################
+# This CMake project file is based on this guide https://github.com/robotology/how-to-export-cpp-library/tree/master #
+######################################################################################################################
 cmake_minimum_required(VERSION 3.13)
 
+#### Create project
 project(dpplib
         VERSION 0.5.0.0
         DESCRIPTION "dpplib is a Cpp library with a lot of helper class and tools"
         LANGUAGES CXX
 )
 
-## Initial setup
+#### Common libraries options
+string(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UPPER)
+include(GNUInstallDirs)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
+
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+if(MSVC)
+    set(CMAKE_DEBUG_POSTFIX "d")
+endif()
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS yes)
+set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif()
-
+#[[
 if (UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
 endif()
@@ -34,15 +44,21 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     # Build with Multiple Processes
     target_compile_options(${PROJECT_NAME} PRIVATE /MP)
 endif()
+]]#
 
-## Cmake modules helper
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(DCMakeHelper)
 
-## Default options
+#### Default options
 option(${PROJECT_NAME}_BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" OFF)
-option(${PROJECT_NAME}_BUILD_EXAMPLES "Build examples" OFF)
-option(${PROJECT_NAME}_BUILD_TESTS "Build tests" OFF)
+if (PROJECT_IS_TOP_LEVEL)
+    option(BUILD_EXAMPLES "Build examples" ON)
+    option(${PROJECT_NAME}_INSTALL "Create install target" ON)
+else()
+    option(BUILD_EXAMPLES "Build examples" OFF)
+    option(${PROJECT_NAME}_INSTALL "Create install target" OFF)
+endif()
+option(${PROJECT_NAME}_BUILD_TESTING "Build tests suite" OFF)
 option(${PROJECT_NAME}_BUILD_NET "Build networking support" ON)
 # Qt
 if (DEFINED QT_VERSION_MAJOR)
@@ -54,7 +70,7 @@ else()
     option(${PROJECT_NAME}_BUILD_QT "Build Qt extension lib" OFF)
 endif()
 
-## Handle options
+#### Handle options (also set ${PROJECT_NAME}_<option> and <option>)
 # Shared / static lib
 if (${PROJECT_NAME}_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
     set(${PROJECT_NAME}_BUILD_SHARED_LIBS ON)
@@ -72,12 +88,12 @@ else()
     set(BUILD_EXAMPLES OFF)
 endif()
 # Tests
-if (${PROJECT_NAME}_BUILD_TESTS OR BUILD_TESTS)
-    set(${PROJECT_NAME}_BUILD_TESTS ON)
-    set(BUILD_TESTS ON)
+if (${PROJECT_NAME}_BUILD_TESTING OR BUILD_TESTING)
+    set(${PROJECT_NAME}_BUILD_TESTING ON)
+    set(BUILD_TESTING ON)
 else()
-    set(${PROJECT_NAME}_BUILD_TESTES OFF)
-    set(BUILD_TESTS OFF)
+    set(${PROJECT_NAME}_BUILD_TESTING OFF)
+    set(BUILD_TESTING OFF)
 endif()
 # Qt
 if (${PROJECT_NAME}_BUILD_QT OR BUILD_QT)
@@ -99,17 +115,136 @@ else()
     set(BUILD_NET OFF)
 endif()
 
+#### Encourage user to specify a build type (e.g. Release, Debug, etc.), otherwise set it to Debug.
+if(NOT CMAKE_CONFIGURATION_TYPES)
+    if(NOT CMAKE_BUILD_TYPE)
+        message(STATUS "Setting build type to 'Release' as none was specified.")
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY VALUE "Debug")
+    endif()
+endif()
+
+#### Sources
+# Source library files
+set(${PROJECT_NAME}_SRC)
+# Header library files
+set(${PROJECT_NAME}_HDR)
+# Include base dir
+set(${PROJECT_NAME}_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 ## Add sources
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/include)
-list(APPEND ${PROJECT_NAME}_SOURCES
+list(APPEND ${PROJECT_NAME}_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/README.md
     ${CMAKE_CURRENT_SOURCE_DIR}/TODO.md
 )
-if (${BUILD_EXAMPLES})
+
+#message("${PROJECT_NAME}_SRC=${${PROJECT_NAME}_SRC}")
+#message("${PROJECT_NAME}_HDR=${${PROJECT_NAME}_HDR}")
+#message("${PROJECT_NAME}_INCLUDE_DIRS=${${PROJECT_NAME}_INCLUDE_DIRS}")
+
+#### Setup target
+add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SRC})
+# Use FILE_SET for HEADERS
+target_sources(${PROJECT_NAME}
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS include
+        FILES ${${PROJECT_NAME}_HDR}
+)
+# Alias
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+
+# Set two minimum target properties for the library.
+# See https://cmake.org/cmake/help/latest/command/set_target_properties.html
+# Properties are: 1) Library version number 2) list of corresponding public headers
+set_target_properties(${PROJECT_NAME}
+    PROPERTIES VERSION ${${PROJECT_NAME}_VERSION}
+#    PUBLIC_HEADER "${${PROJECT_NAME}_HDR}"
+)
+
+# Specify include directories for both compilation and installation process.
+# The $<INSTALL_PREFIX> generator expression is useful to ensure to create
+# relocatable configuration files, see https://cmake.org/cmake/help/latest/manual/cmake-packages.7.html#creating-relocatable-packages
+target_include_directories(${PROJECT_NAME}
+    PUBLIC 
+        "$<BUILD_INTERFACE:${${PROJECT_NAME}_INCLUDE_DIRS}>"
+        "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>"
+)
+
+#### Install stuff
+if (${${PROJECT_NAME}_INSTALL})
+    # Enable RPATH support for installed binaries and libraries
+    include(AddInstallRPATHSupport)
+    add_install_rpath_support(
+        BIN_DIRS "${CMAKE_INSTALL_FULL_BINDIR}"
+        LIB_DIRS "${CMAKE_INSTALL_FULL_LIBDIR}"
+        INSTALL_NAME_DIR "${CMAKE_INSTALL_FULL_LIBDIR}"
+        USE_LINK_PATH
+    )
+
+    # Specify installation targets, typology and destination folders.
+    install(TARGETS ${PROJECT_NAME}
+            EXPORT  ${PROJECT_NAME}
+            FILE_SET HEADERS
+            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}        COMPONENT dev
+            LIBRARY       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT shlib
+            ARCHIVE       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT lib
+            RUNTIME       DESTINATION "${CMAKE_INSTALL_BINDIR}"                     COMPONENT bin
+#            PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}" COMPONENT dev
+    )
+
+    # Create and install CMake configuration files
+    include(InstallBasicPackageFiles)
+    install_basic_package_files(${PROJECT_NAME}
+        VERSION ${${PROJECT_NAME}_VERSION}
+        COMPATIBILITY AnyNewerVersion
+        VARS_PREFIX ${PROJECT_NAME}
+        NO_CHECK_REQUIRED_COMPONENTS_MACRO
+    )
+    # Add the uninstall target
+    include(AddUninstallTarget)
+endif()
+
+message(STATUS "Created target ${PROJECT_NAME} for export ${PROJECT_NAME}.")
+
+#### Integration tests
+if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(test)
+endif()
+
+#### Examples
+if (${PROJECT_NAME}_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
 
+#### Doxygen support
+if (PROJECT_IS_TOP_LEVEL)
+    set(DOXYGEN_THEME_NAME example)
+    set(DOXYGEN_LANGUAGE Italian)
+    #add_subdirectory(doxygen)
+#    include(doxygen/Doxygen.cmake)
+endif()
+
+## C++ Pre-processor variables
+# dpplib_VERSION
+add_compile_definitions(${PROJECT_NAME}_VERSION="${PROJECT_VERSION}")
+# DPPLIB_VERSION
+string(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UPPER)
+add_compile_definitions(${PROJECT_NAME_UPPER}_VERSION="${PROJECT_VERSION}")
+
+## Print summary
+message_c(${BOLD_CYAN} "Summary:")
+message_c(${BOLD_CYAN} "Project name:             ${PROJECT_NAME} - Version: ${PROJECT_VERSION}")
+message_c(${BOLD_CYAN} "PROJECT_IS_TOP_LEVEL:     ${PROJECT_IS_TOP_LEVEL}")
+message_c(${BOLD_CYAN} "BUILD_SHARED_LIBS:        ${${PROJECT_NAME}_BUILD_SHARED_LIBS}")
+message_c(${BOLD_CYAN} "Build examples:           ${${PROJECT_NAME}_BUILD_EXAMPLES}")
+message_c(${BOLD_CYAN} "Build testing:            ${${PROJECT_NAME}_BUILD_TESTING}")
+message_c(${BOLD_CYAN} "Build Qt extension:       ${BUILD_QT}")
+message_c(${BOLD_CYAN} "Build networking support: ${BUILD_NET}")
+
+#[[
 ## Setup target
 if(BUILD_SHARED_LIBS)
     # Building shared library
@@ -119,7 +254,7 @@ if(BUILD_SHARED_LIBS)
     endif()
     add_library( ${PROJECT_NAME} SHARED
         ${${PROJECT_NAME}_SOURCES}
-        ${${PROJECT_NAME}_HEADERS}
+#        ${${PROJECT_NAME}_HEADERS}
     )
     # Set library version
     set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
@@ -127,17 +262,24 @@ else()
     # Static library
     add_library(${PROJECT_NAME}
         ${${PROJECT_NAME}_SOURCES}
-        ${${PROJECT_NAME}_HEADERS}
+#        ${${PROJECT_NAME}_HEADERS}
     )
 endif()
+
+target_sources(${PROJECT_NAME}
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS include
+        FILES ${${PROJECT_NAME}_HEADERS}
+)
 # Includes
 set(${PROJECT_NAME}_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
 include(GNUInstallDirs)
 target_include_directories(${PROJECT_NAME} PUBLIC
-  $<BUILD_INTERFACE:${${PROJECT_NAME}_INCLUDE_DIRS}/>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>
+  "$<BUILD_INTERFACE:${${PROJECT_NAME}_INCLUDE_DIRS}/>"
+  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>"
 )
-set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${${PROJECT_NAME}_HEADERS}")
+#set_target_properties(${PROJECT_NAME} PROPERTIES HEADERS "${${PROJECT_NAME}_HEADERS}")
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 # Config Qt stuffs
 if(${BUILD_QT})
@@ -150,76 +292,66 @@ if(${BUILD_QT})
     endif()
 endif()
 
-## Install/uninstall directives
-install(TARGETS ${PROJECT_NAME}
-    EXPORT ${PROJECT_NAME}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/
-)
-include(GNUInstallDirs)
-set(INCLUDE_INSTALL_DIR 
-    ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
-    CACHE PATH "Location of header files"
-)
-set(SYSCONFIG_INSTALL_DIR
-    ${CMAKE_INSTALL_SYSCONFDIR}/${PROJECT_NAME}
-    CACHE PATH "Location of configuration files"
-)
-include(CMakePackageConfigHelpers)
-configure_package_config_file(
-    ${CMAKE_MODULE_PATH}/Config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    PATH_VARS INCLUDE_INSTALL_DIR SYSCONFIG_INSTALL_DIR
-)
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMajorVersion
-)
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-)
-# todo: need .pc ?
-configure_file(
-    ${CMAKE_MODULE_PATH}/pc.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc
-    @ONLY
-)
-install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-)
-install(EXPORT ${PROJECT_NAME}
-    FILE ${PROJECT_NAME}Targets.cmake
-    NAMESPACE ${PROJECT_NAME}::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-)
-if(NOT TARGET uninstall)
-  configure_file(
-    ${CMAKE_MODULE_PATH}/uninstall.cmake.in
-    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-    IMMEDIATE @ONLY)
+#if (${CMAKE_CURRENT_SOURCE_DIR} MATCHES ${CMAKE_SOURCE_DIR})
+if(PROJECT_IS_TOP_LEVEL)
+    ## Install/uninstall directives
+    install(TARGETS ${PROJECT_NAME}
+        EXPORT ${PROJECT_NAME}
+        FILE_SET HEADERS
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/
+#        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/
+    )
+    include(GNUInstallDirs)
+    set(INCLUDE_INSTALL_DIR 
+        ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+        CACHE PATH "Location of header files"
+    )
+    set(SYSCONFIG_INSTALL_DIR
+        ${CMAKE_INSTALL_SYSCONFDIR}/${PROJECT_NAME}
+        CACHE PATH "Location of configuration files"
+    )
+    include(CMakePackageConfigHelpers)
+    configure_package_config_file(
+        ${CMAKE_MODULE_PATH}/Config.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+        PATH_VARS INCLUDE_INSTALL_DIR SYSCONFIG_INSTALL_DIR
+    )
+    write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+    )
+    # todo: need .pc ?
+    configure_file(
+        ${CMAKE_MODULE_PATH}/pc.in
+        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc
+        @ONLY
+    )
+    install(
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    )
+    install(EXPORT ${PROJECT_NAME}
+        FILE ${PROJECT_NAME}Targets.cmake
+        NAMESPACE ${PROJECT_NAME}::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+    )
+    if(NOT TARGET uninstall)
+    configure_file(
+        ${CMAKE_MODULE_PATH}/uninstall.cmake.in
+        "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+        IMMEDIATE @ONLY)
 
-  add_custom_target(uninstall
-    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+    add_custom_target(uninstall
+        COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+    endif()
 endif()
+]]#
 
-
-## C++ Pre-processor variables
-# dpplib_VERSION
-add_compile_definitions(${PROJECT_NAME}_VERSION="${PROJECT_VERSION}")
-# DPPLIB_VERSION
-string(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UPPER)
-add_compile_definitions(${PROJECT_NAME_UPPER}_VERSION="${PROJECT_VERSION}")
-
-## Print summary
-message_c(${BOLD_CYAN} "Summary:")
-message_c(${BOLD_CYAN} "Project name:             ${PROJECT_NAME} - Version: ${PROJECT_VERSION}")
-message_c(${BOLD_CYAN} "BUILD_SHARED_LIBS:        ${BUILD_SHARED_LIBS}")
-message_c(${BOLD_CYAN} "Build examples:           ${BUILD_EXAMPLES}")
-message_c(${BOLD_CYAN} "Build tests:              ${BUILD_TESTS}")
-message_c(${BOLD_CYAN} "Build Qt extension:       ${BUILD_QT}")
-message_c(${BOLD_CYAN} "Build networking support: ${BUILD_NET}")
