@@ -3,11 +3,24 @@
 ######################################################################################################################
 cmake_minimum_required(VERSION 3.13)
 
+#### WASM support
+# CMAKE_TOOLCHAIN_FILE must be set before project() otherwise it does not take effect
+if (${PLATFORM} MATCHES "Web" OR EMSCRIPTEN)
+    if (NOT CMAKE_TOOLCHAIN_FILE)
+        if (DEFINED ENV{EMSDK})
+            set(CMAKE_TOOLCHAIN_FILE "$ENV{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake" CACHE STRING "" FORCE)
+            #include(${CMAKE_TOOLCHAIN_FILE})
+        else()
+            message(FATAL_ERROR  "Emscripten non found, cannot compile on PLATFORM Web")
+        endif()
+    endif()
+endif()
+
 #### Create project
 project(dpplib
         VERSION 0.5.0.0
         DESCRIPTION "dpplib is a Cpp library with a lot of helper class and tools"
-        LANGUAGES CXX
+        LANGUAGES C CXX
 )
 
 #### Common libraries options
@@ -28,8 +41,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS yes)
-set(CMAKE_C_EXTENSIONS OFF)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
 #[[
 if (UNIX)
@@ -46,20 +57,27 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif()
 ]]#
 
+#### CMake modules helper
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+list (REMOVE_DUPLICATES CMAKE_MODULE_PATH)
 include(DCMakeHelper)
 
 #### Default options
 option(${PROJECT_NAME}_BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" OFF)
+# Top level options
 if (PROJECT_IS_TOP_LEVEL)
-    option(BUILD_EXAMPLES "Build examples" ON)
+    option(${PROJECT_NAME}_BUILD_EXAMPLES "Build examples" ON)
     option(${PROJECT_NAME}_INSTALL "Create install target" ON)
 else()
-    option(BUILD_EXAMPLES "Build examples" OFF)
+    option(${PROJECT_NAME}_BUILD_EXAMPLES "Build examples" OFF)
     option(${PROJECT_NAME}_INSTALL "Create install target" OFF)
 endif()
-option(${PROJECT_NAME}_BUILD_TESTING "Build tests suite" OFF)
-option(${PROJECT_NAME}_BUILD_NET "Build networking support" ON)
+# Network
+if (EMSCRIPTEN)
+    option(${PROJECT_NAME}_BUILD_NET "Build networking support" OFF)
+else()
+    option(${PROJECT_NAME}_BUILD_NET "Build networking support" ON)
+endif()
 # Qt
 if (DEFINED QT_VERSION_MAJOR)
     # default ON if qt is already found
@@ -69,8 +87,10 @@ else()
     # set QT_DIR to force cmake find qt in
     option(${PROJECT_NAME}_BUILD_QT "Build Qt extension lib" OFF)
 endif()
+# Testing
+option(${PROJECT_NAME}_BUILD_TESTING "Build tests suite" OFF)
 
-#### Handle options (also set ${PROJECT_NAME}_<option> and <option>)
+#### Handle options (also set ${PROJECT_NAME}_<option> and <option> the same)
 # Shared / static lib
 if (${PROJECT_NAME}_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
     set(${PROJECT_NAME}_BUILD_SHARED_LIBS ON)
@@ -78,6 +98,22 @@ if (${PROJECT_NAME}_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
 else()
     set(${PROJECT_NAME}_BUILD_SHARED_LIBS OFF)
     set(BUILD_SHARED_LIBS OFF)
+endif()
+# EMSCRIPTEN
+if (${PROJECT_NAME}_EMSCRIPTEN OR EMSCRIPTEN)
+    set(${PROJECT_NAME}_EMSCRIPTEN ON)
+    set(EMSCRIPTEN ON)
+else()
+    set(${PROJECT_NAME}_EMSCRIPTEN OFF)
+    set(EMSCRIPTEN OFF)
+endif()
+# Network
+if (${PROJECT_NAME}_BUILD_NET OR BUILD_NET)
+    set(${PROJECT_NAME}_BUILD_NET ON)
+    set(BUILD_NET ON)
+else()
+    set(${PROJECT_NAME}_BUILD_NET OFF)
+    set(BUILD_NET OFF)
 endif()
 # Examples
 if (${PROJECT_NAME}_BUILD_EXAMPLES OR BUILD_EXAMPLES)
@@ -106,19 +142,11 @@ else()
     set(${PROJECT_NAME}_BUILD_QT OFF)
     set(BUILD_QT OFF)
 endif()
-# Network
-if (${PROJECT_NAME}_BUILD_NET OR BUILD_NET)
-    set(${PROJECT_NAME}_BUILD_NET ON)
-    set(BUILD_NET ON)
-else()
-    set(${PROJECT_NAME}_BUILD_NET OFF)
-    set(BUILD_NET OFF)
-endif()
 
 #### Encourage user to specify a build type (e.g. Release, Debug, etc.), otherwise set it to Debug.
 if(NOT CMAKE_CONFIGURATION_TYPES)
     if(NOT CMAKE_BUILD_TYPE)
-        message(STATUS "Setting build type to 'Release' as none was specified.")
+        message(STATUS "Setting build type to 'Debug' as none was specified.")
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY VALUE "Debug")
     endif()
 endif()
@@ -155,17 +183,7 @@ target_sources(${PROJECT_NAME}
 # Alias
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-# Set two minimum target properties for the library.
-# See https://cmake.org/cmake/help/latest/command/set_target_properties.html
-# Properties are: 1) Library version number 2) list of corresponding public headers
-set_target_properties(${PROJECT_NAME}
-    PROPERTIES VERSION ${${PROJECT_NAME}_VERSION}
-#    PUBLIC_HEADER "${${PROJECT_NAME}_HDR}"
-)
-
 # Specify include directories for both compilation and installation process.
-# The $<INSTALL_PREFIX> generator expression is useful to ensure to create
-# relocatable configuration files, see https://cmake.org/cmake/help/latest/manual/cmake-packages.7.html#creating-relocatable-packages
 target_include_directories(${PROJECT_NAME}
     PUBLIC 
         "$<BUILD_INTERFACE:${${PROJECT_NAME}_INCLUDE_DIRS}>"
@@ -191,7 +209,6 @@ if (${${PROJECT_NAME}_INSTALL})
             LIBRARY       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT shlib
             ARCHIVE       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT lib
             RUNTIME       DESTINATION "${CMAKE_INSTALL_BINDIR}"                     COMPONENT bin
-#            PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}" COMPONENT dev
     )
 
     # Create and install CMake configuration files
@@ -202,11 +219,27 @@ if (${${PROJECT_NAME}_INSTALL})
         VARS_PREFIX ${PROJECT_NAME}
         NO_CHECK_REQUIRED_COMPONENTS_MACRO
     )
+
     # Add the uninstall target
     include(AddUninstallTarget)
 endif()
 
-message(STATUS "Created target ${PROJECT_NAME} for export ${PROJECT_NAME}.")
+#### EMSCRIPTEN settings
+if (EMSCRIPTEN)
+	# Da provare ad attivare
+	#set(USE_ZLIB OFF)
+    
+    # Flag for dpplib (Boost support)
+    set(EMSDK_FLAGS "${EMSDK_FLAGS} -s USE_BOOST_HEADERS=1") # -s WARN_ON_UNDEFINED_SYMBOLS")
+
+    # Add compile flags
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EMSDK_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EMSDK_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EMSDK_FLAGS}")
+
+    # Includes
+#    target_include_directories(${PROJECT_NAME} PUBLIC ${EMSCRIPTEN_SYSROOT}/include)
+endif()
 
 #### Integration tests
 if(BUILD_TESTING)
@@ -243,115 +276,7 @@ message_c(${BOLD_CYAN} "Build examples:           ${${PROJECT_NAME}_BUILD_EXAMPL
 message_c(${BOLD_CYAN} "Build testing:            ${${PROJECT_NAME}_BUILD_TESTING}")
 message_c(${BOLD_CYAN} "Build Qt extension:       ${BUILD_QT}")
 message_c(${BOLD_CYAN} "Build networking support: ${BUILD_NET}")
-
-#[[
-## Setup target
-if(BUILD_SHARED_LIBS)
-    # Building shared library
-    if(MSVC)
-        # Workaround for some projects
-        set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-    endif()
-    add_library( ${PROJECT_NAME} SHARED
-        ${${PROJECT_NAME}_SOURCES}
-#        ${${PROJECT_NAME}_HEADERS}
-    )
-    # Set library version
-    set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
-else()
-    # Static library
-    add_library(${PROJECT_NAME}
-        ${${PROJECT_NAME}_SOURCES}
-#        ${${PROJECT_NAME}_HEADERS}
-    )
+if (EMSCRIPTEN)
+    message_c(${BOLD_CYAN} "WASM support:             ON (EMSCRIPTEN)")
+    message_c(${BOLD_CYAN} "CMAKE_TOOLCHAIN_FILE:     ${CMAKE_TOOLCHAIN_FILE}")
 endif()
-
-target_sources(${PROJECT_NAME}
-    PUBLIC
-        FILE_SET HEADERS
-        BASE_DIRS include
-        FILES ${${PROJECT_NAME}_HEADERS}
-)
-# Includes
-set(${PROJECT_NAME}_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
-include(GNUInstallDirs)
-target_include_directories(${PROJECT_NAME} PUBLIC
-  "$<BUILD_INTERFACE:${${PROJECT_NAME}_INCLUDE_DIRS}/>"
-  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>"
-)
-#set_target_properties(${PROJECT_NAME} PROPERTIES HEADERS "${${PROJECT_NAME}_HEADERS}")
-add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
-# Config Qt stuffs
-if(${BUILD_QT})
-    message_c("Project <${PROJECT_NAME}> is configuring Qt libraries...")
-    find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
-    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
-    message_c("\tFound Qt${QT_VERSION_MAJOR}")
-    if (NOT ${BUILD_INTERFACE_LIBS})
-        target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Widgets)
-    endif()
-endif()
-
-#if (${CMAKE_CURRENT_SOURCE_DIR} MATCHES ${CMAKE_SOURCE_DIR})
-if(PROJECT_IS_TOP_LEVEL)
-    ## Install/uninstall directives
-    install(TARGETS ${PROJECT_NAME}
-        EXPORT ${PROJECT_NAME}
-        FILE_SET HEADERS
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/
-#        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/
-    )
-    include(GNUInstallDirs)
-    set(INCLUDE_INSTALL_DIR 
-        ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
-        CACHE PATH "Location of header files"
-    )
-    set(SYSCONFIG_INSTALL_DIR
-        ${CMAKE_INSTALL_SYSCONFDIR}/${PROJECT_NAME}
-        CACHE PATH "Location of configuration files"
-    )
-    include(CMakePackageConfigHelpers)
-    configure_package_config_file(
-        ${CMAKE_MODULE_PATH}/Config.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-        PATH_VARS INCLUDE_INSTALL_DIR SYSCONFIG_INSTALL_DIR
-    )
-    write_basic_package_version_file(
-        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-        VERSION ${PROJECT_VERSION}
-        COMPATIBILITY SameMajorVersion
-    )
-    install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    )
-    # todo: need .pc ?
-    configure_file(
-        ${CMAKE_MODULE_PATH}/pc.in
-        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc
-        @ONLY
-    )
-    install(
-        FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-    )
-    install(EXPORT ${PROJECT_NAME}
-        FILE ${PROJECT_NAME}Targets.cmake
-        NAMESPACE ${PROJECT_NAME}::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    )
-    if(NOT TARGET uninstall)
-    configure_file(
-        ${CMAKE_MODULE_PATH}/uninstall.cmake.in
-        "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-        IMMEDIATE @ONLY)
-
-    add_custom_target(uninstall
-        COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
-    endif()
-endif()
-]]#
-
