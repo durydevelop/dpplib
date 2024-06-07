@@ -145,13 +145,21 @@ list(APPEND ${PROJECT_NAME}_SRC
 
 #### Setup target
 add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SRC})
-# Use FILE_SET for HEADERS
-target_sources(${PROJECT_NAME}
-    PUBLIC
-        FILE_SET HEADERS
-        BASE_DIRS include
-        FILES ${${PROJECT_NAME}_HDR}
-)
+
+if (CMAKE_VERSION VERSION_LESS 3.28)
+    # Use PUBLIC_HEADER
+    target_sources(${PROJECT_NAME} PUBLIC ${${PROJECT_NAME}_HDR})
+    set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${${PROJECT_NAME}_HDR})
+else()
+    # Use FILE_SET for HEADERS
+    target_sources(${PROJECT_NAME}
+        PUBLIC
+            FILE_SET HEADERS
+            BASE_DIRS include
+            FILES ${${PROJECT_NAME}_HDR}
+    )
+endif()
+
 # Alias
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
@@ -184,15 +192,28 @@ if (${${PROJECT_NAME}_INSTALL})
     )
 
     # Specify installation targets, typology and destination folders.
-    install(TARGETS ${PROJECT_NAME}
+    if (CMAKE_VERSION VERSION_LESS 3.28)
+        # Using PUBLIC_HEADER
+        install(TARGETS ${PROJECT_NAME}
             EXPORT  ${PROJECT_NAME}
-            FILE_SET HEADERS
             INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}        COMPONENT dev
             LIBRARY       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT shlib
             ARCHIVE       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT lib
             RUNTIME       DESTINATION "${CMAKE_INSTALL_BINDIR}"                     COMPONENT bin
-#            PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}" COMPONENT dev
-    )
+            PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}" COMPONENT dev
+        )
+        message(FATAL "Install is not supported, cannot create correct folder structure. You need to use cmake 3.28 or higher")
+    else()
+        # Using FILE_SET
+        install(TARGETS ${PROJECT_NAME}
+                EXPORT  ${PROJECT_NAME}
+                FILE_SET HEADERS
+                INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}        COMPONENT dev
+                LIBRARY       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT shlib
+                ARCHIVE       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT lib
+                RUNTIME       DESTINATION "${CMAKE_INSTALL_BINDIR}"                     COMPONENT bin
+        )
+    endif()
 
     # Create and install CMake configuration files
     include(InstallBasicPackageFiles)
