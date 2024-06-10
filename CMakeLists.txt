@@ -177,7 +177,7 @@ add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SRC})
 if (CMAKE_VERSION VERSION_LESS 3.28)
     # Use PUBLIC_HEADER
     target_sources(${PROJECT_NAME} PUBLIC ${${PROJECT_NAME}_HDR})
-    set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${${PROJECT_NAME}_HDR})
+    set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${${PROJECT_NAME}_HDR}")
 else()
     # Use FILE_SET for HEADERS
     target_sources(${PROJECT_NAME}
