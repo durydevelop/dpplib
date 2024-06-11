@@ -278,7 +278,7 @@ endif()
 if (PROJECT_IS_TOP_LEVEL)
     set(DOXYGEN_THEME_NAME example)
     set(DOXYGEN_LANGUAGE Italian)
-    #add_subdirectory(doxygen)
+    add_subdirectory(doxygen)
 #    include(doxygen/Doxygen.cmake)
 endif()
 
