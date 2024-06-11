@@ -1,9 +1,9 @@
 #ifndef DSyncFileH
 #define DSyncFileH
 
-#include "libdpp/DFilesystem.h"
+#include "dpplib/DFilesystem.h"
 #include <string>
-#include "libdpp/DPath.h"
+#include "dpplib/DPath.h"
 
 namespace DTools
 {

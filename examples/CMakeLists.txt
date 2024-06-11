@@ -1,2 +1,6 @@
-add_subdirectory(rest-client)
-#add_subdirectory(mega-demo)
+if (EMSCRIPTEN)
+    #add_subdirectory(mega-demo)
+else()
+    add_subdirectory(rest-client)
+endif()
+

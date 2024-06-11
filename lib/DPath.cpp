@@ -1,8 +1,8 @@
-﻿#include "libdpp/DPath.h"
+﻿#include "dpplib/DPath.h"
 //#include "libdpp/DStringGrid.h"
-#include "libdpp/DString.h"
-#include "libdpp/DCsv.h"
-#include "libdpp/DChrono.h"
+#include "dpplib/DString.h"
+#include "dpplib/DCsv.h"
+#include "dpplib/DChrono.h"
 #include <iostream>
 
 #include <fcntl.h>

@@ -1,6 +1,7 @@
-set(FILES
+set(SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/DChrono.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DCsv.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/DLog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DPath.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DPathWatcher.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DPreferences.cpp
@@ -17,8 +18,8 @@ set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/DWindow.cpp
 )
 
-if (${BUILD_QT})
-	set(FILES ${FILES}
+if (${PROJECT_NAME}_BUILD_QT)
+    set(SRC ${SRC}
 		${CMAKE_CURRENT_SOURCE_DIR}/qt/DQApp.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/qt/DQCheckBoxDelegate.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/qt/DFormLog.cpp
@@ -36,8 +37,8 @@ if (${BUILD_QT})
 	)
 endif()
 
-if (${BUILD_NET})
-	set(FILES ${FILES}
+if (${PROJECT_NAME}_BUILD_NET)
+    set(SRC ${SRC}
 		${CMAKE_CURRENT_SOURCE_DIR}/network/DNetwork.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/network/DRESTClient.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/network/DUdpServer.cpp
@@ -45,16 +46,4 @@ if (${BUILD_NET})
 	)
 endif()
 
-#add_library(${TARGET_NAME} ${TARGET_SRC_FILES})
-#target_link_libraries(dpp)
-#list(APPEND TARGETS ${TARGET_NAME})
-#propagate sources to parent scope for one-lib-build
-#set(${TARGET_NAME}_SRC_FILES ${TARGET_SRC_FILES} PARENT_SCOPE)
-#set(TARGETS ${TARGETS} ${TARGET_NAME} PARENT_SCOPE)
-set(SRC_FILES ${SRC_FILES} ${FILES} PARENT_SCOPE)
-
-#install(
-#  TARGETS lib-dpp
-#  ARCHIVE DESTINATION lib
-#  LIBRARY DESTINATION lib
-#)
+set(${PROJECT_NAME}_SRC ${${PROJECT_NAME}_SRC} ${SRC} PARENT_SCOPE)

@@ -4,7 +4,7 @@
 #include <string>
 #include <fstream>
 #include <boost/beast/core.hpp>
-#include "libdpp/network/DRESTClient.h"
+#include "dpplib/network/DRESTClient.h"
 
 
 namespace beast = boost::beast;

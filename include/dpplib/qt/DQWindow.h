@@ -5,7 +5,7 @@
 
 #include <QLayout>
 #include <QMainWindow>
-#include <libdpp/DPreferences.h>
+#include <dpplib/DPreferences.h>
 #include <QSettings>
 
 namespace DTools

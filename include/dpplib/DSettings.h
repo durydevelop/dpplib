@@ -2,7 +2,7 @@
 #define DSETTINGS_H
 
 #include <string>
-#include "libdpp/DFilesystem.h"
+#include "dpplib/DFilesystem.h"
 
 namespace DTools
 {

@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include <libdpp/DError.h>
+#include <dpplib/DError.h>
 
 namespace DTools
 {

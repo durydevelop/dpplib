@@ -1,4 +1,4 @@
-#include "libdpp/network/DUri.h"
+#include "dpplib/network/DUri.h"
 
 #include <string>
 #include <regex>

@@ -87,14 +87,25 @@ namespace DTools
             // ***************************************************************************************
 
         public:
-            //! Colors defines for printf
-            const std::string CL_RED        =   "\x1b[31m";
-            const std::string CL_GREEN      =   "\x1b[32m";
-            const std::string CL_YELLOW     =   "\x1b[33m";
-            const std::string CL_BLUE       =   "\x1b[34m";
-            const std::string CL_MAGENTA    =   "\x1b[35m";
-            const std::string CL_CYAN       =   "\x1b[36m";
-            const std::string CL_DEFAULT    =   "\x1b[0m";
+            #ifdef DLOG_NO_COLORS
+                // No colors
+                inline static const char* CL_RED      =   "";
+                inline static const char* CL_GREEN    =   "";
+                inline static const char* CL_YELLOW   =   "";
+                inline static const char* CL_BLUE     =   "";
+                inline static const char* CL_MAGENTA  =   "";
+                inline static const char* CL_CYAN     =   "";
+                inline static const char* CL_DEFAULT  =   "";        
+            #else
+                //! Colors defines for printf
+                inline static const char* CL_RED      =   "\x1b[31m";
+                inline static const char* CL_GREEN    =   "\x1b[32m";
+                inline static const char* CL_YELLOW   =   "\x1b[33m";
+                inline static const char* CL_BLUE     =   "\x1b[34m";
+                inline static const char* CL_MAGENTA  =   "\x1b[35m";
+                inline static const char* CL_CYAN     =   "\x1b[36m";
+                inline static const char* CL_DEFAULT  =   "\x1b[0m";
+            #endif
             //! Log deep levels
             enum DLogLevel {PRINT_LEVEL_NORMAL, PRINT_LEVEL_DEEP};
             //! Output types
@@ -121,6 +132,12 @@ namespace DTools
             size_t StorageModeParam;
 
         public:
+            // Static methods
+            static void info(const char *, ...);
+            static void debug(const char *, ...);
+            static void error(const char *, ...);
+            static void warning(const char *, ...);
+            
             /**
             * @brief Contructor
             * @details Create the log object
@@ -493,7 +510,7 @@ namespace DTools
 
                 // Print log message
                 if (LogToStdout) {
-                    printf("%s%s\n\r",(Color+TimeMsg+Sep+LevelMsg+Sep+LogMsg).c_str(),CL_DEFAULT.c_str());
+                    printf("%s%s\n\r",(Color+TimeMsg+Sep+LevelMsg+Sep+LogMsg).c_str(),CL_DEFAULT);
                 }
 
                 if (Callback) {

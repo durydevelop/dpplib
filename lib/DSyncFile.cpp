@@ -1,6 +1,6 @@
-#include <libdpp/DSyncFile.h>
-#include <libdpp/DString.h>
-#include <libdpp/DChrono.h>
+#include <dpplib/DSyncFile.h>
+#include <dpplib/DString.h>
+#include <dpplib/DChrono.h>
 
 namespace DTools
 {

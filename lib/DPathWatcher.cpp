@@ -1,5 +1,5 @@
-#include "libdpp/DPathWatcher.h"
-#include "libdpp/DChrono.h"
+#include "dpplib/DPathWatcher.h"
+#include "dpplib/DChrono.h"
 #include <thread>
 #include <chrono>
 using namespace std::chrono_literals;
@@ -108,7 +108,7 @@ namespace DTools
                         LastChangeTime=std::chrono::system_clock::now();
                     }
                 }
-            } catch (std::exception e) {
+            } catch (std::exception &e) {
                 LastErrorString=std::string("DPathWath check for update exception: ")+e.what();
                 LastChangeStatus=CHANGE_STATUS_ERROR;
             }

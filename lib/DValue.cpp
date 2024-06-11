@@ -1,5 +1,5 @@
-#include "libdpp/DValue.h"
-#include "libdpp/DString.h"
+#include "dpplib/DValue.h"
+#include "dpplib/DString.h"
 #include <algorithm>
 
 namespace DTools

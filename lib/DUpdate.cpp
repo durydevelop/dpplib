@@ -1,7 +1,7 @@
-#include <libdpp/DUpdate.h>
-#include <libdpp/DString.h>
-#include <libdpp/DPath.h>
-#include <libdpp/DShell.h>
+#include <dpplib/DUpdate.h>
+#include <dpplib/DString.h>
+#include <dpplib/DPath.h>
+#include <dpplib/DShell.h>
 #include <fstream>
 
 namespace fs=DTools::fs;

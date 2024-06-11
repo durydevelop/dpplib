@@ -6,9 +6,9 @@
 #include <QPlainTextEdit>
 #include <QStringListModel>
 #include <QThread>
-#include <libdpp/DLog.h>
-#include <libdpp/DPreferences.h>
-#include <libdpp/qt/DQSpinnerWidget.h>
+#include <dpplib/DLog.h>
+#include <dpplib/DPreferences.h>
+#include <dpplib/qt/DQSpinnerWidget.h>
 
 namespace Ui
 {

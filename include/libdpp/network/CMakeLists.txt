@@ -1,9 +1,0 @@
-set(FILES
-	${CMAKE_CURRENT_SOURCE_DIR}/DNetwork.h
-	${CMAKE_CURRENT_SOURCE_DIR}/DRESTClient.h
-	${CMAKE_CURRENT_SOURCE_DIR}/DUdpServer.h
-	${CMAKE_CURRENT_SOURCE_DIR}/DUri.h
-)
-
-# Propagate sources to parent scope
-set(SRC_FILES ${SRC_FILES} ${FILES} PARENT_SCOPE)

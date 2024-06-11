@@ -1,9 +1,9 @@
 #ifndef DSyncWatcherH
 #define DSyncWatcherH
 
-#include "libdpp/DFilesystem.h"
-#include "libdpp/DPath.h"
-#include "libdpp/DSyncFile.h"
+#include "dpplib/DFilesystem.h"
+#include "dpplib/DPath.h"
+#include "dpplib/DSyncFile.h"
 #include <thread>
 #include <chrono>
 #include <future>
