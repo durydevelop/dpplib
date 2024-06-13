@@ -1,4 +1,4 @@
-#include <libdpp/qt/DQWidget.h>
+#include <dpplib/qt/DQWidget.h>
 
 #ifdef QT_GUI_LIB
 

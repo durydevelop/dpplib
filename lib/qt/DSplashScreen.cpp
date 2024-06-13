@@ -1,4 +1,4 @@
-#include "libdpp/qt/DSplashScreen.h"
+#include "dpplib/qt/DSplashScreen.h"
 
 #ifdef QT_GUI_LIB
 
