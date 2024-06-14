@@ -4,7 +4,7 @@
 #include <string>
 
 #ifdef QT_CORE_LIB
-    #include <libdpp/qt/DQShell.h>
+    #include <dpplib/qt/DQShell.h>
 #endif
 
 namespace DTools

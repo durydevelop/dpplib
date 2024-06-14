@@ -22,7 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 // Own includes
-#include <libdpp/qt/DQSpinnerWidget.h>
+#include <dpplib/qt/DQSpinnerWidget.h>
 
 #ifdef QT_GUI_LIB
 

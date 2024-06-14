@@ -1,4 +1,4 @@
-#include <libdpp/qt/DQProgressBar.h>
+#include <dpplib/qt/DQProgressBar.h>
 
 #ifdef QT_GUI_LIB
 namespace DTools

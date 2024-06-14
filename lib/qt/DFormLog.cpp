@@ -1,10 +1,10 @@
-#include "libdpp/qt/DFormLog.h"
+#include "dpplib/qt/DFormLog.h"
 
 #ifdef QT_GUI_LIB
 #include <QtConcurrent/QtConcurrentRun>
-#include "libdpp/qt/ui_dformlog.h"
-#include "libdpp/qt/DQShell.h"
-#include "libdpp/qt/DQWindow.h"
+#include "dpplib/qt/ui_dformlog.h"
+#include "dpplib/qt/DQShell.h"
+#include "dpplib/qt/DQWindow.h"
 #include <QBuffer>
 #include <QFile>
 

@@ -1,8 +1,8 @@
-#include "libdpp/qt/DQApp.h"
+#include "dpplib/qt/DQApp.h"
 
 #ifdef QT_GUI_LIB
 
-#include <libdpp/DPath.h>
+#include <dpplib/DPath.h>
 #include <QFile>
 #include <QApplication>
 

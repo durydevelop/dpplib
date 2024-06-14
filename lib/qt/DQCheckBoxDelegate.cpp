@@ -1,4 +1,4 @@
-#include "libdpp/qt/DQCheckBoxDelegate.h"
+#include "dpplib/qt/DQCheckBoxDelegate.h"
 
 #ifdef QT_GUI_LIB
 
@@ -43,6 +43,9 @@ void DQCheckBoxDelegate::setColumnIndex(int index)
 void DQCheckBoxDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,const QModelIndex& index)const
 {
     if(index.column() == columnIndex){
+//        auto newSize=option.decorationSize*2;
+//        option.decorationSize.expandedTo(newSize);
+
         QStyleOptionButton checkBoxStyleOption;
         checkBoxStyleOption.rect=CheckBoxRect(option);
 
@@ -118,6 +121,13 @@ bool DQCheckBoxDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, c
         return(QStyledItemDelegate::editorEvent(event, model, option, index));
     }
 }
+/*
+QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override {
+    //return option.fontMetrics.boundingRect(option.rect, Qt::TextWordWrap, index.data().toString()).size();
+    auto newSize=option.decorationSize*2;
+    return option.decorationSize.expandedTo(newSize);
+}
+*/
 }
 
 /**
@@ -179,6 +189,7 @@ QWidget *DQCheckBoxDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     Q_UNUSED(option);
     Q_UNUSED(index);
     QCheckBox *editor = new QCheckBox(parent);
+editor->resize( option.rect.width(), option.rect.height() )
     return editor;
 }
 

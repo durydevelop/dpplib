@@ -27,6 +27,7 @@ class DQCheckBoxDelegate : public QStyledItemDelegate
         enum DRoles {ROLE_ENABLE=Qt::UserRole, ROLE_VISIBLE};
         DQCheckBoxDelegate(QObject *parent = nullptr);
         void setColumnIndex(int Index);
+        //QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 
     signals:
         void statusChanged(const QModelIndex&, bool checked);
