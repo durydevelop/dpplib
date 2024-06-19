@@ -267,23 +267,22 @@ if (EMSCRIPTEN)
 
     # Includes
 #    target_include_directories(${PROJECT_NAME} PUBLIC ${EMSCRIPTEN_SYSROOT}/include)
-endif()
-
-#### Dependencies
-# Boost
-if (NOT boost_FOUND)
-    get_filename_component(Boost_ROOT "../boost" ABSOLUTE) # same as BOOST_ROOT_DIR "../../../../lib/boost"
-    include(DBoostFinder)
-endif()
-# Winsock
-if (${PROJECT_NAME}_BUILD_NET)
-    # winsock
-    if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        message_c("Linking Winsock2 for " ${PROJECT_NAME})
-        target_link_libraries(${PROJECT_NAME} PUBLIC ws2_32 wsock32)
+else()
+    #### Dependencies
+    # Boost
+    if (NOT Boost_FOUND)
+        get_filename_component(Boost_ROOT "../boost" ABSOLUTE) # same as BOOST_ROOT_DIR "../../../../lib/boost"
+        include(DBoostFinder)
+    endif()
+    # Winsock
+    if (${PROJECT_NAME}_BUILD_NET)
+        # winsock
+        if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+            message_c("Linking Winsock2 for " ${PROJECT_NAME})
+            target_link_libraries(${PROJECT_NAME} PUBLIC ws2_32 wsock32)
+        endif()
     endif()
 endif()
-
 
 #### Integration tests
 if(BUILD_TESTING)
