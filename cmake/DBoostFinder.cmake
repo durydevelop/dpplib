@@ -98,7 +98,7 @@ endif()
 
 if (${Boost_FOUND})
     ## headers only
-    target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost)
+#    target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost)
     message(${DSTATUS} "\tFound ${Boost_VERSION_STRING}")
     message(${DSTATUS} "\tBoost include dir: ${Boost_INCLUDE_DIR}")
     if (NOT ${Boost_LIBRARY_DIR} STREQUAL "")

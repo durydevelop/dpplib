@@ -610,28 +610,28 @@ namespace DPath
                     // Try windows fast move
 					if (SourceDir.string().substr(0,2) == DestDir.string().substr(0,2) && DestDir.string().substr(0,2) != "\\\\") {
                         // use windows api for c++ < 17
-                    #if __cplusplus <= 201703L // <= C++17
-                        // !!!! MOVEFILE_REPLACE_EXISTING seems not work !!!
-                        if (Exists(DestDir)) {
-                            if (FailIfExists) {
-                                ErrorCode.SetError("Destination exists");
-                                return(ErrorCode);
-                            }
-                            else {
-                                if (!DeleteDir(DestDir)) {
-                                    ErrorCode.SetError("Unable to delete existing detination directory");
+                        #if __cplusplus <= 201703L // <= C++17
+                            // !!!! MOVEFILE_REPLACE_EXISTING seems not work !!!
+                            if (Exists(DestDir)) {
+                                if (FailIfExists) {
+                                    ErrorCode.SetError("Destination exists");
                                     return(ErrorCode);
                                 }
+                                else {
+                                    if (!DeleteDir(DestDir)) {
+                                        ErrorCode.SetError("Unable to delete existing detination directory");
+                                        return(ErrorCode);
+                                    }
+                                }
                             }
-                        }
-                        if (!MoveFileExA(SourceDir.string().c_str(),DestDir.string().c_str(),MOVEFILE_REPLACE_EXISTING)) {
-                    #else
-                        if (!MoveFileEx(SourceDir.string().c_str(),DestDir.string().c_str(),MOVEFILE_REPLACE_EXISTING)) {
-                    #endif
-                            // TODO: GetLastErrorString
-                            ErrorCode.SetError(ErrorCode.GetLastErrorText());
-                            return(ErrorCode);
-                        }
+                            if (!MoveFileExA(SourceDir.string().c_str(),DestDir.string().c_str(),MOVEFILE_REPLACE_EXISTING)) {
+                        #else
+                            if (!MoveFileExA(SourceDir.string().c_str(),DestDir.string().c_str(),MOVEFILE_REPLACE_EXISTING)) {
+                        #endif
+                                // TODO: GetLastErrorString
+                                ErrorCode.SetError(ErrorCode.GetLastErrorText());
+                                return(ErrorCode);
+                            }
 					}
                     else {
                         ErrorCode=CopyDir(SourceDir,DestDir,FailIfExists);
