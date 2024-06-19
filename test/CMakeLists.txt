@@ -1,18 +1,5 @@
 include_directories(${${PROJECT_NAME}_SOURCE_DIR}/include)
 
-#include_directories(${PROJECT_SOURCE_DIR})
-#set(CMAKE_INCLUDE_CURRENT_DIR ON)
-#set(PROJECT_UNIT_TESTS_NAME ${PROJECT_NAME}_unit_tests)
-#[[
-# Gather the header and source files
-#file(GLOB UNIT_TESTS_INC_FILES ${PROJECT_SOURCE_DIR}/test/*.h)
-file(GLOB UNIT_TESTS_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
-add_definitions(-DBOOST_TEST_DYN_LINK)
-add_executable(${PROJECT_UNIT_TESTS_NAME} ${UNIT_TESTS_SRC_FILES} ${SRC_FILES})
-target_link_libraries(${PROJECT_UNIT_TESTS_NAME})
-enable_testing()
-add_test(DemoTest ${PROJECT_UNIT_TESTS_NAME})
-]]#
 
 set(TESTS
     dpath_test_dirs
@@ -23,8 +10,8 @@ set(TESTS
 
 foreach(test_name ${TESTS})
         add_executable(${test_name} ${test_name}.cpp)
-        add_dependencies(${test_name} DPPLIB gtest_main) # gmock_main)
-        target_link_libraries(${test_name} ${CMAKE_THREAD_LIBS_INIT} DPPLIB gtest_main) # gmock_main)
+        add_dependencies(${test_name} ${PROJECT_NAME} gtest_main) # gmock_main)
+        target_link_libraries(${test_name} ${CMAKE_THREAD_LIBS_INIT} ${PROJECT_NAME} gtest_main) # gmock_main)
 	#if (OPENSSL_FOUND)
 	#	target_link_libraries(${test} ${OPENSSL_LIBRARIES})
 	#endif()
@@ -35,7 +22,7 @@ foreach(test_name ${TESTS})
 
 endforeach()
 
-
+#[[
 install (
     DIRECTORY
         ${${PROJECT_NAME}_SOURCE_DIR}/test/find
@@ -43,10 +30,20 @@ install (
         ${${PROJECT_NAME}_BINARY_DIR}/test
 )
 
+install (
+    DIRECTORY
+        ${${PROJECT_NAME}_SOURCE_DIR}/test/move
+    DESTINATION
+        ${${PROJECT_NAME}_BINARY_DIR}/test
+)
+#]]
 add_custom_target(copy_test_files ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_SOURCE_DIR}/find
             ${CMAKE_CURRENT_BINARY_DIR}/find
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/move
+            ${CMAKE_CURRENT_BINARY_DIR}/move
 )
 
 

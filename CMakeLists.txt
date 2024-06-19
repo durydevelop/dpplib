@@ -36,11 +36,12 @@ if(MSVC)
     set(CMAKE_DEBUG_POSTFIX "d")
 endif()
 
+message("CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_CXX_STANDARD 20)
+#set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS yes)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 #[[
 if (UNIX)
@@ -79,7 +80,8 @@ else()
     option(${PROJECT_NAME}_BUILD_NET "Build networking support" ON)
 endif()
 # Qt
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Widget)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 if (DEFINED QT_VERSION_MAJOR)
     # default ON if qt is already found
     option(${PROJECT_NAME}_BUILD_QT "Build Qt extension lib" ON)
@@ -138,7 +140,6 @@ if (${PROJECT_NAME}_BUILD_QT OR BUILD_QT)
     set(BUILD_QT ON)
     set(CMAKE_AUTOUIC ON)
     set(CMAKE_AUTOMOC ON)
-    find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets)
 else()
     set(${PROJECT_NAME}_BUILD_QT OFF)
     set(BUILD_QT OFF)
@@ -267,6 +268,7 @@ if (EMSCRIPTEN)
 
     # Includes
 #    target_include_directories(${PROJECT_NAME} PUBLIC ${EMSCRIPTEN_SYSROOT}/include)
+<<<<<<< HEAD
 else()
     #### Dependencies
     # Boost
@@ -286,6 +288,8 @@ endif()
 
 #### Integration tests
 if(BUILD_TESTING)
+    set(USE_EXTERNAL_googletest ON)
+    find_package(GoogleTest)
     enable_testing()
     add_subdirectory(test)
 endif()
@@ -317,7 +321,11 @@ message_c(${BOLD_CYAN} "PROJECT_IS_TOP_LEVEL:     ${PROJECT_IS_TOP_LEVEL}")
 message_c(${BOLD_CYAN} "BUILD_SHARED_LIBS:        ${${PROJECT_NAME}_BUILD_SHARED_LIBS}")
 message_c(${BOLD_CYAN} "Build examples:           ${${PROJECT_NAME}_BUILD_EXAMPLES}")
 message_c(${BOLD_CYAN} "Build testing:            ${${PROJECT_NAME}_BUILD_TESTING}")
-message_c(${BOLD_CYAN} "Build Qt extension:       ${BUILD_QT}")
+if (${BUILD_QT})
+    message_c(${BOLD_CYAN} "Build Qt extension:       ${BUILD_QT} (Qt${QT_VERSION_MAJOR})")
+else()
+    message_c(${BOLD_CYAN} "Build Qt extension:       ${BUILD_QT}")
+endif()
 message_c(${BOLD_CYAN} "Build networking support: ${BUILD_NET}")
 if (EMSCRIPTEN)
     message_c(${BOLD_CYAN} "WASM support:             ON (EMSCRIPTEN)")
