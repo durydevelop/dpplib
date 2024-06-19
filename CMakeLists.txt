@@ -268,7 +268,7 @@ if (EMSCRIPTEN)
 
     # Includes
 #    target_include_directories(${PROJECT_NAME} PUBLIC ${EMSCRIPTEN_SYSROOT}/include)
-<<<<<<< HEAD
+
 else()
     #### Dependencies
     # Boost
