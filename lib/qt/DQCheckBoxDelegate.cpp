@@ -1,4 +1,4 @@
-#include "libdpp/qt/DQCheckBoxDelegate.h"
+#include "dpplib/qt/DQCheckBoxDelegate.h"
 
 #ifdef QT_GUI_LIB
 

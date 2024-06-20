@@ -1,5 +1,5 @@
-#include <libdpp/qt/DQProcess.h>
-#include <libdpp/DFilesystem.h>
+#include <dpplib/qt/DQProcess.h>
+#include <dpplib/DFilesystem.h>
 
 #ifdef QT_GUI_LIB
 

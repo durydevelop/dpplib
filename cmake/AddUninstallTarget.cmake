@@ -33,13 +33,23 @@ endif()
 set(__ADD_UNINSTALL_TARGET_INCLUDED TRUE)
 
 # Get only the last one (added by this lib)
-list(GET CMAKE_MODULE_PATH -1 MODULE_PATH)
-set (IN_FILE ${MODULE_PATH}/uninstall.cmake.in)
+foreach(DIR ${CMAKE_MODULE_PATH})
+    set (IN_FILE ${DIR}/uninstall.cmake.in)
+    message_c(${BOLD_WHITE} "finding ${IN_FILE}")
+    if (EXISTS "${IN_FILE}")
+        configure_file(
+            ${IN_FILE}
+            "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+            IMMEDIATE @ONLY
+        )
+        set(UNINSTALL_FOUND TRUE)
+        break()
+    endif()
+endforeach()
 
-configure_file(
-        ${IN_FILE}
-        "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-        IMMEDIATE @ONLY)
+if (NOT UNINSTALL_FOUND)
+    message_c(${BOLD_YELLOW} "uninstall.cmake.in file not found, 'uninstall' target is not set")
+endif()
 
 if("${CMAKE_GENERATOR}" MATCHES "^(Visual Studio|Xcode)")
     set(_uninstall "UNINSTALL")

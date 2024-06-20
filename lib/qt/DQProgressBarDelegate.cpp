@@ -1,4 +1,4 @@
-#include "libdpp/qt/DQProgressBarDelegate.h"
+#include "dpplib/qt/DQProgressBarDelegate.h"
 
 #ifdef QT_GUI_LIB
 

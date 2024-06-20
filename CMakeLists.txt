@@ -36,11 +36,12 @@ if(MSVC)
     set(CMAKE_DEBUG_POSTFIX "d")
 endif()
 
+message("CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_CXX_STANDARD 20)
+#set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS yes)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 #[[
 if (UNIX)
@@ -79,6 +80,8 @@ else()
     option(${PROJECT_NAME}_BUILD_NET "Build networking support" ON)
 endif()
 # Qt
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 if (DEFINED QT_VERSION_MAJOR)
     # default ON if qt is already found
     option(${PROJECT_NAME}_BUILD_QT "Build Qt extension lib" ON)
@@ -137,7 +140,6 @@ if (${PROJECT_NAME}_BUILD_QT OR BUILD_QT)
     set(BUILD_QT ON)
     set(CMAKE_AUTOUIC ON)
     set(CMAKE_AUTOMOC ON)
-    find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets)
 else()
     set(${PROJECT_NAME}_BUILD_QT OFF)
     set(BUILD_QT OFF)
@@ -199,51 +201,56 @@ target_include_directories(${PROJECT_NAME}
 )
 
 #### Install stuff
-if (${${PROJECT_NAME}_INSTALL})
-    # Enable RPATH support for installed binaries and libraries
-    include(AddInstallRPATHSupport)
-    add_install_rpath_support(
-        BIN_DIRS "${CMAKE_INSTALL_FULL_BINDIR}"
-        LIB_DIRS "${CMAKE_INSTALL_FULL_LIBDIR}"
-        INSTALL_NAME_DIR "${CMAKE_INSTALL_FULL_LIBDIR}"
-        USE_LINK_PATH
-    )
-
-    # Specify installation targets, typology and destination folders.
-    if (CMAKE_VERSION VERSION_LESS 3.28)
-        # Using PUBLIC_HEADER
-        install(TARGETS ${PROJECT_NAME}
-            EXPORT  ${PROJECT_NAME}
-            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}        COMPONENT dev
-            LIBRARY       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT shlib
-            ARCHIVE       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT lib
-            RUNTIME       DESTINATION "${CMAKE_INSTALL_BINDIR}"                     COMPONENT bin
-            PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}" COMPONENT dev
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28)
+    if (${${PROJECT_NAME}_INSTALL})
+        # Enable RPATH support for installed binaries and libraries
+        include(AddInstallRPATHSupport)
+        add_install_rpath_support(
+            BIN_DIRS "${CMAKE_INSTALL_FULL_BINDIR}"
+            LIB_DIRS "${CMAKE_INSTALL_FULL_LIBDIR}"
+            INSTALL_NAME_DIR "${CMAKE_INSTALL_FULL_LIBDIR}"
+            USE_LINK_PATH
         )
-        message(FATAL "Install is not supported, cannot create correct folder structure. You need to use cmake 3.28 or higher")
-    else()
-        # Using FILE_SET
-        install(TARGETS ${PROJECT_NAME}
+
+        # Specify installation targets, typology and destination folders.
+        if (CMAKE_VERSION VERSION_LESS 3.28)
+            # Using PUBLIC_HEADER
+            install(TARGETS ${PROJECT_NAME}
                 EXPORT  ${PROJECT_NAME}
-                FILE_SET HEADERS
                 INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}        COMPONENT dev
                 LIBRARY       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT shlib
                 ARCHIVE       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT lib
                 RUNTIME       DESTINATION "${CMAKE_INSTALL_BINDIR}"                     COMPONENT bin
+                PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}" COMPONENT dev
+            )
+            message(FATAL "Install is not supported, cannot create correct folder structure. You need to use cmake 3.28 or higher")
+        else()
+            # Using FILE_SET
+            install(TARGETS ${PROJECT_NAME}
+                    EXPORT  ${PROJECT_NAME}
+                    FILE_SET HEADERS
+                    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}        COMPONENT dev
+                    LIBRARY       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT shlib
+                    ARCHIVE       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT lib
+                    RUNTIME       DESTINATION "${CMAKE_INSTALL_BINDIR}"                     COMPONENT bin
+            )
+        endif()
+
+        # Create and install CMake configuration files
+        include(InstallBasicPackageFiles)
+        install_basic_package_files(${PROJECT_NAME}
+            VERSION ${${PROJECT_NAME}_VERSION}
+            COMPATIBILITY AnyNewerVersion
+            VARS_PREFIX ${PROJECT_NAME}
+            NO_CHECK_REQUIRED_COMPONENTS_MACRO
         )
+
+        # Add the uninstall target
+        include(AddUninstallTarget)
     endif()
-
-    # Create and install CMake configuration files
-    include(InstallBasicPackageFiles)
-    install_basic_package_files(${PROJECT_NAME}
-        VERSION ${${PROJECT_NAME}_VERSION}
-        COMPATIBILITY AnyNewerVersion
-        VARS_PREFIX ${PROJECT_NAME}
-        NO_CHECK_REQUIRED_COMPONENTS_MACRO
-    )
-
-    # Add the uninstall target
-    include(AddUninstallTarget)
+else()
+    set(${PROJECT_NAME}_INSTALL OFF)
+    message_c(${BOLD_YELLOW} "You need cmake 2.28 or greater to set install targets. Now ${${PROJECT_NAME}_INSTALL} is set to OFF")
 endif()
 
 #### EMSCRIPTEN settings
@@ -263,8 +270,31 @@ if (EMSCRIPTEN)
 #    target_include_directories(${PROJECT_NAME} PUBLIC ${EMSCRIPTEN_SYSROOT}/include)
 endif()
 
+#### Dependencies
+#Qt
+if (${BUILD_QT})
+    target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+endif()
+# Boost
+#if (NOT Boost_FOUND)
+    get_filename_component(Boost_ROOT "../boost" ABSOLUTE) # same as BOOST_ROOT_DIR "../../../../lib/boost"
+    include(DBoostFinder)
+    target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost)
+#endif()
+# Winsock
+if (${PROJECT_NAME}_BUILD_NET)
+    # winsock
+    if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        message_c("Linking Winsock2 for " ${PROJECT_NAME})
+        target_link_libraries(${PROJECT_NAME} PUBLIC ws2_32 wsock32)
+    endif()
+endif()
+
+
 #### Integration tests
 if(BUILD_TESTING)
+    set(USE_EXTERNAL_googletest ON)
+    find_package(GoogleTest)
     enable_testing()
     add_subdirectory(test)
 endif()
@@ -296,7 +326,11 @@ message_c(${BOLD_CYAN} "PROJECT_IS_TOP_LEVEL:     ${PROJECT_IS_TOP_LEVEL}")
 message_c(${BOLD_CYAN} "BUILD_SHARED_LIBS:        ${${PROJECT_NAME}_BUILD_SHARED_LIBS}")
 message_c(${BOLD_CYAN} "Build examples:           ${${PROJECT_NAME}_BUILD_EXAMPLES}")
 message_c(${BOLD_CYAN} "Build testing:            ${${PROJECT_NAME}_BUILD_TESTING}")
-message_c(${BOLD_CYAN} "Build Qt extension:       ${BUILD_QT}")
+if (${BUILD_QT})
+    message_c(${BOLD_CYAN} "Build Qt extension:       ${BUILD_QT} (Qt${QT_VERSION_MAJOR})")
+else()
+    message_c(${BOLD_CYAN} "Build Qt extension:       ${BUILD_QT}")
+endif()
 message_c(${BOLD_CYAN} "Build networking support: ${BUILD_NET}")
 if (EMSCRIPTEN)
     message_c(${BOLD_CYAN} "WASM support:             ON (EMSCRIPTEN)")

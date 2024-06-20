@@ -1,8 +1,8 @@
-#include <libdpp/qt/DQWindow.h>
+#include <dpplib/qt/DQWindow.h>
 
 #ifdef QT_GUI_LIB
 
-#include <libdpp/DWindow.h>
+#include <dpplib/DWindow.h>
 #include <QDialog>
 #include <QGuiApplication>
 #include <QLabel>
