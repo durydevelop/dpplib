@@ -348,7 +348,7 @@ namespace DTools
         size_t ixC=0;
         for (auto& Item : RootNode) {
             if (ixC == SubTreeIndex) {
-                return (DTree(Item.second));
+                return (std::move(DTree(Item.second)));
             }
             ixC++;
         }
@@ -372,7 +372,7 @@ namespace DTools
 		}
 
 		// return inValue as new DTree
-		return(DTree(inValue.get()));
+		return(std::move(DTree(inValue.get())));
 	}
 
 	bool DTree::Exists(std::string SubTree, char Translator) {
