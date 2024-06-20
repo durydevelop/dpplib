@@ -80,11 +80,11 @@ else()
     option(${PROJECT_NAME}_BUILD_NET "Build networking support" ON)
 endif()
 # Qt
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets)
 if (DEFINED QT_VERSION_MAJOR)
     # default ON if qt is already found
     option(${PROJECT_NAME}_BUILD_QT "Build Qt extension lib" ON)
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 else()
     # default OFF if qt is not found
     # set QT_DIR to force cmake find qt in
