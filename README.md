@@ -1,4 +1,4 @@
-# cpp library that do what other library don't do
+# CPP library that does what other libraries don't
 
 In my programmer's life, often, I need to write my own libraries to do something more or less complex that cpp does not handle in easy mode.
 For example, to find files or directory you need to handle manually recursively, search filter, case sensitive and other logic depends of kind of search, for that, I create a few group of functions that can search, filter in name, filter in extension, recursive, select files of folder, set callback for progress, and return directly the result as list, all in only one api call.
