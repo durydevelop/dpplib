@@ -76,7 +76,6 @@ namespace DTools
 
 		protected:
 			boost::property_tree::iptree RootNode;
-
 			std::string LastStatus;
 
         private:
