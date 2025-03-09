@@ -276,11 +276,12 @@ if (${BUILD_QT})
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 endif()
 # Boost
-#if (NOT Boost_FOUND)
-    get_filename_component(Boost_ROOT "../boost" ABSOLUTE) # same as BOOST_ROOT_DIR "../../../../lib/boost"
+if (NOT EMSCRIPTEN)
+	# Set custom boost folder
+    #get_filename_component(Boost_ROOT "../boost" ABSOLUTE) # same as BOOST_ROOT_DIR "../../../../lib/boost"
     include(DBoostFinder)
     target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost)
-#endif()
+endif()
 # Winsock
 if (${PROJECT_NAME}_BUILD_NET)
     # winsock
