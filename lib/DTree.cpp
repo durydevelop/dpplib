@@ -587,7 +587,7 @@ namespace DTools
 	//! Write byte data into node
 	/**
 	* Write byte value into @ref Item inside @ref SubTree node
-	* @param SubTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
+	* @param SubTree	    ->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
 	* @param Item			->	the item name to write.
 	* @param Value			->	value to write.
 	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
@@ -632,6 +632,46 @@ namespace DTools
 		return true;
 	}
 
+    /**
+     * @brief Write an array of tree into node
+     * 
+     * @param SubTree	    ->	Can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
+     * @param ArrayName     ->  Name of item that contains araay.
+     * @param Items         ->  A vector of DTree to add as array.
+     * @param Translator    ->	Alternative json tree translator char other that '.' (which is default).
+     * @return true on successfully write otherwhise false (to get error message call @ref GetLastStatus()).
+     * 
+     * "MyArray":
+     * [
+     *     {
+     *         "childkeyA": "1",
+     *         "childkeyB": "2"
+     *     },
+     *     {
+     *         "childkeyA": "3",
+     *         "childkeyB": "4"
+     *     },
+     *     {
+     *         "childkeyA": "5",
+     *         "childkeyB": "6"
+     *     }
+     * ]
+     */
+    bool DTree::WriteArray(std::string SubTree, std::string ArrayName, std::vector<DTree> Items, char Translator) {
+        try {
+            boost::property_tree::iptree Children;
+            for (auto& Item : Items) {
+                Children.push_back(std::make_pair("",Item.RootNode));
+            }
+            RootNode.add_child(pt::iptree::path_type(SubTree,Translator),Children);
+		}
+		catch (boost::exception& e) {
+			LastStatus=boost::diagnostic_information(e);
+			return false;
+		}
+		return true;
+    }
+
 	/**
 	* @brief Delete Item (and its value) of SubTree.
 	* @param SubTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
@@ -659,7 +699,7 @@ namespace DTools
 	/**
 	* @brief Delete all SubTree content.
 	* @param SubTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
-	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+	* @param Translator ->	Alternative json tree translator char other that '.' (which is default).
 	* @return true on successfully write otherwhise false (to get error message call @ref GetLastStatus()).
 	*/
 	bool DTree::DeleteContent(std::string SubTree, char Translator) {
@@ -678,6 +718,10 @@ namespace DTools
 			return false;
 		}
 	}
+
+    void DTree::Clear(void) {
+        RootNode.clear();
+    }
 
 	//! @return last operation status message
 	std::string DTree::GetLastStatus(void) {

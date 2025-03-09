@@ -9,6 +9,10 @@ namespace DTools
 	/**
 	 * @brief The DTree provide convenient methods to use boost::property_tree::iptree object.
 	 * N.B. iptree is case unsensistive.
+     * 
+     * TODO:
+     * Correggere: WriteString(str,str,bool) funziona perché equivale a WriteString(str,str,char) ma non deve
+     *                                  ^                                                    ^
 	 */
 	class DTree {
 		public:
@@ -59,9 +63,12 @@ namespace DTools
 			bool WriteFloat(std::string SubTree, std::string Item, float Value, char Translator = DEFAULT_TRANSLATOR);
 			bool WriteByte(std::string SubTree, std::string Item, uint8_t Value, char Translator = DEFAULT_TRANSLATOR);
 			bool WriteBool(std::string SubTree, std::string Item, bool Value, char Translator = DEFAULT_TRANSLATOR);
+            bool WriteArray(std::string SubTree, std::string ArrayName, std::vector<DTree> Items, char Translator = DEFAULT_TRANSLATOR);
+            //bool AddToArray(std::string SubTree, std::string ArrayName, DTree Items, char Translator = DEFAULT_TRANSLATOR);
 
 			bool DeleteItem(std::string SubTree, std::string Item, char Translator = DEFAULT_TRANSLATOR);
 			bool DeleteContent(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
+            void Clear(void);
 
             // Auto inferred read method
             template <class T>

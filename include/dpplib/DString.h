@@ -61,6 +61,7 @@ namespace DString
 	bool IsDouble(const std::string& str);
 	bool IsUnsignedDouble(const std::string& str);
     int ToInt(const std::string& str);
+    int ToInt(const std::string& str, const int defaultValue);
 
 	template<class T>
 	T ToNumber(const std::string& str) {
