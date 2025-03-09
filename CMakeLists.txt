@@ -277,7 +277,8 @@ if (${BUILD_QT})
 endif()
 # Boost
 if (NOT EMSCRIPTEN)
-    get_filename_component(Boost_ROOT "../boost" ABSOLUTE) # same as BOOST_ROOT_DIR "../../../../lib/boost"
+	# Set custom boost folder
+    #get_filename_component(Boost_ROOT "../boost" ABSOLUTE) # same as BOOST_ROOT_DIR "../../../../lib/boost"
     include(DBoostFinder)
     target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost)
 endif()
