@@ -18,7 +18,7 @@ endif()
 
 #### Create project
 project(dpplib
-        VERSION 0.5.0.0
+        VERSION 0.6.0
         DESCRIPTION "dpplib is a Cpp library with a lot of helper class and tools"
         LANGUAGES C CXX
 )
@@ -39,7 +39,12 @@ endif()
 message("CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-#set(CMAKE_CXX_STANDARD 20)
+if (NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 20)
+elseif (CMAKE_CXX_STANDARD < 17)
+    message(WARNING "This project supports al least C++17, current CMAKE_CXX_STANDARD is ${CMAKE_CXX_STANDARD} and will set to 20")
+    set(CMAKE_CXX_STANDARD 20)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -337,3 +342,4 @@ if (EMSCRIPTEN)
     message_c(${BOLD_CYAN} "WASM support:             ON (EMSCRIPTEN)")
     message_c(${BOLD_CYAN} "CMAKE_TOOLCHAIN_FILE:     ${CMAKE_TOOLCHAIN_FILE}")
 endif()
+message_c(${BOLD_CYAN} "CPP standard version:     C++${CMAKE_CXX_STANDARD}")
