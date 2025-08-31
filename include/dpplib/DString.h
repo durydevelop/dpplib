@@ -3,6 +3,7 @@
 
 #include <sstream>
 #include <memory>
+#include <charconv>
 #include <dpplib/DVector.h>
 
 namespace DTools
@@ -62,14 +63,32 @@ namespace DString
 	bool IsUnsignedDouble(const std::string& str);
     int ToInt(const std::string& str);
     int ToInt(const std::string& str, const int defaultValue);
+/*
+	template <class T>
+    T ToNumber(const std::string& str) {
+        T num{};
+        std::istringstream iss(str);
+        iss >> num;
 
-	template<class T>
-	T ToNumber(const std::string& str) {
-		T Num;
-		//std::string sDigit=RemoveNotDigit_Copy(TypeFromArticle);
-		std::istringstream(str) >> Num;
-		return(Num);
-	}
+        if (iss.fail() || !iss.eof()) {
+            throw std::invalid_argument("Invalid conversion: '" + str + "'");
+        }
+
+        return num;
+    }
+*/
+    /**
+     * Converts a string to a number, returning a default value (0 default) if the conversion fails.
+     */
+    template <class T>
+    T ToNumber(const std::string& str, const T defaultValue = {}) {
+        T num{};
+        auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), num);
+        if (ec != std::errc{} || ptr != str.data() + str.size()) {
+            return defaultValue;
+        }
+        return num;
+    }
 
     // Strings Formatting
 	template<typename ... Args>
