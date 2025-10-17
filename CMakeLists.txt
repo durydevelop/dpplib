@@ -1,15 +1,22 @@
 ######################################################################################################################
 # This CMake project file is based on this guide https://github.com/robotology/how-to-export-cpp-library/tree/master #
+# Version with all-in-one CMakeLists.txt                                                                             #
 ######################################################################################################################
-cmake_minimum_required(VERSION 3.13)
+#[[
+Project structure:
+CMakeLists.txt          ->  contains all project stuff
+    /lib/CMakeLists.txt ->  set ${PROJECT_NAME}_SRC with .cpp files
+    /include/CMakeLists.txt set(${PROJECT_NAME}_HDR widh .h files
+]]#
+
+cmake_minimum_required(VERSION 3.28)
 
 #### WASM support
 # CMAKE_TOOLCHAIN_FILE must be set before project() otherwise it does not take effect
-if (${PLATFORM} MATCHES "Web" OR EMSCRIPTEN)
-    if (NOT CMAKE_TOOLCHAIN_FILE)
+if ((DEFINED PLATFORM AND PLATFORM MATCHES "Web") OR EMSCRIPTEN)
+    if (NOT DEFINED CMAKE_TOOLCHAIN_FILE OR CMAKE_TOOLCHAIN_FILE STREQUAL "")
         if (DEFINED ENV{EMSDK})
             set(CMAKE_TOOLCHAIN_FILE "$ENV{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake" CACHE STRING "" FORCE)
-            #include(${CMAKE_TOOLCHAIN_FILE})
         else()
             message(FATAL_ERROR  "Emscripten non found, cannot compile on PLATFORM Web")
         endif()
@@ -18,7 +25,7 @@ endif()
 
 #### Create project
 project(dpplib
-        VERSION 0.6.0
+        VERSION 0.6.1
         DESCRIPTION "dpplib is a Cpp library with a lot of helper class and tools"
         LANGUAGES C CXX
 )
@@ -36,17 +43,20 @@ if(MSVC)
     set(CMAKE_DEBUG_POSTFIX "d")
 endif()
 
-message("CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}")
+#message("CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-if (NOT CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 20)
+
+#[[ used target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20) instead
+if (NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 20 CACHE STRING "Standard C++ to use")
 elseif (CMAKE_CXX_STANDARD LESS 17)
     message(WARNING "This project supports al least C++17, current CMAKE_CXX_STANDARD is ${CMAKE_CXX_STANDARD} and will set to 20")
-    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD 20 CACHE STRING "Standard C++ to use" FORCE)
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+]]#
 
 #[[
 if (UNIX)
@@ -161,101 +171,94 @@ endif()
 #### Sources
 # Source library files
 set(${PROJECT_NAME}_SRC)
-# Header library files
+# Include files (selective list)
 set(${PROJECT_NAME}_HDR)
+#[[
+# Include files (all founds)
+file(GLOB_RECURSE ${PROJECT_NAME}_HDR
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "include/*.h" "include/*.hpp" "include/*.hh"
+)
+]]#
 # Include base dir
 set(${PROJECT_NAME}_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 ## Add sources
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/include)
+#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/include)
 list(APPEND ${PROJECT_NAME}_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/README.md
     ${CMAKE_CURRENT_SOURCE_DIR}/TODO.md
 )
 
-#message("${PROJECT_NAME}_SRC=${${PROJECT_NAME}_SRC}")
-#message("${PROJECT_NAME}_HDR=${${PROJECT_NAME}_HDR}")
-#message("${PROJECT_NAME}_INCLUDE_DIRS=${${PROJECT_NAME}_INCLUDE_DIRS}")
-
 #### Setup target
 add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SRC})
 
-if (CMAKE_VERSION VERSION_LESS 3.28)
-    # Use PUBLIC_HEADER
-    target_sources(${PROJECT_NAME} PUBLIC ${${PROJECT_NAME}_HDR})
-    set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${${PROJECT_NAME}_HDR}")
-else()
-    # Use FILE_SET for HEADERS
-    target_sources(${PROJECT_NAME}
-        PUBLIC
-            FILE_SET HEADERS
-            BASE_DIRS include
-            FILES ${${PROJECT_NAME}_HDR}
-    )
-endif()
+# Use FILE_SET for HEADERS (CMake >= 3.28)
+target_sources(${PROJECT_NAME}
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS include
+        FILES ${${PROJECT_NAME}_HDR}
+)
 
 # Alias
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
+# Set two minimum target properties for the library.
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION_MAJOR}
+)
+
+# Need C++20
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
+
 # Specify include directories for both compilation and installation process.
+# The $<INSTALL_PREFIX> generator expression is useful to ensure to create
+# relocatable configuration files, see https://cmake.org/cmake/help/latest/manual/cmake-packages.7.html#creating-relocatable-packages
 target_include_directories(${PROJECT_NAME}
-    PUBLIC 
+    PUBLIC
         "$<BUILD_INTERFACE:${${PROJECT_NAME}_INCLUDE_DIRS}>"
-        "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>"
+        # non serve più"$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>"
 )
 
 #### Install stuff
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28)
-    if (${${PROJECT_NAME}_INSTALL})
-        # Enable RPATH support for installed binaries and libraries
-        include(AddInstallRPATHSupport)
-        add_install_rpath_support(
-            BIN_DIRS "${CMAKE_INSTALL_FULL_BINDIR}"
-            LIB_DIRS "${CMAKE_INSTALL_FULL_LIBDIR}"
-            INSTALL_NAME_DIR "${CMAKE_INSTALL_FULL_LIBDIR}"
-            USE_LINK_PATH
-        )
+if (${PROJECT_NAME}_INSTALL)
+    # Specify installation targets, typology and destination folders.
+    install(TARGETS ${PROJECT_NAME}
+            EXPORT ${PROJECT_NAME}
+            LIBRARY       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                 COMPONENT shlib
+            ARCHIVE       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                 COMPONENT lib
+            RUNTIME       DESTINATION "${CMAKE_INSTALL_BINDIR}"                 COMPONENT bin
+            FILE_SET HEADERS DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}"
+    )
 
-        # Specify installation targets, typology and destination folders.
-        if (CMAKE_VERSION VERSION_LESS 3.28)
-            # Using PUBLIC_HEADER
-            install(TARGETS ${PROJECT_NAME}
-                EXPORT  ${PROJECT_NAME}
-                INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}        COMPONENT dev
-                LIBRARY       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT shlib
-                ARCHIVE       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT lib
-                RUNTIME       DESTINATION "${CMAKE_INSTALL_BINDIR}"                     COMPONENT bin
-                PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}" COMPONENT dev
-            )
-            message(FATAL "Install is not supported, cannot create correct folder structure. You need to use cmake 3.28 or higher")
-        else()
-            # Using FILE_SET
-            install(TARGETS ${PROJECT_NAME}
-                    EXPORT  ${PROJECT_NAME}
-                    FILE_SET HEADERS
-                    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}        COMPONENT dev
-                    LIBRARY       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT shlib
-                    ARCHIVE       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                     COMPONENT lib
-                    RUNTIME       DESTINATION "${CMAKE_INSTALL_BINDIR}"                     COMPONENT bin
-            )
-        endif()
+    install(EXPORT ${PROJECT_NAME}
+            NAMESPACE ${PROJECT_NAME}::
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+    )
 
-        # Create and install CMake configuration files
-        include(InstallBasicPackageFiles)
-        install_basic_package_files(${PROJECT_NAME}
-            VERSION ${${PROJECT_NAME}_VERSION}
-            COMPATIBILITY AnyNewerVersion
-            VARS_PREFIX ${PROJECT_NAME}
-            NO_CHECK_REQUIRED_COMPONENTS_MACRO
-        )
+    # Enable RPATH support for installed binaries and libraries
+    include(AddInstallRPATHSupport)
+    add_install_rpath_support(
+        BIN_DIRS "${CMAKE_INSTALL_FULL_BINDIR}"
+        LIB_DIRS "${CMAKE_INSTALL_FULL_LIBDIR}"
+        INSTALL_NAME_DIR "${CMAKE_INSTALL_FULL_LIBDIR}"
+        USE_LINK_PATH
+    )
 
-        # Add the uninstall target
-        include(AddUninstallTarget)
-    endif()
-else()
-    set(${PROJECT_NAME}_INSTALL OFF)
-    message_c(${BOLD_YELLOW} "You need cmake 2.28 or greater to set install targets. Now ${${PROJECT_NAME}_INSTALL} is set to OFF")
+    # Create and install CMake configuration files
+    include(InstallBasicPackageFiles)
+    install_basic_package_files(${PROJECT_NAME}
+        VERSION ${${PROJECT_NAME}_VERSION}
+        COMPATIBILITY AnyNewerVersion
+        VARS_PREFIX ${PROJECT_NAME}
+        NO_CHECK_REQUIRED_COMPONENTS_MACRO
+    )
+    # Add the uninstall target
+    include(AddUninstallTarget)
 endif()
 
 #### EMSCRIPTEN settings
@@ -276,18 +279,18 @@ if (EMSCRIPTEN)
 endif()
 
 #### Dependencies
-#Qt
+#Qt (optional)
 if (${BUILD_QT})
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 endif()
-# Boost
+# Boost (need)
 if (NOT EMSCRIPTEN)
 	# Set custom boost folder
     #get_filename_component(Boost_ROOT "../boost" ABSOLUTE) # same as BOOST_ROOT_DIR "../../../../lib/boost"
     include(DBoostFinder)
     target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost)
 endif()
-# Winsock
+# Winsock (optional)
 if (${PROJECT_NAME}_BUILD_NET)
     # winsock
     if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -298,7 +301,7 @@ endif()
 
 
 #### Integration tests
-if(BUILD_TESTING)
+if(${PROJECT_NAME}BUILD_TESTING)
     set(USE_EXTERNAL_googletest ON)
     find_package(GoogleTest)
     enable_testing()

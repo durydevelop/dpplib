@@ -66,6 +66,11 @@ dpplib is based on C++20 and can be used also on C++17, for fully funtionality s
 | DQWindow                | A set of helper functions for windows and dialogs:<br/>Enable/disable layout and its content.<br/>Save and restore window position and size.<br/>Easy show info dialog. |      |     |
 | DSplahScreen            | QSplashScreen implementation that adds a usefull progress bar                                                                                                           |      |     |
 
+## Dependencies:
+boost   ->  need
+Qt      ->  optional: if Qt is found in system, Qt features are compiled. Set DPPLIB_BUILD_QT=OFF to disable
+network ->  optional: network features are compiled by default. Set DPPLIB_BUILD_NET=OFF to disable
+
 ## How to build:
 
 Install or download and build boost.
