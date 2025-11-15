@@ -301,7 +301,8 @@ endif()
 
 
 #### Integration tests
-if(${PROJECT_NAME}BUILD_TESTING)
+if(${PROJECT_NAME}_BUILD_TESTING)
+    message_c(${BOLD_MAGENTA} "Enabling integration tests")
     set(USE_EXTERNAL_googletest ON)
     find_package(GoogleTest)
     enable_testing()
