@@ -120,7 +120,7 @@ TEST(DUTF8StringTest, EraseWithUnicode) {
     DUTF8String u;
     u.assign("a");
     // append euro sign U+20AC via codepoint insert
-    u.insert(0x20AC, 1); // insert at position 1
+    u.insert_codepoint(0x20AC, 1); // insert at position 1
     u += DUTF8String("b");
     // now erase the euro sign (at pos 1)
     u.erase(1,1);
@@ -137,7 +137,7 @@ TEST(DUTF8StringTest, IteratorAscii) {
 TEST(DUTF8StringTest, IteratorCountUnicode) {
     DUTF8String t;
     t.assign("a");
-    t.insert(0x20AC, 1); // euro sign
+    t.insert_codepoint(0x20AC, 1); // euro sign
     t += DUTF8String("b");
     size_t count = 0;
     for (auto cp : t) ++count;
