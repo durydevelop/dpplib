@@ -20,7 +20,6 @@ namespace DTools
      */
     DTree::DTree(boost::property_tree::iptree RootTree) {
         RootNode=RootTree;
-
     }
 
     bool DTree::LoadJsonContent(std::istream& JsonContent) {
