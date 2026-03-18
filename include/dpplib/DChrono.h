@@ -9,6 +9,7 @@ namespace DTools
 {
 namespace DChrono
 {
+    std::time_t Now(void);
     unsigned long NowMillis(void);
     std::stringstream GetChronoInfo(void);
     std::time_t ToTimeT(const std::string& DateTimeString, const std::string& Fmt);
@@ -17,6 +18,9 @@ namespace DChrono
     std::string FormatNow(std::string Fmt = "%Y%m%d%H%M%S");
     std::string FormatTimeT(time_t TimeT, std::string Fmt = "%Y%m%d%H%M%S");
     std::string FormatTimeP(std::chrono::system_clock::time_point TimePoint, std::string Fmt = "%Y%m%d%H%M%S");
+    int ExtractHour(std::time_t TimeT);
+    int ExtractMin(std::time_t TimeT);
+    int ExtractSec(std::time_t TimeT);
 
 	/**
 	 * @brief Convert a time type to a time_t type (eg. a file_time_type)
