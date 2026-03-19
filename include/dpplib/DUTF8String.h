@@ -22,7 +22,7 @@ class DUTF8String {
             using reference         = char32_t;
 
             iterator();
-            iterator(const std::string* s, size_t pos);
+            iterator(const std::string* s, size_t index);
 
             char32_t operator*() const;
             iterator& operator++();
@@ -82,7 +82,7 @@ class DUTF8String {
         explicit DUTF8String(std::string&& utf8) noexcept;
         explicit DUTF8String(std::string_view utf8);
         explicit DUTF8String(const char* utf8);
-        explicit DUTF8String(const std::vector<char32_t>& cps);
+        explicit DUTF8String(const std::vector<char32_t>& codepoints);
         explicit DUTF8String(const std::u32string& utf32);
 
         DUTF8String(const DUTF8String&) = default;
@@ -93,13 +93,17 @@ class DUTF8String {
 
         // ------------------------------------- Operators -----------------------------------
         DUTF8String& operator=(const std::string& s);
+        DUTF8String& operator=(std::string_view s);
         DUTF8String& operator=(std::string&& s) noexcept;
         DUTF8String& operator=(const char* s);
         DUTF8String& operator+=(const DUTF8String& other);
         DUTF8String& operator+=(const std::string& s);
         DUTF8String& operator+=(const char* s);
-        DUTF8String& operator+=(char32_t cp);
+        DUTF8String& operator+=(char32_t codepoint);
         char32_t operator[](size_t index) const; // index by codepoint
+        bool operator==(const std::string& s) const;
+        bool operator==(std::string_view sv) const;
+        bool operator==(const char* s) const;
 
         // --------------------------------- Conversions -------------------------------------
         std::string to_string() const;
@@ -116,24 +120,26 @@ class DUTF8String {
         DUTF8String& assign(std::string&& s) noexcept;
         DUTF8String& assign(const char* s);
         DUTF8String& assign(const char* s, size_t count);
-        void append_codepoint(char32_t cp);
-        void insert_codepoint(size_t index, char32_t cp);
-        void replace(char32_t target, char32_t replacement);
+        size_t append_codepoint(char32_t codepoint);
+        void insert_codepoint(size_t index, char32_t codepoint);
+        void insert(size_t index, const std::string& str);
+        void replace_codepoint(char32_t target, char32_t replacement);
         void replace(const std::string& search, const std::string& replace_with_naive);
         void erase_codepoint(size_t index);
-        DUTF8String& erase(size_t pos_cp, size_t count_cp = SIZE_MAX);
+        DUTF8String& erase(size_t index_cp, size_t count_cp = SIZE_MAX);
         DUTF8String& erase(iterator it_start, iterator it_end);
         void pop_back();
 
         // ------------------------------- Interrogations ------------------------------------
-        std::string substr(size_t start_cp, size_t count_cp = SIZE_MAX) const;
+        std::string substr(size_t start_cp, size_t count_cp = SIZE_MAX) const; // TODO: deprecate?
+        std::string_view substr_view(size_t start_cp, size_t count_cp = SIZE_MAX) const;
         size_t find(char32_t target, size_t start_cp = 0) const;
         size_t find(const std::string& sub, size_t start_cp = 0) const;
         bool empty() const noexcept;
         void clear();
         size_t length() const; // codepoint count (cached)
-        // map codepoint index -> byte index
-        size_t cpIndexToBytePos(size_t cpIndex) const;
+        size_t codepoint_index_to_byte_index(size_t cpIndex) const; // map codepoint index -> byte index
+        void generate_cp_index_list(std::vector<size_t>& destList);
 
         // --------------------- KMP-based search/replace on codepoints ----------------------
         size_t find_kmp(const std::string& sub, size_t start_cp = 0) const;
@@ -145,17 +151,20 @@ class DUTF8String {
         reverse_iterator rbegin() const;
         reverse_iterator rend() const;
 
+        // ---------------------------------- Public helpers ---------------------------------
+        static bool is_unicode(int codepoint);
+
     private:
         std::string data;
         mutable size_t cached_len = 0;
         mutable bool cache_valid = false;
 
-        // -------------------------------------- Helpers ------------------------------------
+        // ---------------------------------- Private helpers --------------------------------
         void invalidate_cache() const;
         static size_t utf8_char_length(unsigned char c) noexcept;
         static char32_t decode_utf8_at(const std::string& s, size_t p, size_t &next_p);
-        static void encode_utf8(char32_t cp, std::string& out);
-        static void move_prev_utf8(const std::string& s, size_t& pos);
+        static void encode_utf8(char32_t codepoint, std::string& out);
+        static void move_prev_utf8(const std::string& s, size_t& index);
         static std::vector<int> build_lps(const std::u32string& pat);
 
 }; // end class DUTF8String
