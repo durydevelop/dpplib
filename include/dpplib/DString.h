@@ -1,7 +1,7 @@
 #ifndef DStringH
 #define DStringH
 
-#include <sstream>
+//#include <sstream>
 #include <memory>
 #include <charconv>
 #include <dpplib/DVector.h>
@@ -114,6 +114,11 @@ namespace DString
     bool EndsWith(std::string str, std::string pattern, bool CaseSensitive = false);
 
 	//std::string& RemoveAll(std::string& str, std::string& Search);
+
+    inline std::u8string to_u8string(const std::string& s) {
+        return std::u8string(reinterpret_cast<const char8_t*>(s.data()), s.size());
+    }
 } // DString
+
 } // DTools
 #endif

@@ -6,6 +6,7 @@ set(TESTS
     dpath_test_files
     #dupdate_test
     dstring_test
+    dutf8string_test
 )
 
 foreach(test_name ${TESTS})

@@ -21,7 +21,6 @@ namespace DTools
      */
     DTree::DTree(boost::property_tree::iptree RootTree) {
         RootNode=RootTree;
-
     }
 
     bool DTree::LoadFromJsonFile(std::string Filename)
