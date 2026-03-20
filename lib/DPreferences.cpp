@@ -55,18 +55,7 @@ namespace DTools
 			Ready=false;
 			return Ready;
 		}
-/* TODO:
-        leaf::try_catch(
-        []
-        {
-            f(); // throws
-        }
-        [](my_exception &, my_info const & x)
-        {
-            //my_info is available with
-            //the caught exception.
-        } );
-*/
+
 		try {
 			pt::json_parser::read_json(PrefFile,RootNode);
 		}catch (boost::exception& e) {

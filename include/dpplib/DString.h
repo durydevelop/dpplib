@@ -90,7 +90,7 @@ namespace DString
         return num;
     }
 
-    // Strings Formatting
+    // Strings Formatting like printf
 	template<typename ... Args>
 	std::string FormatString(const std::string& format,Args ... args) {
 		size_t len = snprintf(nullptr,0,format.c_str(),args ...)+1; // Extra space for '\0'

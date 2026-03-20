@@ -19,7 +19,8 @@ namespace DTools
 			DTree();
 			DTree(boost::property_tree::iptree RootTree);
 
-			bool LoadJsonContent(std::istream& JsonContent);
+			bool LoadFromJsonStream(std::istream& JsonContent);
+            bool LoadFromJsonFile(std::string Filename);
 
 			bool IsEmpty(void);
 
@@ -49,7 +50,7 @@ namespace DTools
             size_t ReadNames(std::vector<std::string>& ResultList);
             size_t ReadNames(std::string SubItemName,std::vector<std::string>& ResultList, char Translator = DEFAULT_TRANSLATOR);
             std::vector<std::string> ReadArrayNames(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
-            std::vector<DTree> ReadArrayTrees(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
+            std::vector<DTree> ReadArrayTrees(std::string SubTree = std::string(), char Translator = DEFAULT_TRANSLATOR);
             DTree GetTree(std::string SubTreeName = std::string(), char Translator = DEFAULT_TRANSLATOR);
             DTree GetTree(size_t SubTreeIndex);
             DTree& GetRootTree(void);

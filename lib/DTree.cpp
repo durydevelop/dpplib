@@ -1,6 +1,7 @@
 //#define BOOST_BIND_GLOBAL_PLACEHOLDERS
 #include <dpplib/DTree.h>
 #include <dpplib/DFilesystem.h>
+#include <dpplib/DPath.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/exception/all.hpp>
 
@@ -23,7 +24,23 @@ namespace DTools
 
     }
 
-    bool DTree::LoadJsonContent(std::istream& JsonContent) {
+    bool DTree::LoadFromJsonFile(std::string Filename)
+	{
+		if (!DPath::Exists(Filename)) {
+			return false;
+		}
+
+		try {
+			pt::json_parser::read_json(Filename,RootNode);
+		}catch (boost::exception& e) {
+			LastStatus.append(boost::diagnostic_information(e));
+			return false;
+		}
+
+		return true;
+	}
+
+    bool DTree::LoadFromJsonStream(std::istream& JsonContent) {
         try {
             pt::json_parser::read_json(JsonContent,RootNode);
         }catch (boost::exception& e) {
@@ -317,19 +334,31 @@ namespace DTools
         return(Children);
 	}
 
+    /**
+     * @brief Read all child trees of a node.
+     * @param SubTree       ->	Can be one or more section nodes separated by '.'.
+     * @param Translator	->	Alternative json tree translator char other that '.' (which is default).
+     * @return a vector of DTree containing all child trees.
+     */
     std::vector<DTree> DTree::ReadArrayTrees(std::string SubTree, char Translator) {
         std::vector<DTree> Children;
+        pt::iptree node;
 
 		// Find SubTree
+        if (SubTree.empty()) {
+            node=RootNode;
+        }
 		auto inValue=RootNode.get_child_optional(pt::iptree::path_type(SubTree,Translator));
         if (!inValue.is_initialized()) {
             return Children;
         }
-        auto node=inValue.get();
+        node=inValue.get();
 
 		// Read all first items
         for (auto &[name, tree] : node) {
-            Children.emplace_back(DTree(tree));
+            DTree dTree(tree);
+            std::string t=dTree.ToString();
+            Children.emplace_back(std::move(dTree));
 		}
 
         return Children;
@@ -641,6 +670,8 @@ namespace DTools
      * @param Translator    ->	Alternative json tree translator char other that '.' (which is default).
      * @return true on successfully write otherwhise false (to get error message call @ref GetLastStatus()).
      * 
+     * N.B. This method does NOT overwrite existing Array if exists.
+     * 
      * "MyArray":
      * [
      *     {
@@ -663,7 +694,7 @@ namespace DTools
             for (auto& Item : Items) {
                 Children.push_back(std::make_pair("",Item.RootNode));
             }
-            RootNode.add_child(pt::iptree::path_type(SubTree,Translator),Children);
+            RootNode.add_child(pt::iptree::path_type(SubTree+Translator+ArrayName,Translator),Children);
 		}
 		catch (boost::exception& e) {
 			LastStatus=boost::diagnostic_information(e);
@@ -675,9 +706,9 @@ namespace DTools
 	/**
 	* @brief Delete Item (and its value) of SubTree.
 	* @param SubTree	->	can be one or more section nodes separated by '.' e.g. "Names.Name" navigate untin Name node under Names one.
-	* @param Item			->	the item name to write.
-	* @param Value			->	value to write.
-	* @param Translator		->	Alternative json tree translator char other that '.' (which is default).
+	* @param Item		->	the item name to write.
+	* @param Value		->	value to write.
+	* @param Translator ->	Alternative json tree translator char other that '.' (which is default).
 	* @return true on successfully write otherwhise false (to get error message call @ref GetLastStatus()).
 	*/
 	bool DTree::DeleteItem(std::string SubTree, std::string Item, char Translator) {
