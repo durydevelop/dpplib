@@ -16,6 +16,7 @@ set(HDR
     ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/DSyncWatcher.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/DTree.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/DUpdate.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/DUTF8String.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/DValue.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/DVector.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dpplib/DWindow.h

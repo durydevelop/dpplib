@@ -62,6 +62,7 @@ namespace DTools
 			LastStatus.append(boost::diagnostic_information(e));
 			return false;
 		}
+
 		return true;
 	}
 

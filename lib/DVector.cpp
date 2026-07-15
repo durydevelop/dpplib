@@ -16,7 +16,7 @@ namespace DVector
 				JoinedValues << Value << JoinStr;
 			}
 		//Strip off the trailing comma
-		return(JoinedValues.str().substr(0,JoinedValues.str().size()-1));
+		return(JoinedValues.str().substr(0,JoinedValues.str().size()-JoinStr.size()));
 	}
 }
 }

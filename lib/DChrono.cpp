@@ -19,6 +19,10 @@ namespace DChrono
         std::locale(std::locale::classic(), new time_input_facet("%Y-%m-%d-%H-%M"))
     };
 
+    std::time_t Now(void) {
+        return std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    }
+
     unsigned long NowMillis(void) {
         return(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
         /*
@@ -245,6 +249,21 @@ main()
         std::stringstream ss;
         ss << std::put_time(localtime(&TimeT),Fmt.c_str());
         return(ss.str());
+    }
+
+    int ExtractHour(std::time_t TimeT) {
+        struct tm *tmNow = gmtime(&TimeT);
+        return tmNow->tm_hour;
+    }
+
+    int ExtractMin(std::time_t TimeT) {
+        struct tm *tmNow = gmtime(&TimeT);
+        return tmNow->tm_min;
+    }
+
+    int ExtractSec(std::time_t TimeT) {
+        struct tm *tmNow = gmtime(&TimeT);
+        return tmNow->tm_sec;
     }
 }
 }

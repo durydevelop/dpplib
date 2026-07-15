@@ -157,7 +157,7 @@ namespace DString
 	  return std::regex_match(str,std::regex("[+]?[0-9]+[.]?[0-9]+"));
 	}
 
-    //! Fastest naive conversion to int
+    //! Fastest naive conversion to int (return 0 if no numbers in string)
     int ToInt(const std::string& str) {
         const char *p=str.c_str();
         int x = 0;
@@ -174,6 +174,28 @@ namespace DString
             x = -x;
         }
         return x;
+    }
+
+    //! Fastest naive conversion to int (return defaultValue if no numbers in string)
+    int ToInt(const std::string& str, int defaultValue) {
+        const char *p=str.c_str();
+        int x = 0;
+        bool neg = false;
+        if (*p == '-') {
+            neg = true;
+            ++p;
+        }
+        bool found=false;
+        while (*p >= '0' && *p <= '9') {
+            x = (x*10) + (*p - '0');
+            ++p;
+            found=true;
+        }
+        if (neg) {
+            x = -x;
+        }
+        
+        return found ? x : defaultValue;
     }
 
 	//! Convert string to uppercase
@@ -298,6 +320,52 @@ namespace DString
         using convert_typeX = std::codecvt_utf8<wchar_t>;
         std::wstring_convert<convert_typeX, wchar_t> converterX;
         return converterX.to_bytes(wstr);
+    }
+
+    /**
+     * @brief Decode a string that rappresent a color in its integer value.
+     * 
+     * Supported formats:
+     * Hex:
+     *  "#rrggbb"    -> RGB
+     *  "#rrggbbaa"  -> RGB + alpha
+     *  "0x...."
+     *  "Hex...."
+     * 
+     * @todo
+     *  [ ] Name    Red
+     *  [ ] Rgb     rgb(255, 0, 0)
+     *  [x] Hex     #ff0000
+     *  [ ] Hsl     hsl(0, 100%, 50%)
+     *  [ ] Hwb     hwb(0, 0%, 0%)
+     *  [ ] Cmyk	cmyk(0%, 100%, 100%, 0%)
+     *  [ ] Ncol	R0, 0%, 0%
+     * 
+     * @param ColorString 
+     * @return unsigned int 
+     */
+    unsigned int ColorStringToInt(std::string ColorString) {
+        std::vector<std::string> Patterns={"#", "0x", "HEX"};
+        for (std::string& Pattern : Patterns) {
+            if (DString::StartsWith(ColorString, Pattern)) {
+                std::string s;
+                if (ColorString.size() >= Pattern.size()+8) {
+                    s=ColorString.substr(Pattern.size(),8);
+                }
+                else if (ColorString.size() >= Pattern.size()+6) {
+                    s=ColorString.substr(Pattern.size(),6);
+                    s.append("FF");
+                }
+                if (!s.empty()) {
+                    std::stringstream ss;
+                    ss << std::hex << s;
+                    unsigned int value;
+                    ss >> value;
+                    return value;
+                }
+            }
+        }
+        return 0;
     }
 
 	/*

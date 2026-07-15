@@ -3,7 +3,7 @@
 #ifdef QT_GUI_LIB
 
 #include <QStyledItemDelegate>
-/*
+
 #include <QProxyStyle>
 class CustomStyle : public QProxyStyle
 {
@@ -16,7 +16,7 @@ public:
     int pixelMetric(PixelMetric which, const QStyleOption *option, const QWidget *widget) const override;
     void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget) const override;
 };
-*/
+
 
 namespace DTools
 {
@@ -27,6 +27,7 @@ class DQCheckBoxDelegate : public QStyledItemDelegate
         enum DRoles {ROLE_ENABLE=Qt::UserRole, ROLE_VISIBLE};
         DQCheckBoxDelegate(QObject *parent = nullptr);
         void setColumnIndex(int Index);
+        void setRowIndex(int Index);
         //QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 
     signals:
@@ -45,6 +46,8 @@ class DQCheckBoxDelegate : public QStyledItemDelegate
 
     private:
         int columnIndex;
+        int rowIndex;
+        CustomStyle style;
 };
 }
 #endif

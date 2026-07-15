@@ -9,13 +9,18 @@ namespace DTools
 	/**
 	 * @brief The DTree provide convenient methods to use boost::property_tree::iptree object.
 	 * N.B. iptree is case unsensistive.
+     * 
+     * TODO:
+     * Correggere: WriteString(str,str,bool) funziona perché equivale a WriteString(str,str,char) ma non deve
+     *                                  ^                                                    ^
 	 */
 	class DTree {
 		public:
 			DTree();
 			DTree(boost::property_tree::iptree RootTree);
 
-			bool LoadJsonContent(std::istream& JsonContent);
+			bool LoadFromJsonStream(std::istream& JsonContent);
+            bool LoadFromJsonFile(std::string Filename);
 
 			bool IsEmpty(void);
 
@@ -45,7 +50,7 @@ namespace DTools
             size_t ReadNames(std::vector<std::string>& ResultList);
             size_t ReadNames(std::string SubItemName,std::vector<std::string>& ResultList, char Translator = DEFAULT_TRANSLATOR);
             std::vector<std::string> ReadArrayNames(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
-            std::vector<DTree> ReadArrayTrees(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
+            std::vector<DTree> ReadArrayTrees(std::string SubTree = std::string(), char Translator = DEFAULT_TRANSLATOR);
             DTree GetTree(std::string SubTreeName = std::string(), char Translator = DEFAULT_TRANSLATOR);
             DTree GetTree(size_t SubTreeIndex);
             DTree& GetRootTree(void);
@@ -59,9 +64,12 @@ namespace DTools
 			bool WriteFloat(std::string SubTree, std::string Item, float Value, char Translator = DEFAULT_TRANSLATOR);
 			bool WriteByte(std::string SubTree, std::string Item, uint8_t Value, char Translator = DEFAULT_TRANSLATOR);
 			bool WriteBool(std::string SubTree, std::string Item, bool Value, char Translator = DEFAULT_TRANSLATOR);
+            bool WriteArray(std::string SubTree, std::string ArrayName, std::vector<DTree> Items, char Translator = DEFAULT_TRANSLATOR);
+            //bool AddToArray(std::string SubTree, std::string ArrayName, DTree Items, char Translator = DEFAULT_TRANSLATOR);
 
 			bool DeleteItem(std::string SubTree, std::string Item, char Translator = DEFAULT_TRANSLATOR);
 			bool DeleteContent(std::string SubTree, char Translator = DEFAULT_TRANSLATOR);
+            void Clear(void);
 
             // Auto inferred read method
             template <class T>
@@ -76,7 +84,6 @@ namespace DTools
 
 		protected:
 			boost::property_tree::iptree RootNode;
-
 			std::string LastStatus;
 
         private:

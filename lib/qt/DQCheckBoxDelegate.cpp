@@ -1,4 +1,5 @@
 #include "dpplib/qt/DQCheckBoxDelegate.h"
+#include "qpainter.h"
 
 #ifdef QT_GUI_LIB
 
@@ -17,9 +18,10 @@
 namespace DTools
 {
 /**
- * @brief CheckBoxRect
- * @param viewItemStyleOptions
- * @return
+ * @brief Generate a QRect zone for check item
+ * @param viewItemStyleOptions  ->  a QStyleOptionViewItem object of the item delegated.
+ * @return a QRect
+ * @todo centered left right
  */
 static QRect CheckBoxRect(const QStyleOptionViewItem &viewItemStyleOptions)
 {
@@ -27,12 +29,14 @@ static QRect CheckBoxRect(const QStyleOptionViewItem &viewItemStyleOptions)
     QRect checkBoxRect=QApplication::style()->subElementRect(QStyle::SE_CheckBoxIndicator,&checkBoxStyleOption);
     QPoint checkBoxPoint(viewItemStyleOptions.rect.x() + viewItemStyleOptions.rect.width() / 2 - checkBoxRect.width() / 2,
                          viewItemStyleOptions.rect.y() + viewItemStyleOptions.rect.height() / 2 - checkBoxRect.height() / 2);
-    return(QRect(checkBoxPoint,checkBoxRect.size()));
+    //return(QRect(checkBoxPoint,checkBoxRect.size()));
+    return(viewItemStyleOptions.rect);
 }
 
 DQCheckBoxDelegate::DQCheckBoxDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
     columnIndex=-1;
+    //QApplication::setStyle(new CustomStyle);
 }
 
 void DQCheckBoxDelegate::setColumnIndex(int index)
@@ -42,7 +46,8 @@ void DQCheckBoxDelegate::setColumnIndex(int index)
 
 void DQCheckBoxDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,const QModelIndex& index)const
 {
-    if(index.column() == columnIndex){
+
+    if(index.column() == columnIndex || columnIndex < 0){
 //        auto newSize=option.decorationSize*2;
 //        option.decorationSize.expandedTo(newSize);
 
@@ -78,12 +83,14 @@ void DQCheckBoxDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
             QStyleOptionViewItem opt(option);
             opt.backgroundBrush = QBrush(QColor(color));
             // Draw item background
-            option.widget->style()->drawPrimitive(QStyle::PE_PanelItemViewItem,&opt,painter);
+            //option.widget->style()->drawPrimitive(QStyle::PE_PanelItemViewItem,&opt,painter);
+            style.drawPrimitive(QStyle::PE_PanelItemViewItem,&opt,painter,nullptr);
         }
 
         // Draw control
         if (visible) {
-            QApplication::style()->drawControl(QStyle::CE_CheckBox,&checkBoxStyleOption,painter);
+            //QApplication::style()->drawControl(QStyle::CE_CheckBox,&checkBoxStyleOption,painter);
+            style.drawControl(QStyle::CE_CheckBox,&checkBoxStyleOption,painter);
         }
     }
     else {
@@ -93,7 +100,7 @@ void DQCheckBoxDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
 
 bool DQCheckBoxDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index)
 {
-    if(index.column() == columnIndex) {
+    if(index.column() == columnIndex || columnIndex < 0) {
         if((event->type() == QEvent::MouseButtonRelease) || (event->type() == QEvent::MouseButtonDblClick)) {
             QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
             if(mouseEvent->button() != Qt::LeftButton || !CheckBoxRect(option).contains(mouseEvent->pos())) {
@@ -130,7 +137,6 @@ QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) con
 */
 }
 
-/**
 CustomStyle::CustomStyle()
 {
 
@@ -150,6 +156,7 @@ int CustomStyle::pixelMetric(PixelMetric which, const QStyleOption *option, cons
 void CustomStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *option,
                                 QPainter *painter, const QWidget *widget) const
 {
+    /*
     if (element == PE_IndicatorSpinUp || element == PE_IndicatorSpinDown) {
         QPolygon points(3);
         int x = option->rect.x();
@@ -178,10 +185,11 @@ void CustomStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *op
         }
         painter->drawPolygon(points);
     } else {
+    */
     QProxyStyle::drawPrimitive(element, option, painter, widget);
-    }
+    //}
 }
-*/
+
 
 /*
 QWidget *DQCheckBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
