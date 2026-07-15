@@ -250,7 +250,7 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28)
     endif()
 else()
     set(${PROJECT_NAME}_INSTALL OFF)
-    message_c(${BOLD_YELLOW} "You need cmake 2.28 or greater to set install targets. Now ${${PROJECT_NAME}_INSTALL} is set to OFF")
+    message_c(${BOLD_YELLOW} "You need cmake 2.28 or greater to setup target install. Now ${PROJECT_NAME}_INSTALL is set to OFF" and you cannot use 'make install' command)
 endif()
 
 #### EMSCRIPTEN settings
