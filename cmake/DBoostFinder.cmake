@@ -1,6 +1,7 @@
 # Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
 # file Copyright.txt or https://cmake.org/licensing for details.
-
+# Author: develop@dury.it
+# Version 1.0.1
 #[=======================================================================[.rst:
 DBoostFinder
 ---------
@@ -92,6 +93,11 @@ if ((NOT DEFINED Boost_FOUND) OR (NOT ${Boost_FOUND}))
 		message(${DSTATUS} "\tfor Windows")
 	elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 		message(${DSTATUS} "\tFor Linux")
+	endif()
+	if (POLICY CMP0167)
+	    # CMake >= 3.30: usa la BoostConfig.cmake nativa fornita da Boost
+	    # invece del vecchio modulo FindBoost.cmake (deprecato/rimosso).
+	    cmake_policy(SET CMP0167 NEW)
 	endif()
 	find_package(Boost ${BOOST_FIND_ARGS})
 endif()
